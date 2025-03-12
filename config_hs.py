@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 
 """
-    config_hs.py: the configuration for hamiltonian simulation task
+config_hs.py: the configuration for hamiltonian simulation task
 
 """
 
+from datetime import datetime
+
 import numpy as np
+from matplotlib.pylab import f
 
 # Learning Scripts
 # from tools.utils import get_maximally_entangled_state, get_maximally_entangled_state_in_subspace
@@ -23,19 +26,23 @@ decay = False
 eta = initial_eta
 
 # Log
-label = 'hs'
+label = "hs"
 # fidelities = list()
 # losses = list()
 
 # System setting
-system_size = 3 #3 #4
-layer = 2 #20 #15 #10 #4 #3 #2 #4
+system_size = 3  # 3 #4
+layer = 2  # 20 #15 #10 #4 #3 #2 #4
 
 # input_state = get_maximally_entangled_state(system_size)
 # input_state = get_maximally_entangled_state_in_subspace(system_size)
 
-# file settings
-figure_path = './figure'
-model_gen_path = './saved_model/{}qubit_model-gen(hs).mdl'.format(system_size)
-model_dis_path = './saved_model/{}qubit_model-dis(hs).mdl'.format(system_size)
+curr_datetime = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 
+# file settings
+figure_path = f"./generated_data/{curr_datetime}/figure"
+model_gen_path = f"./generated_data/{curr_datetime}/saved_model/{system_size}qubit_model-gen(hs).mdl"
+model_dis_path = f"./generated_data/{curr_datetime}/saved_model/{system_size}qubit_model-dis(hs).mdl"
+log_path = f"./generated_data/{curr_datetime}/logs/{system_size}qubit_log_hs.txt"
+fid_loss_path = f"./generated_data/{curr_datetime}/fidelities/{system_size}qubit_log_hs_fidelity_loss.npy"
+theta_path = f"./generated_data/{curr_datetime}/theta/{system_size}qubit_theta_gen.txt"
