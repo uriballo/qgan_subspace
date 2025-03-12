@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-
 """
-config_hs.py: the configuration for hamiltonian simulation task
+config.py: the configuration for hamiltonian simulation task
 
 """
 
@@ -42,6 +40,6 @@ curr_datetime = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 figure_path = f"./generated_data/{curr_datetime}/figure"
 model_gen_path = f"./generated_data/{curr_datetime}/saved_model/{system_size}qubit_model-gen(hs).mdl"
 model_dis_path = f"./generated_data/{curr_datetime}/saved_model/{system_size}qubit_model-dis(hs).mdl"
-log_path = f"./generated_data/{curr_datetime}/logs/{system_size}qubit_log_hs.txt"
-fid_loss_path = f"./generated_data/{curr_datetime}/fidelities/{system_size}qubit_log_hs_fidelity_loss.npy"
+log_path = f"./generated_data/{curr_datetime}/logs/{system_size}qubit_log.txt"
+fid_loss_path = f"./generated_data/{curr_datetime}/fidelities/{system_size}qubit_log_fidelity_loss.npy"
 theta_path = f"./generated_data/{curr_datetime}/theta/{system_size}qubit_theta_gen.txt"

@@ -1,11 +1,7 @@
-#!/usr/bin/env python
+"""
+qgates.py: including base components and definition of quantum gatesn.
 
 """
-qcircuit.py: including base components and definition of quantum circuit simulation.
-
-"""
-
-import os
 
 import numpy as np
 import scipy.linalg as linalg
@@ -28,7 +24,7 @@ SWAP = np.matrix([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]])  #: S
 CZ = np.matrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, -1]])  #: CZ gate
 
 global param_table
-param_table = dict()
+param_table = {}
 
 
 def Identity(size):
@@ -246,11 +242,11 @@ def Global_phase(size, param, is_grad):
     eA = np.exp(-1j * param**2) * matrix
     if is_grad is False:
         return eA
-    else:
-        return -1j * 2 * param * np.matmul(matrix, eA)
+
+    return -1j * 2 * param * np.matmul(matrix, eA)
 
 
-class Quantum_Gate:
+class QuantumGate:
     def __init__(self, name, qubit1=None, qubit2=None, **kwarg):
         self.name = name
         self.qubit1 = qubit1
@@ -309,7 +305,7 @@ class Quantum_Gate:
         raise ValueError("Gate is not defined")
 
     def matrix_representation_shift_phase(self, size, is_grad, signal):
-        if self.angle != None:
+        if self.angle is not None:
             try:
                 if self.name == "G":
                     param = float(self.angle)
@@ -327,111 +323,25 @@ class Quantum_Gate:
         if self.name == "XX":
             return XX_Rotation(size, self.qubit1, self.qubit2, param, is_grad)
 
-        elif self.name == "YY":
+        if self.name == "YY":
             return YY_Rotation(size, self.qubit1, self.qubit2, param, is_grad)
 
-        elif self.name == "ZZ":
+        if self.name == "ZZ":
             return ZZ_Rotation(size, self.qubit1, self.qubit2, param, is_grad)
 
-        elif self.name == "Z":
+        if self.name == "Z":
             return Z_Rotation(size, self.qubit1, param, is_grad)
 
-        elif self.name == "X":
+        if self.name == "X":
             return X_Rotation(size, self.qubit1, param, is_grad)
 
-        elif self.name == "Y":
+        if self.name == "Y":
             return Y_Rotation(size, self.qubit1, param, is_grad)
 
-        elif self.name == "G":
+        if self.name == "G":
             return Global_phase(size, param, is_grad)
 
-        elif self.name == "CNOT":
+        if self.name == "CNOT":
             return mCNOT(size, self.qubit1, self.qubit2)
 
-        else:
-            raise ValueError("Gate is not defined")
-
-
-class Quantum_Circuit:
-    def __init__(self, size, name):
-        self.size = size
-        self.depth = 0
-        self.gates = []
-        self.name = name
-
-    def check_ciruit(self):
-        for j, gate in zip(range(len(self.gates)), self.gates):
-            if gate.qubit1 is not None and gate.qubit2 is not None:
-                if gate.qubit1 > self.size - 1:
-                    print("Error: #{} gate:{} 1qubit is out of range".format(j, gate.name))
-                    os._exit(0)
-                elif gate.qubit2 > self.size - 1:
-                    print("Error: #{} gate:{} 2qubit is out of range".format(j, gate.name))
-                    os._exit(0)
-
-    def get_mat_rep(self):
-        matrix = Identity(self.size)
-        for gate in self.gates:
-            g = gate.matrix_representation(self.size, False)
-            matrix = np.matmul(g, matrix)
-        return np.asmatrix(matrix)
-
-    def get_grad_mat_rep(self, index, signal="none", type="matrix_multiplication"):
-        """
-            matrix multipliction: explicit way to calculate the gradient using matrix multiplication
-            shift_phase: generate two quantum circuit to calculate the gradient
-            Evaluating analytic gradients on quantum hardware
-            https://arxiv.org/pdf/1811.11184.pdf
-        :param index:
-        :param type: the type of calculate gradient
-        :return:
-        """
-        if type == "shift_phase":
-            matrix = Identity(self.size)
-            for j, gate in zip(range(len(self.gates)), self.gates):
-                if index == j:
-                    g = gate.matrix_representation_shift_phase(self.size, True, signal)
-                    matrix = np.matmul(g, matrix)
-                else:
-                    g = gate.matrix_representation_shift_phase(self.size, False, signal)
-                    matrix = np.matmul(g, matrix)
-            return np.asmatrix(matrix)
-
-        if type == "matrix_multiplication":
-            matrix = Identity(self.size)
-            for j, gate in zip(range(len(self.gates)), self.gates):
-                if index == j:
-                    g = gate.matrix_representation(self.size, True)
-                    matrix = np.matmul(g, matrix)
-                else:
-                    g = gate.matrix_representation(self.size, False)
-                    matrix = np.matmul(g, matrix)
-            return np.asmatrix(matrix)
-
-        return None
-
-    def get_grad_qc(self, indx, type="0"):
-        qc_list = []
-        for j, gate in zip(range(len(self.gates)), self.gates):
-            tmp = Quantum_Gate(" ", qubit1=None, qubit2=None, angle=None)
-            tmp.name = gate.name
-            tmp.qubit1 = gate.qubit1
-            tmp.qubit2 = gate.qubit2
-            tmp.angle = gate.angle
-            if j == indx:
-                try:
-                    if self.gates[j].name != "G" or self.gates[j].name != "CNOT":
-                        if type == "+":
-                            tmp.angle = gate.angle + gate.s
-                        elif type == "-":
-                            tmp.angle = gate.angle - gate.s
-                except:
-                    print("param value error")
-                qc_list.append(tmp)
-            else:
-                qc_list.append(tmp)
-        return qc_list
-
-    def add_gate(self, quantum_gate):
-        self.depth += 1
-        self.gates.append(quantum_gate)
+        raise ValueError("Gate is not defined")

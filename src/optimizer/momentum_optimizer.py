@@ -1,4 +1,7 @@
-from tools.utils import _flatten, _unflatten
+##### Optimizer file
+
+
+from tools.data_reshapers import _flatten, _unflatten
 
 
 class MomentumOptimizer:
