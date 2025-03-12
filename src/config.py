@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 config.py: the configuration for hamiltonian simulation task
 

@@ -5,20 +5,20 @@ import numpy as np
 import scipy.io as scio
 
 import config as cf
+from cost_functions.cost_and_fidelity import compute_cost, compute_fidelity
 from discriminator.discriminator import Discriminator
 from generator.ansatz import construct_qcircuit_ZZ_XZ
 from generator.generator import Generator
-from optimization.cost_and_fidelity import compute_cost, compute_fidelity
 from target.target_hamiltonian import construct_target
 from target.target_state import get_maximally_entangled_state
-from tools.plot_hub import plt_fidelity_vs_iter
-from tools.qcircuit import I, Identity, X, Y, Z
-from tools.utils import (
+from tools.data_managers import (
     save_fidelity_loss,
     save_model,
     save_theta,
     train_log,
 )
+from tools.plot_hub import plt_fidelity_vs_iter
+from tools.qgates import I, Identity, X, Y, Z
 
 np.random.seed()
 

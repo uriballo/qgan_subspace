@@ -5,7 +5,7 @@ import numpy as np
 from scipy.linalg import expm
 
 from config import cst1, cst2, cst3, lamb
-from optimization.momentum_optimizer import MomentumOptimizer
+from optimizer.momentum_optimizer import MomentumOptimizer
 
 
 class Discriminator:

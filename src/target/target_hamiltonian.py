@@ -6,7 +6,7 @@ import sys
 import numpy as np
 from scipy import linalg
 
-from tools.qcircuit import I, X, Y, Z
+from tools.qgates import I, X, Y, Z
 
 
 def term_XXXX(size, qubit1, qubit2, qubit3, qubit4):
