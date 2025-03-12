@@ -1,0 +1,10 @@
+# Virtual enviorments
+.qodo
+.venv
+
+# Generated files
+figure/
+saved_model/
+*log*
+*cache*
+*gen*
