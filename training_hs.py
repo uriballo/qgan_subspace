@@ -5,11 +5,12 @@ from datetime import datetime
 
 import numpy as np
 import scipy.io as scio
+import scipy.linalg as linalg
 
 import config_hs as cf
 from model_hs import Discriminator, Generator, compute_cost, compute_fidelity
 from tools.plot_hub import plt_fidelity_vs_iter
-from tools.qcircuit import *
+from tools.qcircuit import I, Identity, Quantum_Gate, X, Y, Z
 from tools.utils import (
     get_maximally_entangled_state,
     get_maximally_entangled_state_in_subspace,

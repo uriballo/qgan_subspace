@@ -11,8 +11,6 @@ from collections.abc import Iterable
 
 import numpy as np
 
-import config_hs as cf
-
 
 def _flatten(x):
     """Iterate through an arbitrarily nested structure, flattening it in depth-first order.
@@ -52,15 +50,16 @@ def _unflatten(flat, prototype):
         idx = prototype.size
         res = np.array(flat)[:idx].reshape(prototype.shape)
         return res
-    # elif isinstance(prototype, collections.Iterable):
-    elif isinstance(prototype, Iterable):
+
+    # if isinstance(prototype, collections.Iterable):
+    if isinstance(prototype, Iterable):
         res = []
         for x in prototype:
             val, flat = _unflatten(flat, x)
             res.append(val)
         return res, flat
-    else:
-        raise TypeError("Unsupported type in the model: {}".format(type(prototype)))
+
+    raise TypeError("Unsupported type in the model: {}".format(type(prototype)))
 
 
 def unflatten(flat, prototype):

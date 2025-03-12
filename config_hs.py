@@ -8,7 +8,6 @@ config_hs.py: the configuration for hamiltonian simulation task
 from datetime import datetime
 
 import numpy as np
-from matplotlib.pylab import f
 
 # Learning Scripts
 # from tools.utils import get_maximally_entangled_state, get_maximally_entangled_state_in_subspace
