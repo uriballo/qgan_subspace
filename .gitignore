@@ -3,8 +3,7 @@
 .venv
 
 # Generated files
-figure/
-saved_model/
+generated_data/
 *log*
 *cache*
 *gen*
