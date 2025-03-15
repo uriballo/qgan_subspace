@@ -18,7 +18,8 @@ cst3 = (s / 2) ** 2
 
 # Learning Scripts
 initial_eta = 1e-1
-epochs = 300
+iterations_epoch = 100
+epochs = 10
 decay = False
 eta = initial_eta
 
@@ -28,15 +29,16 @@ label = "hs"
 # losses = list()
 
 # System setting
-system_size = 3  # 3 #4
-layer = 2  # 20 #15 #10 #4 #3 #2 #4
+system_size = 4  # #3 #4
+layer = 10  # #20 #15 #10 #4 #3 #2
 
 # input_state = get_maximally_entangled_state(system_size)
 # input_state = get_maximally_entangled_state_in_subspace(system_size)
 
 curr_datetime = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 
-# file settings
+
+# File settings
 figure_path = f"./generated_data/{curr_datetime}/figure"
 model_gen_path = f"./generated_data/{curr_datetime}/saved_model/{system_size}qubit_model-gen(hs).mdl"
 model_dis_path = f"./generated_data/{curr_datetime}/saved_model/{system_size}qubit_model-dis(hs).mdl"

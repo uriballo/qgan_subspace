@@ -33,7 +33,7 @@ def main():
 
     # define target gates
     # target_unitary = scio.loadmat('./exp_ideal_{}_qubit.mat'.format(cf.system_size))['exp_ideal']
-    target_unitary = construct_target(cf.system_size)
+    target_unitary = construct_target(cf.system_size, ZZZ=True)
     # target_unitary = construct_clusterH(cf.system_size)
     # target_unitary = construct_RotatedSurfaceCode(cf.system_size)
 
@@ -52,10 +52,10 @@ def main():
     # dis = Discriminator(herm, (cf.system_size+1)*2)
 
     # compute fidelity at initial
-    f = compute_fidelity(gen, input_state, real_state, input_state)
+    f = compute_fidelity(gen, input_state, real_state)
 
-    fidelities = np.zeros(cf.epochs)
-    losses = np.zeros(cf.epochs)
+    fidelities = np.zeros(cf.iterations_epoch)
+    losses = np.zeros(cf.iterations_epoch)
     fidelities_history = []
     losses_history = []
     starttime = datetime.now()
@@ -66,9 +66,9 @@ def main():
         fidelities[:] = 0.0
         losses[:] = 0.0
         num_epochs += 1
-        for iter in range(cf.epochs):
+        for iter in range(cf.iterations_epoch):
             print("==================================================")
-            print("Epoch {}, Step_size {}".format(iter + 1 + (num_epochs - 1) * cf.epochs, cf.eta))
+            print("Epoch {}, Iteration {}, Step_size {}".format(num_epochs, iter + 1, cf.eta))
 
             # Generator gradient descent
             gen.update_gen(dis, real_state, input_state)
@@ -101,8 +101,8 @@ def main():
         losses_history = np.append(losses_history, losses)
         plt_fidelity_vs_iter(fidelities_history, losses_history, cf, num_epochs)
 
-        if num_epochs >= 10:
-            print("The number of epochs exceeds 10.")
+        if num_epochs >= cf.epochs:
+            print(f"The number of epochs exceeds {cf.epochs}.")
             break
 
     # save data of fidelity and loss
