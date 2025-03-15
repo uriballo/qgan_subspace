@@ -83,22 +83,14 @@ def term_Z(size, qubit1):
 
 def construct_target(size, Z: bool = False, ZZ: bool = False, ZZZ: bool = False, I: bool = False):
     H = np.zeros([2**size, 2**size])
-
     if Z:
-        for i in range(size):
-            H += term_Z(size, i)
-
+        H += sum(term_Z(size, i) for i in range(size))
     if ZZ:
-        for i in range(size - 1):
-            H += term_ZZ(size, i, i + 1)
-
+        H += sum(term_ZZ(size, i, i + 1) for i in range(size - 1))
     if ZZZ:
-        for i in range(size - 2):
-            H += term_ZZZ(size, i, i + 1, i + 2)
-
+        H += sum(term_ZZZ(size, i, i + 1, i + 2) for i in range(size - 2))
     if I:
         H = np.identity(2**size)
-
     return linalg.expm(-1j * H)
 
 
