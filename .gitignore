@@ -6,5 +6,4 @@
 generated_data/
 *log*
 *cache*
-*gen*
 .DS_Store
