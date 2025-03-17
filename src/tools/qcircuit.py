@@ -34,15 +34,11 @@ class QuantumCircuit:
             matrix = np.matmul(g, matrix)
         return np.asmatrix(matrix)
 
-    def get_grad_mat_rep(self, index, signal="none", type="matrix_multiplication"):
-        """
-            matrix multipliction: explicit way to calculate the gradient using matrix multiplication
-            shift_phase: generate two quantum circuit to calculate the gradient
-            Evaluating analytic gradients on quantum hardware
-            https://arxiv.org/pdf/1811.11184.pdf
-        :param index:
-        :param type: the type of calculate gradient
-        :return:
+    def get_grad_mat_rep(self, index, signal="none", type="matrix_multiplication") -> np.ndarray:
+        """Matrix multipliction: explicit way to calculate the gradient using matrix multiplication.
+
+        Shift_phase: generate two quantum circuit to calculate the gradient evaluating analytic gradients on quantum hardware:
+        https://arxiv.org/pdf/1811.11184.pdf
         """
         if type == "shift_phase":
             matrix = Identity(self.size)

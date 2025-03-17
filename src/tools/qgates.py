@@ -27,19 +27,15 @@ global param_table
 param_table = {}
 
 
-def Identity(size):
+def Identity(size: int) -> np.ndarray:
     matrix = 1
     for i in range(1, size + 1):
         matrix = np.kron(matrix, I)
     return matrix
 
 
-def CSWAP(size):
-    """
-        get control swap gate
-    :param size:
-    :return:
-    """
+def CSWAP(size: int) -> np.ndarray:
+    """Get control swap gate"""
     dim = 2 * size
     C_SWAP = dok_matrix((2 ** (dim + 1), 2 ** (dim + 1)))
 
@@ -59,12 +55,8 @@ def CSWAP(size):
     return C_SWAP - np.zeros((2 ** (dim + 1), 2 ** (dim + 1))), SWAP
 
 
-def CSWAP_T(size):
-    """
-        get control swap gate
-    :param size:
-    :return:
-    """
+def CSWAP_T(size: int) -> np.ndarray:
+    """Get control swap gate"""
     dim = 2 * size
     C_SWAP = dok_matrix((2 ** (dim + 1), 2 ** (dim + 1)))
 
