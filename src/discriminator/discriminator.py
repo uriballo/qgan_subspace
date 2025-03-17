@@ -25,16 +25,16 @@ class Discriminator:
             self.alpha[i] = -1 + 2 * np.random.random(len(self.herm))
             self.beta[i] = -1 + 2 * np.random.random(len(self.herm))
 
-    def getPsi(self):
-        """
-            get matrix representation of real part of discriminator
-        :param alpha:
-                    parameters of psi(ndarray):size = [num_qubit, 4]
+    def getPsi(self) -> np.ndarray:
+        """Get matrix representation of real part of discriminator
+
+        Parameters of psi(ndarray):size = [num_qubit, 4]
                     0: I
                     1: X
                     2: Y
                     3: Z
-        :return:
+        Returns:
+            np.ndarray: Psi, matrix representation of real part of discriminator
         """
         psi = 1
         for i in range(self.size):
@@ -44,16 +44,16 @@ class Discriminator:
             psi = np.kron(psi, psi_i)
         return psi
 
-    def getPhi(self):
-        """
-            get matrix representation of fake part of discriminator
-        :param beta:
-                    parameters of psi(ndarray):size = [num_qubit, 4]
+    def getPhi(self) -> np.ndarray:
+        """Get matrix representation of fake part of discriminator
+
+        Parameters of psi(ndarray):size = [num_qubit, 4]
                     0: I
                     1: X
                     2: Y
                     3: Z
-        :return:
+        Returns:
+            np.ndarray: Phi, matrix representation of fake part of discriminator
         """
         phi = 1
         for i in range(self.size):
