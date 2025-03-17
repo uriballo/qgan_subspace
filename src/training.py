@@ -25,43 +25,45 @@ np.random.seed()
 
 class Training:
     def __init__(self):
-        """Builds the configuration for the Training."""
+        """Builds the configuration for the Training. You might wanna comment/discomment lines, for changing the model."""
 
         self.input_state = get_maximally_entangled_state(cf.system_size)
         # self.input_state = get_maximally_entangled_state_in_subspace(cf.system_size)  # 2*(size+1), B0, B1, A0, A1
-        """Preparation for Choi state"""
+        """Preparation of max. entgl. state. First option is for no extra Ancilla qubit, second option is for Ancilla."""
 
         # self.target_unitary = scio.loadmat('./exp_ideal_{}_qubit.mat'.format(cf.system_size))['exp_ideal']
         self.target_unitary = construct_target(cf.system_size, ZZZ=True)
         # self.target_unitary = construct_clusterH(cf.system_size)
         # self.target_unitary = construct_RotatedSurfaceCode(cf.system_size)
-        """Define target gates"""
+        """Define target gates. First option is to specify the Z, ZZ, ZZZ and/or I terms, second and third is for the respective hardcoded Hamiltonians."""
 
         self.real_state = np.matmul(np.kron(self.target_unitary, Identity(cf.system_size)), self.input_state)
         # self.real_state = np.matmul(np.kron(np.kron(np.kron(self.target_unitary, Identity(1)), Identity(cf.system_size)), Identity(1)), self.input_state)
-        """ Define target state"""
+        """Define target state. First option is for no extra Ancilla qubit, second option is for Ancilla."""
 
         self.gen = Generator(cf.system_size)
         # self.gen.set_qcircuit(construct_qcircuit_XYZandfieldZ(self.gen.qc, cf.system_size, cf.layer))
         self.gen.set_qcircuit(construct_qcircuit_ZZ_XZ(self.gen.qc, cf.system_size, cf.layer))
-        """ Defines the Generator"""
+        """Defines the Generator. First option is for XYZ and FieldZ, second option is for ZZ and XZ."""
 
         herm = [I, X, Y, Z]
         self.dis = Discriminator(herm, cf.system_size * 2)  # Without Extra Ancilla qubit
         # self.dis = Discriminator(herm, (cf.system_size + 1) * 2) # With Extra Ancilla qubit
-        """ Defines the Discriminator"""
+        """Defines the Discriminator. First option is for no extra Ancilla qubit, second option is for Ancilla."""
 
     def run(self):
-        # compute fidelity at initial
+        """Run the training, saving the data, the model, the logs, and the results plots."""
+
+        # Compute fidelity at initial
         f = compute_fidelity(self.gen, self.input_state, self.real_state)
 
-        fidelities = np.zeros(cf.iterations_epoch)
-        losses = np.zeros(cf.iterations_epoch)
-        fidelities_history = []
-        losses_history = []
+        # Data storing
+        fidelities, losses = np.zeros(cf.iterations_epoch), np.zeros(cf.iterations_epoch)
+        fidelities_history, losses_history = [], []
         starttime = datetime.now()
         num_epochs = 0
 
+        # Training
         while f < 0.99:
             # while (f < 0.95):
             fidelities[:] = 0.0
@@ -106,14 +108,14 @@ class Training:
                 print(f"The number of epochs exceeds {cf.epochs}.")
                 break
 
-        # save data of fidelity and loss
+        # Save data of fidelity and loss
         save_fidelity_loss(fidelities_history, losses_history, cf.fid_loss_path)
 
-        # save data of the generator and the discriminator
+        # Save data of the generator and the discriminator
         save_model(self.gen, cf.model_gen_path)
         save_model(self.dis, cf.model_dis_path)
 
-        # output the parameters of the generator
+        # Output the parameters of the generator
         save_theta(self.gen, cf.theta_path)
 
         endtime = datetime.now()

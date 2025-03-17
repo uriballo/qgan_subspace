@@ -9,7 +9,7 @@ from scipy import linalg
 from tools.qgates import I, X, Y, Z
 
 
-def term_XXXX(size, qubit1, qubit2, qubit3, qubit4):
+def term_XXXX(size: int, qubit1: int, qubit2: int, qubit3: int, qubit4: int):
     matrix = 1
     for i in range(size):
         if (qubit1 == i) or (qubit2 == i) or (qubit3 == i) or (qubit4 == i):
@@ -19,7 +19,7 @@ def term_XXXX(size, qubit1, qubit2, qubit3, qubit4):
     return matrix
 
 
-def term_ZZZZ(size, qubit1, qubit2, qubit3, qubit4):
+def term_ZZZZ(size: int, qubit1: int, qubit2: int, qubit3: int, qubit4: int):
     matrix = 1
     for i in range(size):
         if (qubit1 == i) or (qubit2 == i) or (qubit3 == i) or (qubit4 == i):
@@ -29,7 +29,7 @@ def term_ZZZZ(size, qubit1, qubit2, qubit3, qubit4):
     return matrix
 
 
-def term_ZZZ(size, qubit1, qubit2, qubit3):
+def term_ZZZ(size: int, qubit1: int, qubit2: int, qubit3: int):
     matrix = 1
     for i in range(size):
         if (qubit1 == i) or (qubit2 == i) or (qubit3 == i):
@@ -39,7 +39,7 @@ def term_ZZZ(size, qubit1, qubit2, qubit3):
     return matrix
 
 
-def term_XZX(size, qubit1, qubit2, qubit3):
+def term_XZX(size: int, qubit1: int, qubit2: int, qubit3: int):
     matrix = 1
     for i in range(size):
         if (qubit1 == i) or (qubit3 == i):
@@ -51,7 +51,7 @@ def term_XZX(size, qubit1, qubit2, qubit3):
     return matrix
 
 
-def term_XX(size, qubit1, qubit2):
+def term_XX(size: int, qubit1: int, qubit2: int):
     matrix = 1
     for i in range(size):
         if (qubit1 == i) or (qubit2 == i):
@@ -61,7 +61,7 @@ def term_XX(size, qubit1, qubit2):
     return matrix
 
 
-def term_ZZ(size, qubit1, qubit2):
+def term_ZZ(size: int, qubit1: int, qubit2: int):
     matrix = 1
     for i in range(size):
         if (qubit1 == i) or (qubit2 == i):
@@ -71,7 +71,7 @@ def term_ZZ(size, qubit1, qubit2):
     return matrix
 
 
-def term_Z(size, qubit1):
+def term_Z(size: int, qubit1: int):
     matrix = 1
     for i in range(size):
         if qubit1 == i:
@@ -81,7 +81,19 @@ def term_Z(size, qubit1):
     return matrix
 
 
-def construct_target(size, Z: bool = False, ZZ: bool = False, ZZZ: bool = False, I: bool = False):
+def construct_target(size: int, Z: bool = False, ZZ: bool = False, ZZZ: bool = False, I: bool = False) -> np.ndarray:
+    """Construct target Hamiltonian. Specify the terms to include, setting them to true.
+
+    Args:
+        size (int): the size of the system.
+        Z (bool): whether to include Z terms.
+        ZZ (bool): whether to include ZZ terms.
+        ZZZ (bool): whether to include ZZZ terms.
+        I (bool): whether to include I terms.
+
+    Returns:
+        np.ndarray: the target Hamiltonian.
+    """
     H = np.zeros([2**size, 2**size])
     if Z:
         H += sum(term_Z(size, i) for i in range(size))
@@ -94,7 +106,15 @@ def construct_target(size, Z: bool = False, ZZ: bool = False, ZZZ: bool = False,
     return linalg.expm(-1j * H)
 
 
-def construct_clusterH(size):
+def construct_clusterH(size: int) -> np.ndarray:
+    """Construct cluster Hamiltonian.
+
+    Args:
+        size (int): the size of the system.
+
+    Returns:
+        np.ndarray: the cluster Hamiltonian.
+    """
     H = np.zeros([2**size, 2**size])
     for i in range(size - 2):
         H += term_XZX(size, i, i + 1, i + 2)
@@ -104,7 +124,15 @@ def construct_clusterH(size):
     return linalg.expm(-1j * H)
 
 
-def construct_RotatedSurfaceCode(size):
+def construct_RotatedSurfaceCode(size: int) -> np.ndarray:
+    """Construct rotated surface code Hamiltonian.
+
+    Args:
+        size (int): the size of the system.
+
+    Returns:
+        np.ndarray: the rotated surface code Hamiltonian.
+    """
     H = np.zeros([2**size, 2**size])
 
     if size == 4:

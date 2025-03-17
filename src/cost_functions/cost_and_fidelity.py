@@ -5,11 +5,24 @@ import numpy as np
 from scipy.linalg import expm
 
 from config import cst1, cst2, cst3, lamb
+from discriminator.discriminator import Discriminator
+from generator.generator import Generator
 
 np.random.seed()
 
 
-def compute_cost(gen, dis, real_state, input_state):
+def compute_cost(gen: Generator, dis: Discriminator, real_state: np.ndarray, input_state: np.ndarray) -> float:
+    """Calculate the cost function
+
+    Args:
+        gen (Generator): the generator.
+        dis (Discriminator): the discriminator.
+        real_state (np.ndarray): the real state.
+        input_state (np.ndarray): the input state.
+
+    Returns:
+        float: the cost function.
+    """
     G = gen.getGen()
     psi = dis.getPsi()
     phi = dis.getPhi()
@@ -54,12 +67,17 @@ def compute_cost(gen, dis, real_state, input_state):
     return loss
 
 
-def compute_fidelity(gen, input_state, real_state, type="training"):
-    """
-        calculate the fidelity between target state and fake state
-    :param gen: generator(Generator)
-    :param state: vector(array), input state
-    :return:
+def compute_fidelity(gen: Generator, input_state: np.ndarray, real_state: np.ndarray, type: str = "training") -> float:
+    """Calculate the fidelity between target state and fake state
+
+    Args:
+        gen (Generator): the generator.
+        input_state (np.ndarray): the input state.
+        real_state (np.ndarray): the real state.
+        type (str): the type of the state. Default is 'training'.
+
+    Returns:
+        float: the fidelity between the target state and the fake state.
     """
     # if type == 'test':
     #     G = gen.qc.get_mat_rep()

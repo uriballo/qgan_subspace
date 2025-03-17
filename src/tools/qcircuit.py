@@ -10,7 +10,7 @@ import numpy as np
 from tools.qgates import Identity, QuantumGate
 
 
-class Quantum_Circuit:
+class QuantumCircuit:
     def __init__(self, size, name):
         self.size = size
         self.depth = 0
