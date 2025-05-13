@@ -18,11 +18,13 @@ lamb = float(10)
 extra_ancilla = False  # True # False
 iterations_epoch = 100
 epochs = 10
-# eta = 1e-1 # initial learning rate TODO: Its not being used!
+# eta = 1e-1 # initial learning rate
+# TODO: Eta its not being used!
 
 # System setting
 system_size = 4  # #3 #4
 layer = 10  # #20 #15 #10 #4 #3 #2
+# TODO: layer is only for the generator??
 
 ################################################################
 # END OF PARAMETERS TO CHANGE:
