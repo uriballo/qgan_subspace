@@ -15,6 +15,7 @@ import numpy as np
 lamb = float(10)
 
 # Learning Scripts
+extra_ancilla = False  # True # False
 iterations_epoch = 100
 epochs = 10
 # eta = 1e-1 # initial learning rate TODO: Its not being used!

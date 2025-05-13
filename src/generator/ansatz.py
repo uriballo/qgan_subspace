@@ -7,7 +7,7 @@ from tools.qcircuit import QuantumCircuit
 from tools.qgates import QuantumGate
 
 
-def construct_qcircuit_XYZandfieldZ(qc: QuantumCircuit, size: int, layer: int) -> QuantumCircuit:
+def construct_qcircuit_XX_YY_ZZ_Z(qc: QuantumCircuit, size: int, layer: int) -> QuantumCircuit:
     """Construct a quantum circuit with the ansatz of XYZ and FieldZ
 
     Args:
@@ -38,7 +38,7 @@ def construct_qcircuit_XYZandfieldZ(qc: QuantumCircuit, size: int, layer: int) -
     return qc
 
 
-def construct_qcircuit_ZZ_XZ(qc: QuantumCircuit, size: int, layer: int) -> QuantumCircuit:
+def construct_qcircuit_ZZ_X_Z(qc: QuantumCircuit, size: int, layer: int) -> QuantumCircuit:
     """Construct a quantum circuit with the ansatz of ZZ and XZ
 
     Args:
