@@ -7,36 +7,34 @@ from datetime import datetime
 
 import numpy as np
 
-# Learning Scripts
-# from tools.utils import get_maximally_entangled_state, get_maximally_entangled_state_in_subspace
+################################################################
+# START OF PARAMETERS TO CHANGE:
+################################################################
 
+# Parameter for costs functions and gradients
 lamb = float(10)
-s = np.exp(-1 / (2 * lamb)) - 1
-cst1 = (s / 2 + 1) ** 2
-cst2 = (s / 2) * (s / 2 + 1)
-cst3 = (s / 2) ** 2
 
 # Learning Scripts
-initial_eta = 1e-1
 iterations_epoch = 100
 epochs = 10
-decay = False
-eta = initial_eta
-
-# Log
-label = "hs"
-# fidelities = list()
-# losses = list()
+# eta = 1e-1 # initial learning rate TODO: Its not being used!
 
 # System setting
 system_size = 4  # #3 #4
 layer = 10  # #20 #15 #10 #4 #3 #2
 
-# input_state = get_maximally_entangled_state(system_size)
-# input_state = get_maximally_entangled_state_in_subspace(system_size)
+################################################################
+# END OF PARAMETERS TO CHANGE:
+################################################################
 
+# Costs and gradients
+s = np.exp(-1 / (2 * lamb)) - 1
+cst1 = (s / 2 + 1) ** 2
+cst2 = (s / 2) * (s / 2 + 1)
+cst3 = (s / 2) ** 2
+
+# Datetime
 curr_datetime = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
-
 
 # File settings
 figure_path = f"./generated_data/{curr_datetime}/figure"
