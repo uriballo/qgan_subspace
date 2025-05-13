@@ -36,8 +36,8 @@ class Training:
         """Preparation of max. entgl. state. First option is for full system, Second for subspace."""
 
         # self.target_unitary = scio.loadmat('./exp_ideal_{}_qubit.mat'.format(cf.system_size))['exp_ideal']
-        # self.target_unitary = construct_target(cf.system_size, ZZZ=True)
-        self.target_unitary = construct_clusterH(cf.system_size)
+        self.target_unitary = construct_target(cf.system_size, ZZZ=True)  # Remember you can chose Z, ZZ and ZZZ
+        # self.target_unitary = construct_clusterH(cf.system_size)
         # self.target_unitary = construct_RotatedSurfaceCode(cf.system_size)
         """Define target gates. First option is to specify the Z, ZZ, ZZZ and/or I terms, second and third is for the respective hardcoded Hamiltonians."""
 
