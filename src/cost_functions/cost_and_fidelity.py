@@ -67,13 +67,13 @@ def compute_cost(gen: Generator, dis: Discriminator, real_state: np.ndarray, inp
     return loss
 
 
-def compute_fidelity(gen: Generator, input_state: np.ndarray, real_state: np.ndarray, type: str = "training") -> float:
+def compute_fidelity(gen: Generator, real_state: np.ndarray, input_state: np.ndarray, type: str = "training") -> float:
     """Calculate the fidelity between target state and fake state
 
     Args:
         gen (Generator): the generator.
-        input_state (np.ndarray): the input state.
         real_state (np.ndarray): the real state.
+        input_state (np.ndarray): the input state.
         type (str): the type of the state. Default is 'training'.
 
     Returns:

@@ -5,6 +5,7 @@ import numpy as np
 import scipy.io as scio
 
 import config as cf
+from ancilla.ancilla import get_fake_state_for_discriminator
 from cost_functions.cost_and_fidelity import compute_cost, compute_fidelity
 from discriminator.discriminator import Discriminator
 from generator.ansatz import construct_qcircuit_XX_YY_ZZ_Z, construct_qcircuit_ZZ_X_Z
@@ -53,12 +54,14 @@ class Training:
         self.real_state = self.initialize_target_state()
         """Define the size of target state (with ancilla or not, depending on value of `config.extra_ancilla`)."""
 
-        self.dis = Discriminator([I, X, Y, Z], (cf.system_size + (1 if cf.extra_ancilla else 0)) * 2)
+        self.dis = Discriminator(
+            [I, X, Y, Z], (cf.system_size + (1 if (cf.extra_ancilla and cf.ancilla_mode == "pass") else 0)) * 2
+        )
         """Defines the size of Discriminator (with ancilla or not, depending on value of `config.extra_ancilla`)."""
 
     def initialize_target_state(self):
         """Initialize the target state."""
-        if cf.extra_ancilla:
+        if cf.extra_ancilla and cf.ancilla_mode == "pass":
             return np.matmul(
                 np.kron(np.kron(np.kron(self.target_unitary, Identity(1)), Identity(cf.system_size)), Identity(1)),
                 self.input_state,
@@ -70,7 +73,7 @@ class Training:
         """Run the training, saving the data, the model, the logs, and the results plots."""
 
         # Compute fidelity at initial
-        f = compute_fidelity(self.gen, self.input_state, self.real_state)
+        f = compute_fidelity(self.gen, self.real_state, get_fake_state_for_discriminator(self.input_state))
 
         # Data storing
         fidelities, losses = np.zeros(cf.iterations_epoch), np.zeros(cf.iterations_epoch)
@@ -88,16 +91,18 @@ class Training:
                 print("==================================================")
                 print("Epoch {}, Iteration {}, Step_size {}".format(num_epochs, iter + 1, cf.eta))
 
+                # # Get the fake state for the discriminator
+                # fake_state = get_fake_state_for_discriminator(gen=self.gen, output_state=self.input_state)
+
                 # Generator gradient descent
                 self.gen.update_gen(self.dis, self.real_state, self.input_state)
-                # print("Loss after generator step: {}".format(compute_cost(gen, dis, real_state, input_state)))
-
                 # Discriminator gradient ascent
                 self.dis.update_dis(self.gen, self.real_state, self.input_state)
-                # print("Loss after discriminator step: {}".format(compute_cost(gen, dis, real_state, input_state)))
 
-                fidelities[iter] = compute_fidelity(self.gen, self.input_state, self.real_state)
-                losses[iter] = compute_cost(self.gen, self.dis, self.real_state, self.input_state)
+                fake_state = get_fake_state_for_discriminator(self.input_state)
+
+                fidelities[iter] = compute_fidelity(self.gen, self.real_state, fake_state)
+                losses[iter] = compute_cost(self.gen, self.dis, self.real_state, fake_state)
 
                 print("Fidelity between real and fake state: {}".format(fidelities[iter]))
                 print("==================================================")

@@ -4,6 +4,7 @@
 import numpy as np
 from scipy.linalg import expm
 
+from ancilla.ancilla import get_fake_state_for_discriminator
 from config import cst1, cst2, cst3, lamb, system_size
 from optimizer.momentum_optimizer import MomentumOptimizer
 from tools.qcircuit import Identity, QuantumCircuit
@@ -31,7 +32,9 @@ class Generator:
         phi = dis.getPhi()
         psi = dis.getPsi()
 
-        fake_state = np.matmul(G, input_state)
+        output_state = np.matmul(G, input_state)
+
+        fake_state = get_fake_state_for_discriminator(output_state)
 
         try:
             A = expm((-1 / lamb) * phi)

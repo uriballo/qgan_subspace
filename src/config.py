@@ -16,6 +16,7 @@ lamb = float(10)
 
 # Learning Scripts
 extra_ancilla = False  # True # False
+ancilla_mode = "pass"  # Options: "pass", "project", "tracing_out"
 iterations_epoch = 100
 epochs = 10
 # eta = 1e-1 # initial learning rate
