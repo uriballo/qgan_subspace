@@ -28,7 +28,7 @@ layer = 4  # Number of layers in the Generator: #20 #15 #10 #4 #3 #2 ...
 
 # Ancilla parameters
 extra_ancilla = True  # If to include an extra ancilla: #True # False
-ancilla_mode = "project"  # Options for the extra ancilla: "pass", "project", "tracing_out"
+ancilla_mode = "pass"  # Options for the extra ancilla: "pass", "project", "tracing_out"
 # TODO: ancilla_topology = "ansatz"  # Options for the ancilla topology: "ansatz", "total"
 
 # GEN ANSATZ (Callable):
