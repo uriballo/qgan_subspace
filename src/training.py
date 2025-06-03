@@ -64,7 +64,7 @@ class Training:
         if cf.extra_ancilla and cf.ancilla_mode == "pass":
             return np.matmul(
                 np.kron(np.kron(np.kron(self.target_unitary, Identity(1)), Identity(cf.system_size)), Identity(1)),
-                self.input_state,
+                get_fake_state_for_discriminator(self.input_state),
             )
 
         return np.matmul(np.kron(self.target_unitary, Identity(cf.system_size)), self.input_state)
@@ -91,13 +91,11 @@ class Training:
                 print("==================================================")
                 print("Epoch {}, Iteration {}, Step_size {}".format(num_epochs, iter + 1, cf.eta))
 
-                # # Get the fake state for the discriminator
-                # fake_state = get_fake_state_for_discriminator(gen=self.gen, output_state=self.input_state)
-
                 # Generator gradient descent
                 self.gen.update_gen(self.dis, self.real_state, self.input_state)
                 # Discriminator gradient ascent
-                self.dis.update_dis(self.gen, self.real_state, self.input_state)
+                for _ in range(cf.ratio_step_disc_to_gen):
+                    self.dis.update_dis(self.gen, self.real_state, self.input_state)
 
                 fake_state = get_fake_state_for_discriminator(self.input_state)
 

@@ -1,6 +1,7 @@
 ##### Optimizer file
 
 
+import config as cf
 from tools.data_reshapers import _flatten, _unflatten
 
 
@@ -18,7 +19,7 @@ class MomentumOptimizer:
     miu:= momentum coefficient [0,1]
     """
 
-    def __init__(self, eta=0.01, miu=0.9):
+    def __init__(self, eta=cf.eta, miu=0.9):
         self.miu = miu
         self.eta = eta
         self.v = None

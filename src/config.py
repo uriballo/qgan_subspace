@@ -15,17 +15,17 @@ import numpy as np
 lamb = float(10)
 
 # Learning Scripts
-extra_ancilla = False  # True # False
+extra_ancilla = True  # True # False
 ancilla_mode = "pass"  # Options: "pass", "project", "tracing_out"
 iterations_epoch = 100
 epochs = 10
-# eta = 1e-1 # initial learning rate
-# TODO: Eta its not being used!
+eta = 0.01  # initial learning rate
+ratio_step_disc_to_gen = 1  # (int) ratio of step size for discriminator to generator (Dis > Gen)
 
 # System setting
 system_size = 4  # #3 #4
 layer = 10  # #20 #15 #10 #4 #3 #2
-# TODO: layer is only for the generator??
+# TODO: Understand why Layer is only for the generator???
 
 ################################################################
 # END OF PARAMETERS TO CHANGE:
