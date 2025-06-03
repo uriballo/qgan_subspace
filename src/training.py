@@ -2,15 +2,11 @@ import time
 from datetime import datetime
 
 import numpy as np
-import scipy.io as scio
 
 import config as cf
-from ancilla.ancilla import get_fake_state_for_discriminator
 from cost_functions.cost_and_fidelity import compute_cost, compute_fidelity
 from discriminator.discriminator import Discriminator
-from generator.ansatz import construct_qcircuit_XX_YY_ZZ_Z, construct_qcircuit_ZZ_X_Z
 from generator.generator import Generator
-from target.target_hamiltonian import construct_clusterH, construct_RotatedSurfaceCode, construct_target
 from target.target_state import get_maximally_entangled_state
 from tools.data_managers import (
     save_fidelity_loss,
@@ -28,52 +24,38 @@ class Training:
     def __init__(self):
         """Builds the configuration for the Training. You might wanna comment/discomment lines, for changing the model."""
 
-        self.input_state = get_maximally_entangled_state(cf.system_size)
+        self.total_input_state = get_maximally_entangled_state(cf.system_size)
         """Preparation of max. entgl. state with ancilla qubit if needed."""
 
-        ################################################################
-        # START OF FUNCTIONS TO CHANGE:
-        ################################################################
-
-        # self.target_unitary = scio.loadmat('./exp_ideal_{}_qubit.mat'.format(cf.system_size))['exp_ideal']
-        self.target_unitary = construct_target(cf.system_size, ZZZ=True)  # Remember you can chose Z, ZZ and ZZZ
-        # self.target_unitary = construct_clusterH(cf.system_size)
-        # self.target_unitary = construct_RotatedSurfaceCode(cf.system_size)
+        self.target_unitary = cf.target_unitary
         """Define target gates. First option is to specify the Z, ZZ, ZZZ and/or I terms, second and third is for the respective hardcoded Hamiltonians."""
 
         # Define the sistem size for the generator and discriminator (the target unitary doesn't have ancilla, it's added later on).
-        self.system_size = (cf.system_size + (1 if (cf.extra_ancilla and cf.ancilla_mode == "pass") else 0)) * 2
-        self.gen = Generator(self.system_size)
+        self.gen_system_size = cf.system_size + (1 if cf.extra_ancilla else 0)
+        self.gen = Generator(self.gen_system_size)
 
-        self.gen.set_qcircuit(construct_qcircuit_XX_YY_ZZ_Z(self.gen.qc, self.system_size, cf.layer))
-        # self.gen.set_qcircuit(construct_qcircuit_ZZ_XZ(self.gen.qc, cf.system_size, cf.layer))
+        self.gen.set_qcircuit(cf.gen_ansatz(self.gen.qc, self.gen_system_size, cf.layer))
         """Defines the Generator. First option is for XYZ and Z, second option is for ZZ and XZ."""
 
-        ################################################################
-        # END OF FUNCTIONS TO CHANGE:
-        ################################################################
-
-        self.real_state = self.initialize_target_state()
+        self.total_target_state = self.initialize_target_state()
         """Define the size of target state (with ancilla or not, depending on value of `config.extra_ancilla`)."""
 
-        self.dis = Discriminator([I, X, Y, Z], self.system_size)
+        self.dis_system_size = cf.system_size * 2 + (1 if cf.extra_ancilla and cf.ancilla_mode == "pass" else 0)
+        self.dis = Discriminator([I, X, Y, Z], self.dis_system_size)
         """Defines the size of Discriminator (with ancilla or not, depending on value of `config.extra_ancilla`)."""
 
     def initialize_target_state(self):
         """Initialize the target state."""
+        target_op = np.kron(Identity(cf.system_size), self.target_unitary)
         if cf.extra_ancilla and cf.ancilla_mode == "pass":
-            return np.matmul(
-                np.kron(np.kron(self.target_unitary, Identity(cf.system_size)), Identity(1)),
-                self.input_state,
-            )
-
-        return np.matmul(np.kron(self.target_unitary, Identity(cf.system_size)), self.input_state)
+            target_op = np.kron(target_op, Identity(1))
+        return np.matmul(target_op, self.total_input_state)
 
     def run(self):
         """Run the training, saving the data, the model, the logs, and the results plots."""
 
         # Compute fidelity at initial
-        f = compute_fidelity(self.gen, self.real_state, get_fake_state_for_discriminator(self.input_state))
+        f = compute_fidelity(self.gen, self.total_target_state, self.total_input_state)
 
         # Data storing
         fidelities, losses = np.zeros(cf.iterations_epoch), np.zeros(cf.iterations_epoch)
@@ -82,7 +64,7 @@ class Training:
         num_epochs = 0
 
         # Training
-        while f < 0.99:
+        while f < cf.max_fidelity:
             # while (f < 0.95):
             fidelities[:] = 0.0
             losses[:] = 0.0
@@ -92,15 +74,13 @@ class Training:
                 print("Epoch {}, Iteration {}, Step_size {}".format(num_epochs, iter + 1, cf.eta))
 
                 # Generator gradient descent
-                self.gen.update_gen(self.dis, self.real_state, self.input_state)
+                self.gen.update_gen(self.dis, self.total_target_state, self.total_input_state)
                 # Discriminator gradient ascent
                 for _ in range(cf.ratio_step_disc_to_gen):
-                    self.dis.update_dis(self.gen, self.real_state, self.input_state)
+                    self.dis.update_dis(self.gen, self.total_target_state, self.total_input_state)
 
-                fake_state = get_fake_state_for_discriminator(self.input_state)
-
-                fidelities[iter] = compute_fidelity(self.gen, self.real_state, fake_state)
-                losses[iter] = compute_cost(self.gen, self.dis, self.real_state, fake_state)
+                fidelities[iter] = compute_fidelity(self.gen, self.total_target_state, self.total_input_state)
+                losses[iter] = compute_cost(self.gen, self.dis, self.total_target_state, self.total_input_state)
 
                 print("Fidelity between real and fake state: {}".format(fidelities[iter]))
                 print("==================================================")
@@ -141,7 +121,9 @@ class Training:
         print("end")
 
 
-##### Run training:
-
-t = Training()
-t.run()
+if __name__ == "__main__":
+    # Run the training process
+    # This will execute the training logic defined in the Training class
+    # and save the results, models, and logs as specified in the configuration.
+    t = Training()
+    t.run()

@@ -22,7 +22,7 @@ def get_zero_state(size: int):
 
 
 def get_maximally_entangled_state(size: int):
-    """Get the maximally entangled state for the system size.
+    """Get the maximally entangled state for the system size (With Ancilla if needed).
 
     Args:
         size (int): the size of the system.
@@ -30,16 +30,9 @@ def get_maximally_entangled_state(size: int):
     Returns:
         np.ndarray: the maximally entangled state.
     """
-    state = np.zeros(2 ** (2 * size), dtype=complex)
-    for i in range(2**size):
-        state_i = np.zeros(2**size)
-        state_i[i] = 1
-        state += np.kron(state_i, state_i)
-    state = state / np.sqrt(2**size)
-    state = np.asmatrix(state).T
-
-    if cf.extra_ancilla:
-        # If using an ancilla, append a zero state for the ancilla qubit
-        ancilla_state = get_zero_state(1)
-        state = np.kron(state, ancilla_state)
-    return state
+    state = np.zeros(2 ** (2 * size + (1 if cf.extra_ancilla else 0)), dtype=complex)
+    dim_register = 2**size
+    for i in range(dim_register):
+        state[i * dim_register + i] = 1.0
+    state /= np.sqrt(dim_register)
+    return np.asmatrix(state).T

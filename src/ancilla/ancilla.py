@@ -58,21 +58,21 @@ def trace_out_ancilla(state, num_qubits):
     return sampled_state.reshape(-1, 1)
 
 
-def get_fake_state_for_discriminator(output_state):
+def get_final_state_for_discriminator(total_output_state):
     """Return the fake state to be passed to the discriminator, according to ancilla_mode."""
-    fake_state = output_state
+    total_final_state = total_output_state
     if cf.extra_ancilla:
         n = cf.system_size * 2 + 1  # total qubits (system + ancilla)
         if cf.ancilla_mode == "pass":
             # Pass ancilla to discriminator (current behavior)
-            return fake_state
+            return total_final_state
         elif cf.ancilla_mode == "project":
-            projected, prob = project_ancilla_zero(fake_state, n)
+            projected, prob = project_ancilla_zero(total_final_state, n)
             return projected
         elif cf.ancilla_mode == "tracing_out":
-            traced = trace_out_ancilla(fake_state, n)
+            traced = trace_out_ancilla(total_final_state, n)
             return traced
         else:
             raise ValueError(f"Unknown ancilla_mode: {cf.ancilla_mode}")
     else:
-        return fake_state
+        return total_final_state

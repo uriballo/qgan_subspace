@@ -4,7 +4,8 @@
 import numpy as np
 from scipy.linalg import expm
 
-from ancilla.ancilla import get_fake_state_for_discriminator
+import config as cf
+from ancilla.ancilla import get_final_state_for_discriminator
 from config import cst1, cst2, cst3, lamb, system_size
 from optimizer.momentum_optimizer import MomentumOptimizer
 from tools.qcircuit import Identity, QuantumCircuit
@@ -23,18 +24,19 @@ class Generator:
         qcircuit = QuantumCircuit(self.size, "generator")
         return qcircuit
 
-    def getGen(self):
-        return np.kron(self.qc.get_mat_rep(), Identity(self.size))
+    def get_Untouched_qubits_and_Gen(self):
+        """Get the matrix representation of the circuit at the Generator step, including the untouched qubits in front."""
+        return np.kron(Identity(cf.system_size), self.qc.get_mat_rep())
 
-    def _grad_theta(self, dis, real_state, input_state):
-        G = self.getGen()
+    def _grad_theta(self, dis, real_state, total_input_state):
+        Untouched_x_G = self.get_Untouched_qubits_and_Gen()
 
         phi = dis.getPhi()
         psi = dis.getPsi()
 
-        output_state = np.matmul(G, input_state)
+        output_state = np.matmul(Untouched_x_G, total_input_state)
 
-        fake_state = get_fake_state_for_discriminator(output_state)
+        total_fake_state = get_final_state_for_discriminator(output_state)
 
         try:
             A = expm((-1 / lamb) * phi)
@@ -51,14 +53,14 @@ class Generator:
         grad_g_psi, grad_g_phi, grad_g_reg = [], [], []
 
         for i in range(self.qc.depth):
-            grad_i = np.kron(self.qc.get_grad_mat_rep(i), Identity(system_size))
+            grad_i = np.kron(Identity(system_size), self.qc.get_grad_mat_rep(i))
             # for psi term
             grad_g_psi.append(0)
 
             # for phi term
-            fake_grad = np.matmul(grad_i, input_state)
-            tmp_grad = np.matmul(fake_grad.getH(), np.matmul(phi, fake_state)) + np.matmul(
-                fake_state.getH(), np.matmul(phi, fake_grad)
+            fake_grad = np.matmul(grad_i, total_input_state)
+            tmp_grad = np.matmul(fake_grad.getH(), np.matmul(phi, total_fake_state)) + np.matmul(
+                total_fake_state.getH(), np.matmul(phi, fake_grad)
             )
 
             grad_g_phi.append(np.ndarray.item(tmp_grad))
@@ -66,31 +68,31 @@ class Generator:
 
             # for reg term
 
-            term1 = np.matmul(fake_grad.getH(), np.matmul(A, fake_state)) * np.matmul(
+            term1 = np.matmul(fake_grad.getH(), np.matmul(A, total_fake_state)) * np.matmul(
                 real_state.getH(), np.matmul(B, real_state)
             )
-            term2 = np.matmul(fake_state.getH(), np.matmul(A, fake_grad)) * np.matmul(
+            term2 = np.matmul(total_fake_state.getH(), np.matmul(A, fake_grad)) * np.matmul(
                 real_state.getH(), np.matmul(B, real_state)
             )
 
             term3 = np.matmul(fake_grad.getH(), np.matmul(B, real_state)) * np.matmul(
-                real_state.getH(), np.matmul(A, fake_state)
+                real_state.getH(), np.matmul(A, total_fake_state)
             )
-            term4 = np.matmul(fake_state.getH(), np.matmul(B, real_state)) * np.matmul(
+            term4 = np.matmul(total_fake_state.getH(), np.matmul(B, real_state)) * np.matmul(
                 real_state.getH(), np.matmul(A, fake_grad)
             )
 
             term5 = np.matmul(fake_grad.getH(), np.matmul(A, real_state)) * np.matmul(
-                real_state.getH(), np.matmul(B, fake_state)
+                real_state.getH(), np.matmul(B, total_fake_state)
             )
-            term6 = np.matmul(fake_state.getH(), np.matmul(A, real_state)) * np.matmul(
+            term6 = np.matmul(total_fake_state.getH(), np.matmul(A, real_state)) * np.matmul(
                 real_state.getH(), np.matmul(B, fake_grad)
             )
 
-            term7 = np.matmul(fake_grad.getH(), np.matmul(B, fake_state)) * np.matmul(
+            term7 = np.matmul(fake_grad.getH(), np.matmul(B, total_fake_state)) * np.matmul(
                 real_state.getH(), np.matmul(A, real_state)
             )
-            term8 = np.matmul(fake_state.getH(), np.matmul(B, fake_grad)) * np.matmul(
+            term8 = np.matmul(total_fake_state.getH(), np.matmul(B, fake_grad)) * np.matmul(
                 real_state.getH(), np.matmul(A, real_state)
             )
 
@@ -111,12 +113,12 @@ class Generator:
 
         return grad
 
-    def update_gen(self, dis, real_state, input_state):
+    def update_gen(self, dis, total_real_state, total_input_state):
         theta = []
         for gate in self.qc.gates:
             theta.append(gate.angle)
 
-        grad = np.asarray(self._grad_theta(dis, real_state, input_state))
+        grad = np.asarray(self._grad_theta(dis, total_real_state, total_input_state))
         theta = np.asarray(theta)
         new_angle = self.optimizer.compute_grad(theta, grad, "min")
         for i in range(self.qc.depth):

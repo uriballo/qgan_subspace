@@ -22,7 +22,7 @@ def plt_fidelity_vs_iter(fidelities, losses, config, indx=0):
     plt.tight_layout()
 
     # Save the figure
-    fig_path = "{}/{}qubit_{}_{}.png".format(config.figure_path, config.system_size, config.label, indx)
+    fig_path = "{}/{}qubit_{}_{}.png".format(config.figure_path, config.system_size, config.layer, indx)
     os.makedirs(os.path.dirname(fig_path), exist_ok=True)
     plt.savefig(fig_path)
 
@@ -46,6 +46,6 @@ def plt_fidelity_vs_iter_projection(fidelities, losses, probability_up, config, 
     plt.tight_layout()
 
     # Save the figure
-    fig_path = "{}/{}qubit_{}_{}.png".format(config.figure_path, config.system_size, config.label, indx)
+    fig_path = "{}/{}qubit_{}_{}.png".format(config.figure_path, config.system_size, config.layer, indx)
     os.makedirs(os.path.dirname(fig_path), exist_ok=True)
     plt.savefig(fig_path)
