@@ -5,7 +5,7 @@ import numpy as np
 from scipy.linalg import expm
 
 import config as cf
-from ancilla.ancilla import get_final_state_for_discriminator
+from ancilla.ancilla import get_final_fake_state_for_discriminator, get_final_real_state_for_discriminator
 from config import cst1, cst2, cst3, lamb, system_size
 from optimizer.momentum_optimizer import MomentumOptimizer
 from tools.qcircuit import Identity, QuantumCircuit
@@ -28,15 +28,16 @@ class Generator:
         """Get the matrix representation of the circuit at the Generator step, including the untouched qubits in front."""
         return np.kron(Identity(cf.system_size), self.qc.get_mat_rep())
 
-    def _grad_theta(self, dis, real_state, total_input_state):
+    def _grad_theta(self, dis, total_real_state, total_input_state):
         Untouched_x_G = self.get_Untouched_qubits_and_Gen()
 
         phi = dis.getPhi()
         psi = dis.getPsi()
 
-        output_state = np.matmul(Untouched_x_G, total_input_state)
+        total_output_state = np.matmul(Untouched_x_G, total_input_state)
 
-        total_fake_state = get_final_state_for_discriminator(output_state)
+        final_fake_state = get_final_fake_state_for_discriminator(total_output_state)
+        final_real_state = get_final_real_state_for_discriminator(total_real_state)
 
         try:
             A = expm((-1 / lamb) * phi)
@@ -59,8 +60,9 @@ class Generator:
 
             # for phi term
             fake_grad = np.matmul(grad_i, total_input_state)
-            tmp_grad = np.matmul(fake_grad.getH(), np.matmul(phi, total_fake_state)) + np.matmul(
-                total_fake_state.getH(), np.matmul(phi, fake_grad)
+            final_fake_grad = np.matrix(get_final_fake_state_for_discriminator(fake_grad))
+            tmp_grad = np.matmul(final_fake_grad.getH(), np.matmul(phi, final_fake_state)) + np.matmul(
+                final_fake_state.getH(), np.matmul(phi, final_fake_grad)
             )
 
             grad_g_phi.append(np.ndarray.item(tmp_grad))
@@ -68,32 +70,32 @@ class Generator:
 
             # for reg term
 
-            term1 = np.matmul(fake_grad.getH(), np.matmul(A, total_fake_state)) * np.matmul(
-                real_state.getH(), np.matmul(B, real_state)
+            term1 = np.matmul(final_fake_grad.getH(), np.matmul(A, final_fake_state)) * np.matmul(
+                final_real_state.getH(), np.matmul(B, final_real_state)
             )
-            term2 = np.matmul(total_fake_state.getH(), np.matmul(A, fake_grad)) * np.matmul(
-                real_state.getH(), np.matmul(B, real_state)
-            )
-
-            term3 = np.matmul(fake_grad.getH(), np.matmul(B, real_state)) * np.matmul(
-                real_state.getH(), np.matmul(A, total_fake_state)
-            )
-            term4 = np.matmul(total_fake_state.getH(), np.matmul(B, real_state)) * np.matmul(
-                real_state.getH(), np.matmul(A, fake_grad)
+            term2 = np.matmul(final_fake_state.getH(), np.matmul(A, final_fake_grad)) * np.matmul(
+                final_real_state.getH(), np.matmul(B, final_real_state)
             )
 
-            term5 = np.matmul(fake_grad.getH(), np.matmul(A, real_state)) * np.matmul(
-                real_state.getH(), np.matmul(B, total_fake_state)
+            term3 = np.matmul(final_fake_grad.getH(), np.matmul(B, final_real_state)) * np.matmul(
+                final_real_state.getH(), np.matmul(A, final_fake_state)
             )
-            term6 = np.matmul(total_fake_state.getH(), np.matmul(A, real_state)) * np.matmul(
-                real_state.getH(), np.matmul(B, fake_grad)
+            term4 = np.matmul(final_fake_state.getH(), np.matmul(B, final_real_state)) * np.matmul(
+                final_real_state.getH(), np.matmul(A, final_fake_grad)
             )
 
-            term7 = np.matmul(fake_grad.getH(), np.matmul(B, total_fake_state)) * np.matmul(
-                real_state.getH(), np.matmul(A, real_state)
+            term5 = np.matmul(final_fake_grad.getH(), np.matmul(A, final_real_state)) * np.matmul(
+                final_real_state.getH(), np.matmul(B, final_fake_state)
             )
-            term8 = np.matmul(total_fake_state.getH(), np.matmul(B, fake_grad)) * np.matmul(
-                real_state.getH(), np.matmul(A, real_state)
+            term6 = np.matmul(final_fake_state.getH(), np.matmul(A, final_real_state)) * np.matmul(
+                final_real_state.getH(), np.matmul(B, final_fake_grad)
+            )
+
+            term7 = np.matmul(final_fake_grad.getH(), np.matmul(B, final_fake_state)) * np.matmul(
+                final_real_state.getH(), np.matmul(A, final_real_state)
+            )
+            term8 = np.matmul(final_fake_state.getH(), np.matmul(B, final_fake_grad)) * np.matmul(
+                final_real_state.getH(), np.matmul(A, final_real_state)
             )
 
             tmp_reg_grad = (

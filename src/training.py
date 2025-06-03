@@ -47,7 +47,7 @@ class Training:
     def initialize_target_state(self):
         """Initialize the target state."""
         target_op = np.kron(Identity(cf.system_size), self.target_unitary)
-        if cf.extra_ancilla and cf.ancilla_mode == "pass":
+        if cf.extra_ancilla:
             target_op = np.kron(target_op, Identity(1))
         return np.matmul(target_op, self.total_input_state)
 

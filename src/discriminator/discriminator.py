@@ -4,7 +4,7 @@
 import numpy as np
 from scipy.linalg import expm
 
-from ancilla.ancilla import get_final_state_for_discriminator
+from ancilla.ancilla import get_final_fake_state_for_discriminator, get_final_real_state_for_discriminator
 from config import cst1, cst2, cst3, lamb
 from optimizer.momentum_optimizer import MomentumOptimizer
 
@@ -81,13 +81,15 @@ class Discriminator:
         return grad_psi
 
     def _grad_alpha(self, gen, total_real_state, total_input_state):
-        G = gen.get_Untouched_qubits_and_Gen()
+        Untouched_x_G = gen.get_Untouched_qubits_and_Gen()
+
         psi = self.getPsi()
         phi = self.getPhi()
 
-        total_output_state = np.matmul(G, total_input_state)
+        total_output_state = np.matmul(Untouched_x_G, total_input_state)
 
-        total_fake_state = get_final_state_for_discriminator(total_output_state)
+        final_fake_state = get_final_fake_state_for_discriminator(total_output_state)
+        final_real_state = get_final_real_state_for_discriminator(total_real_state)
 
         try:
             A = expm((-1 / lamb) * phi)
@@ -114,7 +116,7 @@ class Discriminator:
 
             for grad_psi in gradpsi:
                 gradpsi_list.append(
-                    np.ndarray.item(np.matmul(total_real_state.getH(), np.matmul(grad_psi, total_real_state)))
+                    np.ndarray.item(np.matmul(final_real_state.getH(), np.matmul(grad_psi, final_real_state)))
                 )
                 # gradpsi_list.append(np.asscalar(np.matmul(real_state.getH(), np.matmul(grad_psi, real_state))))
 
@@ -122,23 +124,23 @@ class Discriminator:
 
                 term1 = (
                     cs
-                    * np.matmul(total_fake_state.getH(), np.matmul(A, total_fake_state))
-                    * np.matmul(total_real_state.getH(), np.matmul(grad_psi, np.matmul(B, total_real_state)))
+                    * np.matmul(final_fake_state.getH(), np.matmul(A, final_fake_state))
+                    * np.matmul(final_real_state.getH(), np.matmul(grad_psi, np.matmul(B, final_real_state)))
                 )
                 term2 = (
                     cs
-                    * np.matmul(total_fake_state.getH(), np.matmul(grad_psi, np.matmul(B, total_real_state)))
-                    * np.matmul(total_real_state.getH(), np.matmul(A, total_fake_state))
+                    * np.matmul(final_fake_state.getH(), np.matmul(grad_psi, np.matmul(B, final_real_state)))
+                    * np.matmul(final_real_state.getH(), np.matmul(A, final_fake_state))
                 )
                 term3 = (
                     cs
-                    * np.matmul(total_fake_state.getH(), np.matmul(A, total_real_state))
-                    * np.matmul(total_real_state.getH(), np.matmul(grad_psi, np.matmul(B, total_fake_state)))
+                    * np.matmul(final_fake_state.getH(), np.matmul(A, final_real_state))
+                    * np.matmul(final_real_state.getH(), np.matmul(grad_psi, np.matmul(B, final_fake_state)))
                 )
                 term4 = (
                     cs
-                    * np.matmul(total_fake_state.getH(), np.matmul(grad_psi, np.matmul(B, total_fake_state)))
-                    * np.matmul(total_real_state.getH(), np.matmul(A, total_real_state))
+                    * np.matmul(final_fake_state.getH(), np.matmul(grad_psi, np.matmul(B, final_fake_state)))
+                    * np.matmul(final_real_state.getH(), np.matmul(A, final_real_state))
                 )
 
                 gradreg_list.append(
@@ -176,13 +178,15 @@ class Discriminator:
         return grad_phi
 
     def _grad_beta(self, gen, total_real_state, total_input_state):
-        G = gen.get_Untouched_qubits_and_Gen()
+        Untouched_x_G = gen.get_Untouched_qubits_and_Gen()
+
         psi = self.getPsi()
         phi = self.getPhi()
 
-        total_output_state = np.matmul(G, total_input_state)
+        total_output_state = np.matmul(Untouched_x_G, total_input_state)
 
-        total_fake_state = get_final_state_for_discriminator(total_output_state)
+        final_fake_state = get_final_fake_state_for_discriminator(total_output_state)
+        final_real_state = get_final_real_state_for_discriminator(total_real_state)
 
         try:
             A = expm((-1 / lamb) * phi)
@@ -211,29 +215,29 @@ class Discriminator:
                 gradpsi_list.append(0)
 
                 gradphi_list.append(
-                    np.ndarray.item(np.matmul(total_fake_state.getH(), np.matmul(grad_phi, total_fake_state)))
+                    np.ndarray.item(np.matmul(final_fake_state.getH(), np.matmul(grad_phi, final_fake_state)))
                 )
                 # gradphi_list.append(np.asscalar(np.matmul(total_fake_state.getH(), np.matmul(grad_phi, total_fake_state))))
 
                 term1 = (
                     cs
-                    * np.matmul(total_fake_state.getH(), np.matmul(grad_phi, np.matmul(A, total_fake_state)))
-                    * np.matmul(total_real_state.getH(), np.matmul(B, total_real_state))
+                    * np.matmul(final_fake_state.getH(), np.matmul(grad_phi, np.matmul(A, final_fake_state)))
+                    * np.matmul(final_real_state.getH(), np.matmul(B, final_real_state))
                 )
                 term2 = (
                     cs
-                    * np.matmul(total_fake_state.getH(), np.matmul(B, total_real_state))
-                    * np.matmul(total_real_state.getH(), np.matmul(grad_phi, np.matmul(A, total_fake_state)))
+                    * np.matmul(final_fake_state.getH(), np.matmul(B, final_real_state))
+                    * np.matmul(final_real_state.getH(), np.matmul(grad_phi, np.matmul(A, final_fake_state)))
                 )
                 term3 = (
                     cs
-                    * np.matmul(total_fake_state.getH(), np.matmul(grad_phi, np.matmul(A, total_real_state)))
-                    * np.matmul(total_real_state.getH(), np.matmul(B, total_fake_state))
+                    * np.matmul(final_fake_state.getH(), np.matmul(grad_phi, np.matmul(A, final_real_state)))
+                    * np.matmul(final_real_state.getH(), np.matmul(B, final_fake_state))
                 )
                 term4 = (
                     cs
-                    * np.matmul(total_fake_state.getH(), np.matmul(B, total_fake_state))
-                    * np.matmul(total_real_state.getH(), np.matmul(grad_phi, np.matmul(A, total_real_state)))
+                    * np.matmul(final_fake_state.getH(), np.matmul(B, final_fake_state))
+                    * np.matmul(final_real_state.getH(), np.matmul(grad_phi, np.matmul(A, final_real_state)))
                 )
 
                 gradreg_list.append(
