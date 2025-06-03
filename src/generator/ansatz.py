@@ -24,7 +24,7 @@ def construct_qcircuit_XX_YY_ZZ_Z(qc: QuantumCircuit, size: int, layer: int) -> 
         for i in range(size):
             if i < size - 1:
                 for gate in entg_list:
-                    qc.add_gate(QuantumGate()(gate, i, i + 1, angle=0.5000 * np.pi))
+                    qc.add_gate(QuantumGate(gate, i, i + 1, angle=0.5000 * np.pi))
                 qc.add_gate(QuantumGate("Z", i, angle=0.5000 * np.pi))
         for gate in entg_list:
             qc.add_gate(QuantumGate(gate, 0, size - 1, angle=0.5000 * np.pi))
