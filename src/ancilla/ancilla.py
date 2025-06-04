@@ -71,7 +71,7 @@ def get_final_fake_state_for_discriminator(total_output_state):
         if cf.ancilla_mode == "project":
             projected, prob = project_ancilla_zero(total_final_state, n)
             return np.matrix(projected)
-        if cf.ancilla_mode == "tracing_out":
+        if cf.ancilla_mode == "trace_out":
             traced = np.matrix(trace_out_ancilla(total_final_state, n))
             return traced
         raise ValueError(f"Unknown ancilla_mode: {cf.ancilla_mode}")
@@ -86,7 +86,7 @@ def get_final_real_state_for_discriminator(total_output_state):
         if cf.ancilla_mode == "pass":
             # Pass ancilla to discriminator (current behavior)
             return total_final_state
-        if cf.ancilla_mode in ["project", "tracing_out"]:
+        if cf.ancilla_mode in ["project", "trace_out"]:
             return total_final_state[: 2 ** (n - 1)]  # Return only the system part
         raise ValueError(f"Unknown ancilla_mode: {cf.ancilla_mode}")
     return total_final_state

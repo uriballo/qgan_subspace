@@ -30,10 +30,8 @@ class Training:
         self.target_unitary = cf.target_unitary
         """Define target gates. First option is to specify the Z, ZZ, ZZZ and/or I terms, second and third is for the respective hardcoded Hamiltonians."""
 
-        # Define the sistem size for the generator and discriminator (the target unitary doesn't have ancilla, it's added later on).
         self.gen_system_size = cf.system_size + (1 if cf.extra_ancilla else 0)
         self.gen = Generator(self.gen_system_size)
-
         self.gen.set_qcircuit(cf.gen_ansatz(self.gen.qc, self.gen_system_size, cf.layer))
         """Defines the Generator. First option is for XYZ and Z, second option is for ZZ and XZ."""
 

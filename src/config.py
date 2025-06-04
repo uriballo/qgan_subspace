@@ -28,18 +28,20 @@ layer = 4  # Number of layers in the Generator: #20 #15 #10 #4 #3 #2 ...
 
 # Ancilla parameters
 extra_ancilla = True  # If to include an extra ancilla: #True # False
-ancilla_mode = "tracing_out"  # Options for the extra ancilla: "pass", "project", "tracing_out"
+ancilla_mode = "project"  # Options for the extra ancilla: "pass", "project", "trace_out"
+ancilla_topology = "ansatz"  # Options for the ancilla topology: "ansatz", "bridge", "total"
 # TODO: Make handling of ancilla_mode more efficient, by never creating ancilla in Target.
-# TODO: ancilla_topology = "ansatz"  # Options for the ancilla topology: "ansatz", "total"
 
 # GEN ANSATZ (Callable):
 gen_ansatz = construct_qcircuit_XX_YY_ZZ_Z  # Callable: construct_qcircuit_XX_YY_ZZ_Z or construct_qcircuit_ZZ_X_Z
+""""Defines the Generator. First option is for XYZ and Z, second option is for ZZ and XZ."""
 
 # TARGET CIRCUIT (Called):
 # target_unitary = scio.loadmat("./exp_ideal_{}_qubit.mat".format(system_size))["exp_ideal"]
 target_unitary = construct_target(system_size, ZZZ=True)  # Remember you can chose Z, ZZ and ZZZ
 # target_unitary = construct_clusterH(system_size)
 # target_unitary = construct_RotatedSurfaceCode(system_size)
+"""Define target gates. First option is to specify the Z, ZZ, ZZZ and/or I terms, second and third is for the respective hardcoded Hamiltonians."""
 
 # Parameter for costs functions and gradients
 lamb = float(10)
