@@ -128,6 +128,7 @@ class Training:
                 print_and_train_log(f"The number of epochs exceeds {CFG.epochs}.", CFG.log_path)
                 break
 
+        # TODO: Implement better data saving, from other branch.
         # Save data of fidelity and loss
         save_fidelity_loss(fidelities_history, losses_history, CFG.fid_loss_path)
 

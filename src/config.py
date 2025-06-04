@@ -27,11 +27,11 @@ class Config:
         ########################################################################
         # CODE CONFIGURATION
         ########################################################################
-        self.testing: bool = False  # True for testing mode, or False for single run
+        self.testing: bool = True  # True for testing mode, or False for single run
 
         # If testing = False: None for new training, or Timestamp String to load models
         self.load_timestamp: Optional[str] = None
-        # TODO: Make this work.
+        # TODO: Make loading models work.
 
         #######################################################################
         # TRAINING CONFIGURATION
@@ -50,7 +50,7 @@ class Config:
         # If adding a helper ancilla  qubit:
         self.extra_ancilla: bool = True  # If to include an extra ancilla: #True # False
         self.ancilla_mode: Optional[Literal["pass", "project", "trace_out"]] = "project"  # Ancilla mode from gen to dis
-        # TODO: self.ancilla_topology: Optional[Literal["ansatz", "bridge", "total"]] = "ansatz"  # Connectivity for the ancilla
+        self.ancilla_topology: Optional[Literal["ansatz", "bridge", "total"]] = "ansatz"  # Connectivity for the ancilla
         # TODO: Make handling of ancilla_mode more efficient, by never creating ancilla in Target.
 
         #######################################################################
@@ -154,7 +154,7 @@ test_configurations = [
         "system_size": 2,
         "extra_ancilla": True,
         "ancilla_mode": "pass",
-        "ancilla_topology": "total",
+        "ancilla_topology": "bridge",
         "epochs": 1,
         "iterations_epoch": 3,
         "gen_layers": 1,
