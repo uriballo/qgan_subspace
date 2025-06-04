@@ -12,33 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import importlib
-import time
+from config import CFG, test_configurations
+from tools.data_managers import print_and_train_log
+from tools.training_initialization import run_single_training, run_test_configurations
 
-from config import CFG
+
+def main():
+    ##############################################################
+    # TESTING mode
+    ##############################################################
+    if CFG.testing:
+        print_and_train_log("Running in TESTING mode.\n", CFG.log_path)
+        run_test_configurations(test_configurations)
+
+    ##############################################################
+    # SINGLE RUN mode
+    ##############################################################
+    else:
+        # TODO: Implement loading models from timestamp
+        # if CFG.load_timestamp:
+        #     run_message = f"\nAttempting to load models from timestamp: {CFG.load_timestamp} and continue training...\n"
+        # else:
+        #     run_message = "\nRunning with default configuration from config.py (new training)...\n"
+        # print_and_train_log(run_message, CFG.log_path)
+        run_single_training()
+
 
 if __name__ == "__main__":
-    # Store results
-    timings = {}
-
-    # List of ancilla modes to test
-    ancilla_modes = ["pass", "project", "trace_out"]
-
-    for mode in ancilla_modes:
-        print(f"\nRunning with ancilla_mode = '{mode}'...")
-        # Set the mode in config
-        CFG.ancilla_mode = mode
-        # Reload training module to ensure config is picked up
-        importlib.invalidate_caches()
-        import training
-
-        start = time.time()
-        training.t = training.Training()
-        training.t.run()
-        elapsed = time.time() - start
-        timings[mode] = elapsed
-        print(f"Time for ancilla_mode '{mode}': {elapsed:.2f} seconds")
-
-    print("\nSummary of timings:")
-    for mode in ancilla_modes:
-        print(f"{mode:>10}: {timings[mode]:.2f} seconds")
+    main()

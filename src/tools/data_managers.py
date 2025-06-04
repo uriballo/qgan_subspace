@@ -24,6 +24,11 @@ def train_log(param, file_path):
         file.write(param)
 
 
+def print_and_train_log(param, file_path):
+    print(param)  # Console feedback
+    train_log(param, file_path)  # Logging to file
+
+
 def load_model(file_path):
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     with open(file_path, "rb") as qc:

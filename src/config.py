@@ -14,7 +14,7 @@
 """the configuration for hamiltonian simulation task"""
 
 from datetime import datetime
-from typing import Literal
+from typing import Literal, Optional
 
 import numpy as np
 
@@ -27,10 +27,11 @@ class Config:
         ########################################################################
         # CODE CONFIGURATION
         ########################################################################
-        # TODO: self.testing: bool = False  # True for testing mode, or False for single run
+        self.testing: bool = False  # True for testing mode, or False for single run
 
         # If testing = False: None for new training, or Timestamp String to load models
-        # TODO: self.load_timestamp: Optional[str] = None
+        self.load_timestamp: Optional[str] = None
+        # TODO: Make this work.
 
         #######################################################################
         # TRAINING CONFIGURATION
@@ -48,8 +49,8 @@ class Config:
 
         # If adding a helper ancilla  qubit:
         self.extra_ancilla: bool = True  # If to include an extra ancilla: #True # False
-        self.ancilla_mode: Literal["pass", "project", "trace_out"] = "project"  # Ancilla mode from gen to dis
-        # TODO: self.ancilla_topology: Literal["ansatz", "bridge", "total"] = "ansatz"  # Connectivity for the ancilla
+        self.ancilla_mode: Optional[Literal["pass", "project", "trace_out"]] = "project"  # Ancilla mode from gen to dis
+        # TODO: self.ancilla_topology: Optional[Literal["ansatz", "bridge", "total"]] = "ansatz"  # Connectivity for the ancilla
         # TODO: Make handling of ancilla_mode more efficient, by never creating ancilla in Target.
 
         #######################################################################
@@ -62,7 +63,9 @@ class Config:
         # TARGET CONFIGURATION
         #######################################################################
         self.target_hamiltonian: Literal["cluster_h", "rotated_surface_h", "custom_h"] = "cluster_h"
-        self.custom_hamiltonian_terms: list[str] = ["ZZZ"]  # Custom Hamiltonian terms to use: ["ZZZ", "ZZ", "Z", "I"]
+        self.custom_hamiltonian_terms: Optional[list[str]] = [
+            "ZZZ"
+        ]  # Custom Hamiltonian terms to use: ["ZZZ", "ZZ", "Z", "I"]
 
         #####################################################################
         # HYPERPARAMETERS for Wasserstein Cost Function
@@ -160,7 +163,7 @@ test_configurations = [
         "label_suffix": "c5_2q_1l_anc_pass_total_ZZXZ_ClusterH",
     },
     {
-        "system_size": 2,
+        "system_size": 4,
         "extra_ancilla": True,
         "ancilla_mode": "project",
         "ancilla_topology": "total",

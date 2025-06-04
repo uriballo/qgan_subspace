@@ -25,11 +25,13 @@ from generator.generator import Generator
 from target.target_hamiltonian import get_target_unitary
 from target.target_state import get_maximally_entangled_state
 from tools.data_managers import (
+    print_and_train_log,
     save_fidelity_loss,
     save_model,
     save_theta,
-    train_log,
 )
+
+# from tools.loading_helpers import load_models_if_specified
 from tools.plot_hub import plt_fidelity_vs_iter
 from tools.qgates import I, Identity, X, Y, Z
 
@@ -68,7 +70,11 @@ class Training:
     def run(self):
         """Run the training, saving the data, the model, the logs, and the results plots."""
         # Save the configuration
-        train_log(str(CFG), CFG.log_path)
+        print_and_train_log(str(CFG), CFG.log_path)
+
+        # TODO: Make this compatible with adding ancilla & parameters changed
+        # Load models if specified (only the params)
+        # load_models_if_specified(self, CFG)
 
         # Compute fidelity at initial
         f = compute_fidelity(self.gen, self.total_target_state, self.total_input_state)
@@ -111,15 +117,15 @@ class Training:
                         time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                         round(training_duration, 2),
                     )
-                    train_log(param, CFG.log_path)
+                    print_and_train_log(param, CFG.log_path)
 
             f = fidelities[-1]
             fidelities_history = np.append(fidelities_history, fidelities)
             losses_history = np.append(losses_history, losses)
-            plt_fidelity_vs_iter(fidelities_history, losses_history, cf, num_epochs)
+            plt_fidelity_vs_iter(fidelities_history, losses_history, CFG, num_epochs)
 
             if num_epochs >= CFG.epochs:
-                print(f"The number of epochs exceeds {CFG.epochs}.")
+                print_and_train_log(f"The number of epochs exceeds {CFG.epochs}.", CFG.log_path)
                 break
 
         # Save data of fidelity and loss
@@ -133,13 +139,5 @@ class Training:
         save_theta(self.gen, CFG.theta_path)
 
         endtime = datetime.now()
-        print("{} seconds".format((endtime - starttime).seconds))
-        print("end")
-
-
-if __name__ == "__main__":
-    # Run the training process
-    # This will execute the training logic defined in the Training class
-    # and save the results, models, and logs as specified in the configuration.
-    t = Training()
-    t.run()
+        print_and_train_log("{} seconds".format((endtime - starttime).seconds), CFG.log_path)
+        print_and_train_log("end", CFG.log_path)
