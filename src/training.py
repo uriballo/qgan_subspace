@@ -72,7 +72,7 @@ class Training:
         # Save the configuration
         print_and_train_log(str(CFG), CFG.log_path)
 
-        # TODO: Make this compatible with adding ancilla & parameters changed
+        # TODO: Make loading models compatible with adding ancilla & parameters changed
         # Load models if specified (only the params)
         # load_models_if_specified(self, CFG)
 
