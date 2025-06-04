@@ -1,11 +1,23 @@
-#### Cost and Fidelities file
-
+# Copyright 2025 GIQ, Universitat Autònoma de Barcelona
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Cost and Fidelity Functions"""
 
 import numpy as np
 from scipy.linalg import expm
 
 from ancilla.ancilla import get_final_fake_state_for_discriminator, get_final_real_state_for_discriminator
-from config import cst1, cst2, cst3, lamb
+from config import CFG
 from discriminator.discriminator import Discriminator
 from generator.generator import Generator
 
@@ -36,15 +48,15 @@ def compute_cost(
     final_real_state = get_final_real_state_for_discriminator(total_real_state)
 
     try:
-        A = expm(float(-1 / lamb) * phi)
+        A = expm(float(-1 / CFG.lamb) * phi)
     except Exception:
-        print("cost function -1/lamb:\n", (-1 / lamb))
+        print("cost function -1/CFG.lamb:\n", (-1 / CFG.lamb))
         print("size of phi:\n", phi.shape)
 
     try:
-        B = expm(float(1 / lamb) * psi)
+        B = expm(float(1 / CFG.lamb) * psi)
     except Exception:
-        print("cost function 1/lamb:\n", (1 / lamb))
+        print("cost function 1/CFG.lamb:\n", (1 / CFG.lamb))
         print("size of psi:\n", psi.shape)
 
     term1 = np.matmul(final_fake_state.getH(), np.matmul(A, final_fake_state))
@@ -63,10 +75,12 @@ def compute_cost(
     phiterm = np.trace(np.matmul(np.matmul(final_fake_state, final_fake_state.getH()), phi))
 
     regterm = np.ndarray.item(
-        lamb / np.e * (cst1 * term1 * term2 - cst2 * term3 * term4 - cst2 * term5 * term6 + cst3 * term7 * term8)
+        CFG.lamb
+        / np.e
+        * (CFG.cst1 * term1 * term2 - CFG.cst2 * term3 * term4 - CFG.cst2 * term5 * term6 + CFG.cst3 * term7 * term8)
     )
     # regterm = np.asscalar(
-    #     lamb / np.e * (cst1 * term1 * term2 - cst2 * term3 * term4 - cst2 * term5 * term6 + cst3 * term7 * term8))
+    #     CFG.lamb / np.e * (CFG.cst1 * term1 * term2 - CFG.cst2 * term3 * term4 - CFG.cst2 * term5 * term6 + CFG.cst3 * term7 * term8))
 
     loss = np.real(psiterm - phiterm - regterm)
 

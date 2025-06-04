@@ -1,12 +1,23 @@
-#### Generator file
-
+# Copyright 2025 GIQ, Universitat Autònoma de Barcelona
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Generator module"""
 
 import numpy as np
 from scipy.linalg import expm
 
-import config as cf
 from ancilla.ancilla import get_final_fake_state_for_discriminator, get_final_real_state_for_discriminator
-from config import cst1, cst2, cst3, lamb, system_size
+from config import CFG
 from optimizer.momentum_optimizer import MomentumOptimizer
 from tools.qcircuit import Identity, QuantumCircuit
 
@@ -26,7 +37,7 @@ class Generator:
 
     def get_Untouched_qubits_and_Gen(self):
         """Get the matrix representation of the circuit at the Generator step, including the untouched qubits in front."""
-        return np.kron(Identity(cf.system_size), self.qc.get_mat_rep())
+        return np.kron(Identity(CFG.system_size), self.qc.get_mat_rep())
 
     def _grad_theta(self, dis, total_real_state, total_input_state):
         Untouched_x_G = self.get_Untouched_qubits_and_Gen()
@@ -40,21 +51,21 @@ class Generator:
         final_real_state = get_final_real_state_for_discriminator(total_real_state)
 
         try:
-            A = expm((-1 / lamb) * phi)
+            A = expm((-1 / CFG.lamb) * phi)
         except Exception:
-            print("grad_gen -1/lamb:\n", (-1 / lamb))
+            print("grad_gen -1/CFG.lamb:\n", (-1 / CFG.lamb))
             print("size of phi:\n", phi.shape)
 
         try:
-            B = expm((1 / lamb) * psi)
+            B = expm((1 / CFG.lamb) * psi)
         except Exception:
-            print("grad_gen 1/lamb:\n", (1 / lamb))
+            print("grad_gen 1/CFG.lamb:\n", (1 / CFG.lamb))
             print("size of psi:\n", psi.shape)
 
         grad_g_psi, grad_g_phi, grad_g_reg = [], [], []
 
         for i in range(self.qc.depth):
-            grad_i = np.kron(Identity(system_size), self.qc.get_grad_mat_rep(i))
+            grad_i = np.kron(Identity(CFG.system_size), self.qc.get_grad_mat_rep(i))
             # for psi term
             grad_g_psi.append(0)
 
@@ -99,9 +110,14 @@ class Generator:
             )
 
             tmp_reg_grad = (
-                lamb
+                CFG.lamb
                 / np.e
-                * (cst1 * (term1 + term2) - cst2 * (term3 + term4) - cst2 * (term5 + term6) + cst3 * (term7 + term8))
+                * (
+                    CFG.cst1 * (term1 + term2)
+                    - CFG.cst2 * (term3 + term4)
+                    - CFG.cst2 * (term5 + term6)
+                    + CFG.cst3 * (term7 + term8)
+                )
             )
 
             grad_g_reg.append(np.ndarray.item(tmp_reg_grad))

@@ -1,12 +1,28 @@
+# Copyright 2025 GIQ, Universitat Autònoma de Barcelona
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import time
 from datetime import datetime
 
 import numpy as np
 
-import config as cf
+from config import CFG
 from cost_functions.cost_and_fidelity import compute_cost, compute_fidelity
 from discriminator.discriminator import Discriminator
+from generator.ansatz import get_ansatz_func
 from generator.generator import Generator
+from target.target_hamiltonian import get_target_unitary
 from target.target_state import get_maximally_entangled_state
 from tools.data_managers import (
     save_fidelity_loss,
@@ -24,57 +40,59 @@ class Training:
     def __init__(self):
         """Builds the configuration for the Training. You might wanna comment/discomment lines, for changing the model."""
 
-        self.total_input_state = get_maximally_entangled_state(cf.system_size)
+        self.total_input_state = get_maximally_entangled_state(CFG.system_size)
         """Preparation of max. entgl. state with ancilla qubit if needed."""
 
-        self.target_unitary = cf.target_unitary
+        self.target_unitary = get_target_unitary(CFG.target_hamiltonian, CFG.system_size)
         """Define target gates. First option is to specify the Z, ZZ, ZZZ and/or I terms, second and third is for the respective hardcoded Hamiltonians."""
 
-        self.gen_system_size = cf.system_size + (1 if cf.extra_ancilla else 0)
+        self.gen_system_size = CFG.system_size + (1 if CFG.extra_ancilla else 0)
         self.gen = Generator(self.gen_system_size)
-        self.gen.set_qcircuit(cf.gen_ansatz(self.gen.qc, self.gen_system_size, cf.layer))
+        self.gen.set_qcircuit(get_ansatz_func(CFG.gen_ansatz)(self.gen.qc, self.gen_system_size, CFG.gen_layers))
         """Defines the Generator. First option is for XYZ and Z, second option is for ZZ and XZ."""
 
         self.total_target_state = self.initialize_target_state()
         """Define the size of target state (with ancilla or not, depending on value of `config.extra_ancilla`)."""
 
-        self.dis_system_size = cf.system_size * 2 + (1 if cf.extra_ancilla and cf.ancilla_mode == "pass" else 0)
+        self.dis_system_size = CFG.system_size * 2 + (1 if CFG.extra_ancilla and CFG.ancilla_mode == "pass" else 0)
         self.dis = Discriminator([I, X, Y, Z], self.dis_system_size)
         """Defines the size of Discriminator (with ancilla or not, depending on value of `config.extra_ancilla`)."""
 
     def initialize_target_state(self):
         """Initialize the target state."""
-        target_op = np.kron(Identity(cf.system_size), self.target_unitary)
-        if cf.extra_ancilla:
+        target_op = np.kron(Identity(CFG.system_size), self.target_unitary)
+        if CFG.extra_ancilla:
             target_op = np.kron(target_op, Identity(1))
         return np.matmul(target_op, self.total_input_state)
 
     def run(self):
         """Run the training, saving the data, the model, the logs, and the results plots."""
+        # Save the configuration
+        train_log(str(CFG), CFG.log_path)
 
         # Compute fidelity at initial
         f = compute_fidelity(self.gen, self.total_target_state, self.total_input_state)
 
         # Data storing
-        fidelities, losses = np.zeros(cf.iterations_epoch), np.zeros(cf.iterations_epoch)
+        fidelities, losses = np.zeros(CFG.iterations_epoch), np.zeros(CFG.iterations_epoch)
         fidelities_history, losses_history = [], []
         starttime = datetime.now()
         num_epochs = 0
 
         # Training
-        while f < cf.max_fidelity:
+        while f < CFG.max_fidelity:
             # while (f < 0.95):
             fidelities[:] = 0.0
             losses[:] = 0.0
             num_epochs += 1
-            for iter in range(cf.iterations_epoch):
+            for iter in range(CFG.iterations_epoch):
                 print("==================================================")
-                print("Epoch {}, Iteration {}, Step_size {}".format(num_epochs, iter + 1, cf.eta))
+                print("Epoch {}, Iteration {}, Step_size {}".format(num_epochs, iter + 1, CFG.l_rate))
 
                 # Generator gradient descent
                 self.gen.update_gen(self.dis, self.total_target_state, self.total_input_state)
                 # Discriminator gradient ascent
-                for _ in range(cf.ratio_step_disc_to_gen):
+                for _ in range(CFG.ratio_step_disc_to_gen):
                     self.dis.update_dis(self.gen, self.total_target_state, self.total_input_state)
 
                 fidelities[iter] = compute_fidelity(self.gen, self.total_target_state, self.total_input_state)
@@ -93,26 +111,26 @@ class Training:
                         time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                         round(training_duration, 2),
                     )
-                    train_log(param, cf.log_path)
+                    train_log(param, CFG.log_path)
 
             f = fidelities[-1]
             fidelities_history = np.append(fidelities_history, fidelities)
             losses_history = np.append(losses_history, losses)
             plt_fidelity_vs_iter(fidelities_history, losses_history, cf, num_epochs)
 
-            if num_epochs >= cf.epochs:
-                print(f"The number of epochs exceeds {cf.epochs}.")
+            if num_epochs >= CFG.epochs:
+                print(f"The number of epochs exceeds {CFG.epochs}.")
                 break
 
         # Save data of fidelity and loss
-        save_fidelity_loss(fidelities_history, losses_history, cf.fid_loss_path)
+        save_fidelity_loss(fidelities_history, losses_history, CFG.fid_loss_path)
 
         # Save data of the generator and the discriminator
-        save_model(self.gen, cf.model_gen_path)
-        save_model(self.dis, cf.model_dis_path)
+        save_model(self.gen, CFG.model_gen_path)
+        save_model(self.dis, CFG.model_dis_path)
 
         # Output the parameters of the generator
-        save_theta(self.gen, cf.theta_path)
+        save_theta(self.gen, CFG.theta_path)
 
         endtime = datetime.now()
         print("{} seconds".format((endtime - starttime).seconds))

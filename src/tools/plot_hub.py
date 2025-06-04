@@ -1,7 +1,18 @@
-"""
-plot_hub.py: the plot tool
+# Copyright 2025 GIQ, Universitat Autònoma de Barcelona
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-"""
+"""The plot tool"""
 
 import os
 
@@ -22,7 +33,7 @@ def plt_fidelity_vs_iter(fidelities, losses, config, indx=0):
     plt.tight_layout()
 
     # Save the figure
-    fig_path = "{}/{}qubit_{}_{}.png".format(config.figure_path, config.system_size, config.layer, indx)
+    fig_path = "{}/{}qubit_{}_{}.png".format(config.figure_path, config.system_size, config.gen_layers, indx)
     os.makedirs(os.path.dirname(fig_path), exist_ok=True)
     plt.savefig(fig_path)
 
@@ -46,6 +57,6 @@ def plt_fidelity_vs_iter_projection(fidelities, losses, probability_up, config, 
     plt.tight_layout()
 
     # Save the figure
-    fig_path = "{}/{}qubit_{}_{}.png".format(config.figure_path, config.system_size, config.layer, indx)
+    fig_path = "{}/{}qubit_{}_{}.png".format(config.figure_path, config.system_size, config.gen_layers, indx)
     os.makedirs(os.path.dirname(fig_path), exist_ok=True)
     plt.savefig(fig_path)

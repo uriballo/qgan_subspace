@@ -1,11 +1,24 @@
-# --- Ancilla post-processing tools ---
+# Copyright 2025 GIQ, Universitat Autònoma de Barcelona
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Ancilla post-processing tools."""
+
 import numpy as np
 
-import config as cf
+from config import CFG
+
 
 # TODO: Check the next two functions for correctness and efficiency.
-
-
 def project_ancilla_zero(state, num_qubits):
     """Project the last qubit onto |0> and renormalize. Assumes state is a column vector.
     Args:
@@ -63,30 +76,30 @@ def trace_out_ancilla(state, num_qubits):
 def get_final_fake_state_for_discriminator(total_output_state):
     """Return the fake state to be passed to the discriminator, according to ancilla_mode."""
     total_final_state = total_output_state
-    if cf.extra_ancilla:
-        n = cf.system_size * 2 + 1  # total qubits (system + ancilla)
-        if cf.ancilla_mode == "pass":
+    if CFG.extra_ancilla:
+        n = CFG.system_size * 2 + 1  # total qubits (system + ancilla)
+        if CFG.ancilla_mode == "pass":
             # Pass ancilla to discriminator (current behavior)
             return total_final_state
-        if cf.ancilla_mode == "project":
+        if CFG.ancilla_mode == "project":
             projected, prob = project_ancilla_zero(total_final_state, n)
             return np.matrix(projected)
-        if cf.ancilla_mode == "trace_out":
+        if CFG.ancilla_mode == "trace_out":
             traced = np.matrix(trace_out_ancilla(total_final_state, n))
             return traced
-        raise ValueError(f"Unknown ancilla_mode: {cf.ancilla_mode}")
+        raise ValueError(f"Unknown ancilla_mode: {CFG.ancilla_mode}")
     return total_final_state
 
 
 def get_final_real_state_for_discriminator(total_output_state):
     """Return the fake state to be passed to the discriminator, according to ancilla_mode."""
     total_final_state = total_output_state
-    if cf.extra_ancilla:
-        n = cf.system_size * 2 + 1  # total qubits (system + ancilla)
-        if cf.ancilla_mode == "pass":
+    if CFG.extra_ancilla:
+        n = CFG.system_size * 2 + 1  # total qubits (system + ancilla)
+        if CFG.ancilla_mode == "pass":
             # Pass ancilla to discriminator (current behavior)
             return total_final_state
-        if cf.ancilla_mode in ["project", "trace_out"]:
+        if CFG.ancilla_mode in ["project", "trace_out"]:
             return total_final_state[: 2 ** (n - 1)]  # Return only the system part
-        raise ValueError(f"Unknown ancilla_mode: {cf.ancilla_mode}")
+        raise ValueError(f"Unknown ancilla_mode: {CFG.ancilla_mode}")
     return total_final_state
