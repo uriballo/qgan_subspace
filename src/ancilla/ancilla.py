@@ -18,13 +18,10 @@ import numpy as np
 from config import CFG
 
 
-# TODO: Check the next two functions for correctness and efficiency.
-# TODO: I think this code actually makes a kind of "trace out" operation, not "projecting" the ancilla.
-def project_ancilla_zero(state, num_qubits):
+def project_ancilla_zero(state):
     """Project the last qubit onto |0> and renormalize. Assumes state is a column vector.
     Args:
         state (np.ndarray): The quantum state vector to project.
-        num_qubits (int): The total number of qubits in the system, including the ancilla.
 
     Returns:
         np.ndarray: The projected state vector, normalized, with the ancilla qubit removed.
@@ -38,19 +35,18 @@ def project_ancilla_zero(state, num_qubits):
     # Compute the norm of the projected state:
     norm = np.linalg.norm(projected)
     if norm == 0:  # Return the system part (without ancilla) as zeros
-        return np.zeros((2 ** (num_qubits - 1), 1)), 0.0
+        return np.zeros((2 ** (CFG.system_size * 2), 1)), 0.0
 
     # Renormalize
     normalized_projected = projected / norm
     return normalized_projected.reshape(-1, 1), norm**2
 
 
-def trace_out_ancilla(state, num_qubits):
+def trace_out_ancilla(state):
     """Trace out the last qubit and return a sampled pure state from the reduced density matrix.
 
     Args:
         state (np.ndarray): The quantum state vector to trace out the ancilla.
-        num_qubits (int): The total number of qubits in the system, including the ancilla.
 
     Returns:
         np.ndarray: The sampled pure state after tracing out the ancilla.
@@ -76,15 +72,14 @@ def get_final_fake_state_for_discriminator(total_output_state):
     """Return the fake state to be passed to the discriminator, according to ancilla_mode."""
     total_final_state = total_output_state
     if CFG.extra_ancilla:
-        n = CFG.system_size * 2 + 1  # total qubits (system + ancilla)
         if CFG.ancilla_mode == "pass":
             # Pass ancilla to discriminator (current behavior)
             return total_final_state
         if CFG.ancilla_mode == "project":
-            projected, prob = project_ancilla_zero(total_final_state, n)
+            projected, prob = project_ancilla_zero(total_final_state)
             return np.matrix(projected)
         if CFG.ancilla_mode == "trace_out":
-            traced = np.matrix(trace_out_ancilla(total_final_state, n))
+            traced = np.matrix(trace_out_ancilla(total_final_state))
             return traced
         raise ValueError(f"Unknown ancilla_mode: {CFG.ancilla_mode}")
     return total_final_state
