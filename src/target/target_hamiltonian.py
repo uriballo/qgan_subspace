@@ -1,11 +1,24 @@
-##### target hamiltonian
-
+# Copyright 2025 GIQ, Universitat Autònoma de Barcelona
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Target hamiltonian module"""
 
 import sys
 
 import numpy as np
 from scipy import linalg
 
+from config import CFG
 from tools.qgates import I, X, Y, Z
 
 
@@ -152,3 +165,28 @@ def construct_RotatedSurfaceCode(size: int) -> np.ndarray:
         sys.exit("system size is not 2*2 or 3*3 either")
 
     return linalg.expm(-1j * H)
+
+
+def get_target_unitary(target_type: str, size: int) -> np.ndarray:
+    """Get the target unitary based on the target type and size.
+
+    Args:
+        target_type (str): Type of target Hamiltonian, either 'ZZ', 'ZZZ', 'ZZZZ', or 'I'.
+        size (int): Size of the system.
+
+    Returns:
+        np.ndarray: The target unitary.
+    """
+    if target_type == "cluster_h":
+        return construct_clusterH(size)
+    if target_type == "rotated_surface_h":
+        return construct_RotatedSurfaceCode(size)
+    if target_type == "custom_h":
+        return construct_target(
+            size,
+            Z="Z" in CFG.custom_hamiltonian_terms,
+            ZZ="ZZ" in CFG.custom_hamiltonian_terms,
+            ZZZ="ZZZ" in CFG.custom_hamiltonian_terms,
+            I="I" in CFG.custom_hamiltonian_terms,
+        )
+    raise ValueError(f"Unknown target type: {target_type}. Expected 'cluster_h', 'rotated_surface_h', or 'custom_h'.")

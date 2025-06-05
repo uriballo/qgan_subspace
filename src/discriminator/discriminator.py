@@ -1,11 +1,30 @@
-#### Discriminator file
+# Copyright 2025 GIQ, Universitat Autònoma de Barcelona
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Discriminator module"""
 
+import os
+import pickle
 
 import numpy as np
 from scipy.linalg import expm
 
-from config import cst1, cst2, cst3, lamb
+from ancilla.ancilla import get_final_fake_state_for_discriminator, get_final_real_state_for_discriminator
+from config import CFG
 from optimizer.momentum_optimizer import MomentumOptimizer
+from tools.data_managers import print_and_train_log
+
+cst1, cst2, cst3, lamb = CFG.cst1, CFG.cst2, CFG.cst3, CFG.lamb
 
 
 class Discriminator:
@@ -79,12 +98,16 @@ class Discriminator:
             grad_psi.append(grad_psiI)
         return grad_psi
 
-    def _grad_alpha(self, gen, real_state, input_state):
-        G = gen.getGen()
+    def _grad_alpha(self, gen, total_real_state, total_input_state):
+        Untouched_x_G = gen.get_Untouched_qubits_and_Gen()
+
         psi = self.getPsi()
         phi = self.getPhi()
 
-        fake_state = np.matmul(G, input_state)
+        total_output_state = np.matmul(Untouched_x_G, total_input_state)
+
+        final_fake_state = get_final_fake_state_for_discriminator(total_output_state)
+        final_real_state = get_final_real_state_for_discriminator(total_real_state)
 
         try:
             A = expm((-1 / lamb) * phi)
@@ -110,15 +133,33 @@ class Discriminator:
             gradpsi_list, gradphi_list, gradreg_list = [], [], []
 
             for grad_psi in gradpsi:
-                gradpsi_list.append(np.ndarray.item(np.matmul(real_state.getH(), np.matmul(grad_psi, real_state))))
+                gradpsi_list.append(
+                    np.ndarray.item(np.matmul(final_real_state.getH(), np.matmul(grad_psi, final_real_state)))
+                )
                 # gradpsi_list.append(np.asscalar(np.matmul(real_state.getH(), np.matmul(grad_psi, real_state))))
 
                 gradphi_list.append(0)
 
-                term1 = cs * np.matmul(fake_state.getH(), np.matmul(A, fake_state)) * np.matmul(real_state.getH(), np.matmul(grad_psi, np.matmul(B, real_state)))
-                term2 = cs * np.matmul(fake_state.getH(), np.matmul(grad_psi, np.matmul(B, real_state))) * np.matmul(real_state.getH(), np.matmul(A, fake_state))
-                term3 = cs * np.matmul(fake_state.getH(), np.matmul(A, real_state)) * np.matmul(real_state.getH(), np.matmul(grad_psi, np.matmul(B, fake_state)))
-                term4 = cs * np.matmul(fake_state.getH(), np.matmul(grad_psi, np.matmul(B, fake_state))) * np.matmul(real_state.getH(), np.matmul(A, real_state))
+                term1 = (
+                    cs
+                    * np.matmul(final_fake_state.getH(), np.matmul(A, final_fake_state))
+                    * np.matmul(final_real_state.getH(), np.matmul(grad_psi, np.matmul(B, final_real_state)))
+                )
+                term2 = (
+                    cs
+                    * np.matmul(final_fake_state.getH(), np.matmul(grad_psi, np.matmul(B, final_real_state)))
+                    * np.matmul(final_real_state.getH(), np.matmul(A, final_fake_state))
+                )
+                term3 = (
+                    cs
+                    * np.matmul(final_fake_state.getH(), np.matmul(A, final_real_state))
+                    * np.matmul(final_real_state.getH(), np.matmul(grad_psi, np.matmul(B, final_fake_state)))
+                )
+                term4 = (
+                    cs
+                    * np.matmul(final_fake_state.getH(), np.matmul(grad_psi, np.matmul(B, final_fake_state)))
+                    * np.matmul(final_real_state.getH(), np.matmul(A, final_real_state))
+                )
 
                 gradreg_list.append(
                     np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4))
@@ -154,12 +195,16 @@ class Discriminator:
             grad_phi.append(grad_phiI)
         return grad_phi
 
-    def _grad_beta(self, gen, real_state, input_state):
-        G = gen.getGen()
+    def _grad_beta(self, gen, total_real_state, total_input_state):
+        Untouched_x_G = gen.get_Untouched_qubits_and_Gen()
+
         psi = self.getPsi()
         phi = self.getPhi()
 
-        fake_state = np.matmul(G, input_state)
+        total_output_state = np.matmul(Untouched_x_G, total_input_state)
+
+        final_fake_state = get_final_fake_state_for_discriminator(total_output_state)
+        final_real_state = get_final_real_state_for_discriminator(total_real_state)
 
         try:
             A = expm((-1 / lamb) * phi)
@@ -187,15 +232,35 @@ class Discriminator:
             for grad_phi in gradphi:
                 gradpsi_list.append(0)
 
-                gradphi_list.append(np.ndarray.item(np.matmul(fake_state.getH(), np.matmul(grad_phi, fake_state))))
-                # gradphi_list.append(np.asscalar(np.matmul(fake_state.getH(), np.matmul(grad_phi, fake_state))))
+                gradphi_list.append(
+                    np.ndarray.item(np.matmul(final_fake_state.getH(), np.matmul(grad_phi, final_fake_state)))
+                )
+                # gradphi_list.append(np.asscalar(np.matmul(total_fake_state.getH(), np.matmul(grad_phi, total_fake_state))))
 
-                term1 = cs * np.matmul(fake_state.getH(), np.matmul(grad_phi, np.matmul(A, fake_state))) * np.matmul(real_state.getH(), np.matmul(B, real_state))
-                term2 = cs * np.matmul(fake_state.getH(), np.matmul(B, real_state)) * np.matmul(real_state.getH(), np.matmul(grad_phi, np.matmul(A, fake_state)))
-                term3 = cs * np.matmul(fake_state.getH(), np.matmul(grad_phi, np.matmul(A, real_state))) * np.matmul(real_state.getH(), np.matmul(B, fake_state))
-                term4 = cs * np.matmul(fake_state.getH(), np.matmul(B, fake_state)) * np.matmul(real_state.getH(), np.matmul(grad_phi, np.matmul(A, real_state)))
+                term1 = (
+                    cs
+                    * np.matmul(final_fake_state.getH(), np.matmul(grad_phi, np.matmul(A, final_fake_state)))
+                    * np.matmul(final_real_state.getH(), np.matmul(B, final_real_state))
+                )
+                term2 = (
+                    cs
+                    * np.matmul(final_fake_state.getH(), np.matmul(B, final_real_state))
+                    * np.matmul(final_real_state.getH(), np.matmul(grad_phi, np.matmul(A, final_fake_state)))
+                )
+                term3 = (
+                    cs
+                    * np.matmul(final_fake_state.getH(), np.matmul(grad_phi, np.matmul(A, final_real_state)))
+                    * np.matmul(final_real_state.getH(), np.matmul(B, final_fake_state))
+                )
+                term4 = (
+                    cs
+                    * np.matmul(final_fake_state.getH(), np.matmul(B, final_fake_state))
+                    * np.matmul(final_real_state.getH(), np.matmul(grad_phi, np.matmul(A, final_real_state)))
+                )
 
-                gradreg_list.append(np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4)))
+                gradreg_list.append(
+                    np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4))
+                )
                 # gradreg_list.append(np.asscalar(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4)))
 
             # calculate grad of psi term
@@ -211,16 +276,51 @@ class Discriminator:
 
         return grad
 
-    def update_dis(self, gen, real_state, input_state):
-        grad_alpha = self._grad_alpha(gen, real_state, input_state)
+    def update_dis(self, gen, total_real_state, total_input_state):
+        grad_alpha = self._grad_alpha(gen, total_real_state, total_input_state)
         # update alpha
         new_alpha = self.optimizer_psi.compute_grad(self.alpha, grad_alpha, "max")
         # new_alpha = self.alpha + eta * self._grad_alpha(gen)
 
-        grad_beta = self._grad_beta(gen, real_state, input_state)
+        grad_beta = self._grad_beta(gen, total_real_state, total_input_state)
         # update beta
         new_beta = self.optimizer_phi.compute_grad(self.beta, grad_beta, "max")
         # new_beta = self.beta + eta * self._grad_beta(gen)
 
         self.alpha = new_alpha
         self.beta = new_beta
+
+    def load_model_params(self, file_path):
+        """
+        Load discriminator parameters (alpha, beta) from a saved model, if compatible.
+        If the saved model has one less qubit (no ancilla), load only the matching parameters.
+        WARNING: Only load trusted pickle files! Untrusted files may be insecure.
+        """
+        ######################################################################
+        # Check if the file exists and is a valid pickle file
+        ########################################################################
+        if not os.path.exists(file_path):
+            print_and_train_log("Discriminator model file not found", CFG.log_path)
+            return False
+        try:
+            with open(file_path, "rb") as f:
+                saved_dis = pickle.load(f)
+        except (OSError, pickle.UnpicklingError) as e:
+            print_and_train_log(f"Could not load discriminator model: {e}", CFG.log_path)
+            return False
+
+        ########################################################################
+        # Check for exact match
+        ########################################################################
+        if getattr(saved_dis, "size", None) == self.size and saved_dis.alpha.shape == self.alpha.shape:
+            self.alpha = saved_dis.alpha.copy()
+            self.beta = saved_dis.beta.copy()
+            print_and_train_log("Discriminator parameters loaded", CFG.log_path)
+            return True
+
+        # For the discriminator the ancilla qubit doesn't pass through the model, so we can load the model normally always
+
+        print_and_train_log(
+            "Saved discriminator model is incompatible (size or shape mismatch). Skipping load.", CFG.log_path
+        )
+        return False

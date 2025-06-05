@@ -1,7 +1,22 @@
-##### target state
-
+# Copyright 2025 GIQ, Universitat Autònoma de Barcelona
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Target State module"""
 
 import numpy as np
+
+from config import CFG
+from tools.qgates import Identity
 
 
 def get_zero_state(size: int):
@@ -20,7 +35,7 @@ def get_zero_state(size: int):
 
 
 def get_maximally_entangled_state(size: int):
-    """Get the maximally entangled state for the system size.
+    """Get the maximally entangled state for the system size (With Ancilla if needed).
 
     Args:
         size (int): the size of the system.
@@ -28,47 +43,17 @@ def get_maximally_entangled_state(size: int):
     Returns:
         np.ndarray: the maximally entangled state.
     """
-    state = np.zeros(2 ** (2 * size), dtype=complex)
-    for i in range(2**size):
-        state_i = np.zeros(2**size)
-        state_i[i] = 1
-        state += np.kron(state_i, state_i)
-    state = state / np.sqrt(2**size)
-    state = np.asmatrix(state).T
-    return state
+    state = np.zeros(2 ** (2 * size + (1 if CFG.extra_ancilla else 0)), dtype=complex)
+    dim_register = 2**size
+    for i in range(dim_register):
+        state[i * dim_register + i] = 1.0
+    state /= np.sqrt(dim_register)
+    return np.asmatrix(state).T
 
 
-def get_maximally_entangled_state_in_subspace(size: int):
-    """Get the maximally entangled state for the system size in the subspace.
-
-    Args:
-        size (int): the size of the initial system.
-
-    Returns:
-        np.ndarray: the maximally entangled state in the subspace
-    """
-
-    state = np.zeros(2 ** (2 * size + 2), dtype=complex)
-
-    # add one additional qubit to each party
-    upspin = np.zeros(2)
-    upspin[0] = 1
-
-    for i in range(2**size):
-        state_i = np.zeros(2**size)
-        state_i[i] = 1
-        state_i = np.kron(state_i, upspin)
-        state += np.kron(state_i, state_i)
-    state = state / np.sqrt(2**size)
-
-    state = np.asmatrix(state).T
-
-    return state
-
-
-def getreal_denmat(cf, prob_real, input_state):
-    real_state_denmat = np.asmatrix(np.zeros((2**cf.system_size, 2**cf.system_size), dtype=complex))
-    # linear combination of pure state
-    for i in range(cf.num_to_mix):
-        real_state_denmat += prob_real[i] * (np.matmul(input_state[i], input_state[i].getH()))
-    return real_state_denmat
+def initialize_target_state(target_unitary: np.ndarray, total_input_state: np.ndarray) -> np.ndarray:
+    """Initialize the target state."""
+    target_op = np.kron(Identity(CFG.system_size), target_unitary)
+    if CFG.extra_ancilla:
+        target_op = np.kron(target_op, Identity(1))
+    return np.matmul(target_op, total_input_state)
