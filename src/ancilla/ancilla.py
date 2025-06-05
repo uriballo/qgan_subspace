@@ -30,20 +30,18 @@ def project_ancilla_zero(state, num_qubits):
         float: The probability of the ancilla being in state |0>.
     """
     state = np.asarray(state).flatten()
-    dim = 2**num_qubits
-    # Projector onto |0> for last qubit
-    proj = np.zeros(dim)
-    for i in range(dim):
-        if (i % 2) == 0:
-            proj[i] = 1
-    projected = state * proj
+
+    # Remove the ancilla qubit: keep only even indices:
+    projected = state[::2]
+
+    # Compute the norm of the projected state:
     norm = np.linalg.norm(projected)
-    if norm == 0:
-        # Return the system part (without ancilla) as zeros
+    if norm == 0:  # Return the system part (without ancilla) as zeros
         return np.zeros((2 ** (num_qubits - 1), 1)), 0.0
-    # Remove the ancilla qubit: keep only even indices, then renormalize
-    system_state = projected[::2] / norm
-    return system_state.reshape(-1, 1), norm**2
+
+    # Renormalize
+    normalized_projected = projected / norm
+    return normalized_projected.reshape(-1, 1), norm**2
 
 
 def trace_out_ancilla(state, num_qubits):
