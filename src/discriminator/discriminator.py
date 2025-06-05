@@ -318,15 +318,7 @@ class Discriminator:
             print_and_train_log("Discriminator parameters loaded", file_path)
             return True
 
-        ########################################################################
-        # Check for one less qubit (ancilla added)
-        ########################################################################
-        if getattr(saved_dis, "size", None) == self.size - 1 and saved_dis.alpha.shape[1] == self.alpha.shape[1]:
-            # Only copy alpha/beta for matching qubits
-            self.alpha[: saved_dis.size, :] = saved_dis.alpha
-            self.beta[: saved_dis.size, :] = saved_dis.beta
-            # The last row (ancilla) remains as initialized
-            print_and_train_log("Discriminator parameters partially loaded (excluding ancilla)", file_path)
-            return True
+        # For the discriminator the ancilla qubit doesn't pass through the model, so we can load the model normally always
+
         print_and_train_log("Saved discriminator model is incompatible (size or shape mismatch). Skipping load.")
         return False
