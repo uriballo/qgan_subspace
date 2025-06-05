@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Main module for running the quantum GAN training and testing."""
 
 from config import CFG, test_configurations
 from tools.data_managers import print_and_train_log
@@ -33,8 +34,8 @@ def main():
         # if CFG.load_timestamp:
         #     run_message = f"\nAttempting to load models from timestamp: {CFG.load_timestamp} and continue training...\n"
         # else:
-        #     run_message = "\nRunning with default configuration from config.py (new training)...\n"
-        # print_and_train_log(run_message, CFG.log_path)
+        run_message = "\nRunning with default configuration from config.py (new training)...\n"
+        print_and_train_log(run_message, CFG.log_path)
         run_single_training()
 
 

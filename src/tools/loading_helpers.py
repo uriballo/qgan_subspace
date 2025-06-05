@@ -1,11 +1,23 @@
-# filepath: /Users/guillermoabadlopez/Documents/GitHub/qgan_subspace/src/runner/loading_helpers.py
+# Copyright 2025 GIQ, Universitat Autònoma de Barcelona
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import os
 import traceback
 
 from tools.data_managers import print_and_train_log, train_log
 
 
-# TODO: Make this compatible with adding ancilla & choi later
+# TODO: Make this compatible with the new config format
 # def load_models_if_specified(training_instance, config_module):
 #     """
 #     Loads generator and discriminator models if a load_timestamp is provided.

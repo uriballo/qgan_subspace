@@ -1,3 +1,18 @@
+# Copyright 2025 GIQ, Universitat Autònoma de Barcelona
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Training initialization module for running training instances"""
+
 import traceback
 
 from config import CFG
@@ -14,13 +29,18 @@ def run_single_training():
     Runs a single training instance (the default case when testing=False).
     """
     try:
-        # Pass the timestamp to the Training constructor if provided
-        # The Training itself will handle the loading logic via load_models_if_specified (or similar)
+        ##############################################################
+        # Run single training instance with specified configuration
+        ##############################################################
         training_instance = Training()
         training_instance.run()
         success_msg = "\nDefault configuration run COMPLETED SUCCESSFULLY.\n"
         print_and_train_log(success_msg, CFG.log_path)  # Log to file
-    except Exception as e:
+
+    except Exception as e:  # noqa: BLE001
+        ##############################################################
+        # Handle exceptions during the training run
+        ##############################################################
         tb_str = traceback.format_exc()
         error_msg = (
             f"\n{'-' * 60}\n"
@@ -43,7 +63,9 @@ def run_test_configurations(test_configurations):
         test_header_msg = f"\n{'=' * 60}\nRunning Test Configuration {i + 1}/{len(test_configurations)}: {config_params['label_suffix']}\n{'-' * 60}\n"
         print_and_train_log(test_header_msg, CFG.log_path)  # Also log to file
 
+        ##############################################################
         # Set config for the current test run
+        ##############################################################
         CFG.system_size = config_params["system_size"]
         CFG.gen_layers = config_params["gen_layers"]  # Corrected key
         CFG.extra_ancilla = config_params["extra_ancilla"]
@@ -59,12 +81,18 @@ def run_test_configurations(test_configurations):
             CFG.ansatz_gen = config_params["gen_ansatz"]
 
         try:
-            # For test configurations, we don't load previous models
+            ##############################################################
+            # Run the training instance with the current configuration
+            ##############################################################
             training_instance = Training()
             training_instance.run()
             success_msg = f"\n{'-' * 60}\nTest Configuration {i + 1} ({config_params['label_suffix']}) COMPLETED SUCCESSFULLY.\n{'=' * 60}\n"
             print_and_train_log(success_msg, CFG.log_path)
-        except Exception as e:
+
+        except Exception as e:  # noqa: BLE001
+            ##############################################################
+            # Handle exceptions for the current test configuration
+            ##############################################################
             all_passed = False
             tb_str = traceback.format_exc()
             error_msg = (
@@ -78,6 +106,9 @@ def run_test_configurations(test_configurations):
             print_and_train_log(error_msg, CFG.log_path)
             # Continue with other test configurations
 
+    ##############################################################
+    # Final summary of test configurations
+    ##############################################################
     final_summary_msg = ""
     if all_passed:
         final_summary_msg = "\nAll test configurations ran successfully! No errors detected during these runs.\n"

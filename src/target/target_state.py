@@ -16,6 +16,7 @@
 import numpy as np
 
 from config import CFG
+from tools.qgates import Identity
 
 
 def get_zero_state(size: int):
@@ -48,3 +49,11 @@ def get_maximally_entangled_state(size: int):
         state[i * dim_register + i] = 1.0
     state /= np.sqrt(dim_register)
     return np.asmatrix(state).T
+
+
+def initialize_target_state(target_unitary: np.ndarray, total_input_state: np.ndarray) -> np.ndarray:
+    """Initialize the target state."""
+    target_op = np.kron(Identity(CFG.system_size), target_unitary)
+    if CFG.extra_ancilla:
+        target_op = np.kron(target_op, Identity(1))
+    return np.matmul(target_op, total_input_state)

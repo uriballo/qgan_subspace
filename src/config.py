@@ -27,7 +27,7 @@ class Config:
         ########################################################################
         # CODE CONFIGURATION
         ########################################################################
-        self.testing: bool = True  # True for testing mode, or False for single run
+        self.testing: bool = False  # True for testing mode, or False for single run
 
         # If testing = False: None for new training, or Timestamp String to load models
         self.load_timestamp: Optional[str] = None
@@ -38,8 +38,9 @@ class Config:
         #######################################################################
         self.epochs: int = 10  # Number of epochs for training (default: 10)
         self.iterations_epoch: int = 100  # Number of iterations per epoch (default: 100)
-        self.l_rate: float = 0.01  # Initial learning rate for optimizers (default: 0.01)
+        self.log_every_x_iter: int = 10  # Log every x iterations (default: 10)
         self.max_fidelity: float = 0.99  # Maximum fidelity to reach, stopping criterion (default: 0.99)
+        self.l_rate: float = 0.01  # Initial learning rate for optimizers (default: 0.01)
         self.ratio_step_disc_to_gen: int = 1  # Ratio of Steps to train for discriminator to generator (Dis > Gen)
 
         #######################################################################
@@ -82,15 +83,38 @@ class Config:
         #####################################################################
         # Datetime for current run - initialized once
         self.run_timestamp: str = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-        self.base_data_path: str = f"./generated_data/{self.run_timestamp}_{self.system_size}qubits_{self.gen_layers}layers_{self.target_hamiltonian}_{self.gen_ansatz}ansatz_with_ancilla_{self.extra_ancilla}_{self.ancilla_mode}"
+        self.base_data_path: str = "./generated_data/TESTING/" if self.testing else "./generated_data/"
+        self.base_data_path += f"{self.run_timestamp}_{self.system_size}qubits_{self.gen_layers}layers_{self.target_hamiltonian}_{self.gen_ansatz}ansatz_with_ancilla_{self.extra_ancilla}_{self.ancilla_mode}"
 
         # File path settings (dynamic based on run_timestamp and system_size)
-        self.figure_path: str = f"{self.base_data_path}/figure"
+        self.figure_path: str = f"{self.base_data_path}/figures"
         self.model_gen_path: str = f"{self.base_data_path}/saved_model/model-gen(hs).npz"
         self.model_dis_path: str = f"{self.base_data_path}/saved_model/model-dis(hs).npz"
         self.log_path: str = f"{self.base_data_path}/logs/log.txt"
-        self.fid_loss_path: str = f"{self.base_data_path}/fidelities/log_fidelity_loss.npy"
-        self.theta_path: str = f"{self.base_data_path}/theta/theta_gen.txt"
+        self.fid_loss_path: str = f"{self.base_data_path}/fidelities/log_fidelity_loss.txt"
+        self.gen_final_params_path: str = f"{self.base_data_path}/gen_final_params/gen_final_params.txt"
+
+    def show_data(self) -> str:
+        """Return a dictionary with the current configuration data."""
+        return (
+            "================================================== \n"
+            f"run_timestamp: {self.run_timestamp},\n"
+            f"system_size: {self.system_size},\n"
+            f"extra_ancilla: {self.extra_ancilla},\n"
+            f"ancilla_mode: {self.ancilla_mode},\n"
+            f"ancilla_topology: {self.ancilla_topology},\n"
+            f"gen_layers: {self.gen_layers},\n"
+            f"gen_ansatz: {self.gen_ansatz},\n"
+            f"target_hamiltonian: {self.target_hamiltonian},\n"
+            f"custom_hamiltonian_terms: {self.custom_hamiltonian_terms},\n"
+            f"epochs: {self.epochs},\n"
+            f"iterations_epoch: {self.iterations_epoch},\n"
+            f"log_every_x_iter: {self.log_every_x_iter},\n"
+            f"max_fidelity: {self.max_fidelity},\n"
+            f"l_rate: {self.l_rate},\n"
+            f"ratio_step_disc_to_gen: {self.ratio_step_disc_to_gen},\n"
+            "================================================== \n"
+        )
 
 
 ####################################################################

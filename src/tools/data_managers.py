@@ -47,11 +47,11 @@ def save_fidelity_loss(fidelities_history, losses_history, file_path):
         os.remove(file_path)
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     with open(file_path, "wb") as f:
-        np.save(f, fidelities_history)
-        np.save(f, losses_history)
+        np.savetxt(f, fidelities_history)
+        np.savetxt(f, losses_history)
 
 
-def save_theta(gen, file_path):
+def save_gen_final_params(gen, file_path):
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     array_angle = np.zeros(len(gen.qc.gates))
     for i in range(len(gen.qc.gates)):
