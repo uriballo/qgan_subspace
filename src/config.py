@@ -86,8 +86,8 @@ class Config:
 
         # File path settings (dynamic based on run_timestamp and system_size)
         self.figure_path: str = f"{self.base_data_path}/figures"
-        self.model_gen_path: str = f"{self.base_data_path}/saved_model/model-gen(hs).npz"
-        self.model_dis_path: str = f"{self.base_data_path}/saved_model/model-dis(hs).npz"
+        self.model_gen_path: str = f"{self.base_data_path}/saved_model/model-gen(hs).pkl"
+        self.model_dis_path: str = f"{self.base_data_path}/saved_model/model-dis(hs).pkl"
         self.log_path: str = f"{self.base_data_path}/logs/log.txt"
         self.fid_loss_path: str = f"{self.base_data_path}/fidelities/log_fidelity_loss.txt"
         self.gen_final_params_path: str = f"{self.base_data_path}/gen_final_params/gen_final_params.txt"
