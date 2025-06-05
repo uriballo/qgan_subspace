@@ -13,7 +13,6 @@
 # limitations under the License.
 """Discriminator module"""
 
-import logging
 import os
 import pickle
 
@@ -23,6 +22,7 @@ from scipy.linalg import expm
 from ancilla.ancilla import get_final_fake_state_for_discriminator, get_final_real_state_for_discriminator
 from config import CFG
 from optimizer.momentum_optimizer import MomentumOptimizer
+from tools.data_managers import print_and_train_log
 
 cst1, cst2, cst3, lamb = CFG.cst1, CFG.cst2, CFG.cst3, CFG.lamb
 
@@ -289,3 +289,44 @@ class Discriminator:
 
         self.alpha = new_alpha
         self.beta = new_beta
+
+    def load_model_params(self, file_path):
+        """
+        Load discriminator parameters (alpha, beta) from a saved model, if compatible.
+        If the saved model has one less qubit (no ancilla), load only the matching parameters.
+        WARNING: Only load trusted pickle files! Untrusted files may be insecure.
+        """
+        ######################################################################
+        # Check if the file exists and is a valid pickle file
+        ########################################################################
+        if not os.path.exists(file_path):
+            print_and_train_log("Discriminator model file not found", file_path)
+            return False
+        try:
+            with open(file_path, "rb") as f:
+                saved_dis = pickle.load(f)
+        except (OSError, pickle.UnpicklingError) as e:
+            print_and_train_log(f"Could not load discriminator model: {e}", file_path)
+            return False
+
+        ########################################################################
+        # Check for exact match
+        ########################################################################
+        if getattr(saved_dis, "size", None) == self.size and saved_dis.alpha.shape == self.alpha.shape:
+            self.alpha = saved_dis.alpha.copy()
+            self.beta = saved_dis.beta.copy()
+            print_and_train_log("Discriminator parameters loaded", file_path)
+            return True
+
+        ########################################################################
+        # Check for one less qubit (ancilla added)
+        ########################################################################
+        if getattr(saved_dis, "size", None) == self.size - 1 and saved_dis.alpha.shape[1] == self.alpha.shape[1]:
+            # Only copy alpha/beta for matching qubits
+            self.alpha[: saved_dis.size, :] = saved_dis.alpha
+            self.beta[: saved_dis.size, :] = saved_dis.beta
+            # The last row (ancilla) remains as initialized
+            print_and_train_log("Discriminator parameters partially loaded (excluding ancilla)", file_path)
+            return True
+        print_and_train_log("Saved discriminator model is incompatible (size or shape mismatch). Skipping load.")
+        return False

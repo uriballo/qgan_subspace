@@ -29,11 +29,12 @@ def print_and_train_log(param, file_path):
     train_log(param, file_path)  # Logging to file
 
 
-def load_model(file_path):
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    with open(file_path, "rb") as qc:
-        model = pickle.load(qc)
-    return model
+# Not used, changed by specific gen and dis load_model_params methods:
+# def load_model(file_path):
+#     os.makedirs(os.path.dirname(file_path), exist_ok=True)
+#     with open(file_path, "rb") as qc:
+#         model = pickle.load(qc)
+#     return model
 
 
 def save_model(gen, file_path):

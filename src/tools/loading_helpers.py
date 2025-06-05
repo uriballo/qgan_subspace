@@ -14,7 +14,7 @@
 import os
 
 from config import CFG
-from tools.data_managers import load_model, print_and_train_log, train_log
+from tools.data_managers import print_and_train_log, train_log
 
 
 def load_models_if_specified(training_instance):
@@ -56,12 +56,7 @@ def load_models_if_specified(training_instance):
         f"Attempting to load Generator parameters from: {load_gen_path}\n",
         CFG.log_path,
     )
-    gen_loaded = load_model(load_gen_path)
-    if not gen_loaded:
-        print_and_train_log(
-            "Generator parameters NOT loaded (incompatible or missing).\n",
-            CFG.log_path,
-        )
+    gen_loaded = training_instance.gen.load_model_params(load_gen_path)
 
     ################################################################
     # Attempt to load discriminator:
@@ -70,12 +65,7 @@ def load_models_if_specified(training_instance):
         f"Attempting to load Discriminator parameters from: {load_dis_path}\n",
         CFG.log_path,
     )
-    dis_loaded = load_model(load_dis_path)
-    if not dis_loaded:
-        print_and_train_log(
-            "Discriminator parameters NOT loaded (incompatible or missing).\n",
-            CFG.log_path,
-        )
+    dis_loaded = training_instance.dis.load_model_params(load_dis_path)
 
     ################################################################
     # Final check: if both models are loaded, continue training
@@ -84,11 +74,4 @@ def load_models_if_specified(training_instance):
         print_and_train_log("Model parameter loading complete. Continuing training.\n", CFG.log_path)
         print_and_train_log("==================================================\n", CFG.log_path)
     else:
-        print_and_train_log(
-            "No compatible model parameters loaded. Training from scratch.\n",
-            CFG.log_path,
-        )
         raise ValueError("Incompatible or missing model parameters. Check the load paths or model compatibility.")
-
-    training_instance.gen = gen_loaded
-    training_instance.dis = dis_loaded

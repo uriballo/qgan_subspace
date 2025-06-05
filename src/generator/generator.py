@@ -13,7 +13,6 @@
 # limitations under the License.
 """Generator module"""
 
-import logging
 import os
 import pickle
 
@@ -23,6 +22,7 @@ from scipy.linalg import expm
 from ancilla.ancilla import get_final_fake_state_for_discriminator, get_final_real_state_for_discriminator
 from config import CFG
 from optimizer.momentum_optimizer import MomentumOptimizer
+from tools.data_managers import print_and_train_log
 from tools.qcircuit import Identity, QuantumCircuit
 
 
@@ -145,3 +145,58 @@ class Generator:
         new_angle = self.optimizer.compute_grad(theta, grad, "min")
         for i in range(self.qc.depth):
             self.qc.gates[i].angle = new_angle[i]
+
+    def load_model_params(self, file_path):
+        """
+        Load generator parameters (angles) from a saved model, if compatible.
+        Supports loading when adding or removing an ancilla (one qubit difference).
+        WARNING: Only load trusted pickle files! Untrusted files may be insecure.
+        """
+        ##################################################################
+        # Check if the file exists and is a valid pickle file
+        ##################################################################
+        if not os.path.exists(file_path):
+            print_and_train_log("Generator model file not found", file_path)
+            return False
+        try:
+            with open(file_path, "rb") as f:
+                saved_gen = pickle.load(f)
+        except (OSError, pickle.UnpicklingError) as e:
+            print_and_train_log(f"Could not load generator model: {e}", file_path)
+            return False
+
+        ##################################################################
+        # Check for exact match
+        ##################################################################
+        if getattr(saved_gen, "size", None) == self.size and len(saved_gen.qc.gates) == len(self.qc.gates):
+            for i, gate in enumerate(self.qc.gates):
+                gate.angle = saved_gen.qc.gates[i].angle
+            print_and_train_log("Generator parameters loaded", file_path)
+            return True
+
+        # TODO: Check that this implementation is correct for the case of ancilla qubits.
+        ##################################################################
+        # When adding or removing an ancilla (one qubit difference)
+        ###################################################################
+        if abs(getattr(saved_gen, "size", None) - self.size) == 1:
+            # Determine the minimum number of qubits (the overlap)
+            min_size = min(saved_gen.size, self.size)
+            for gate in self.qc.gates:
+                q1 = getattr(gate, "qubit1", None)
+                q2 = getattr(gate, "qubit2", None)
+                # Only consider gates that act on the overlapping qubits
+                if (q1 is not None and q1 >= min_size) or (q2 is not None and q2 >= min_size):
+                    continue
+                for saved_gate in saved_gen.qc.gates:
+                    if (
+                        isinstance(gate, type(saved_gate))
+                        and getattr(saved_gate, "qubit1", None) == q1
+                        and getattr(saved_gate, "qubit2", None) == q2
+                    ):
+                        gate.angle = saved_gate.angle
+                        break
+            print_and_train_log("Generator parameters partially loaded (excluding ancilla difference)", file_path)
+            return True
+
+        print_and_train_log("Saved generator model is incompatible (size or depth mismatch). Skipping load.")
+        return False

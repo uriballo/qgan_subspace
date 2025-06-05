@@ -30,7 +30,7 @@ class Config:
         self.testing: bool = False  # True for testing mode, or False for single run
 
         # If testing = False: None for new training, or Timestamp String to load models
-        self.load_timestamp: Optional[str] = "2025-06-05_20:05:38"  # e.g., "2025-06-05_19:22:43"
+        self.load_timestamp: Optional[str] = None  # e.g., "2025-06-05_19:22:43"
 
         #######################################################################
         # TRAINING CONFIGURATION
