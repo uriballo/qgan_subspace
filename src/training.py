@@ -30,6 +30,7 @@ from tools.data_managers import (
     save_gen_final_params,
     save_model,
 )
+from tools.loading_helpers import load_models_if_specified
 
 # from tools.loading_helpers import load_models_if_specified
 from tools.plot_hub import plt_fidelity_vs_iter
@@ -66,11 +67,10 @@ class Training:
         ###########################################################
         # Initialize training
         ###########################################################
-        print_and_train_log(CFG.show_data(), CFG.log_path)
+        print_and_train_log("\n" + CFG.show_data(), CFG.log_path)
 
-        # TODO: Make loading models compatible with adding ancilla & parameters changed
-        # Load models if specified (only the params)
-        # load_models_if_specified(self, CFG)
+        # Load models if specified (only the params, and only if compatible)
+        load_models_if_specified(self)
 
         # Data storing
         fidelities, losses = np.zeros(CFG.iterations_epoch), np.zeros(CFG.iterations_epoch)
@@ -81,7 +81,7 @@ class Training:
         ###########################################################
         # Main Training Block
         ###########################################################
-        while fidelities[-1] < CFG.max_fidelity:  # TODO: Maybe change this cond, to use max(fidelities)?
+        while True:
             # while (f < 0.95):
             fidelities[:] = 0.0
             losses[:] = 0.0
@@ -107,7 +107,7 @@ class Training:
                 ###########################################################
                 if iter % CFG.log_every_x_iter == 0:
                     # save log
-                    param = "epoch:{:4d} | iters:{:4d} | fidelity:{:8f} | loss:{:8f}\n".format(
+                    param = "\nepoch:{:4d} | iters:{:4d} | fidelity:{:8f} | loss:{:8f}".format(
                         num_epochs,
                         iter + 1,
                         round(fidelities[iter], 6),
@@ -122,8 +122,20 @@ class Training:
             losses_history = np.append(losses_history, losses)
             plt_fidelity_vs_iter(fidelities_history, losses_history, CFG, num_epochs)
 
+            #############################################################
+            # Stopping conditions
+            #############################################################
             if num_epochs >= CFG.epochs:
-                print_and_train_log(f"The number of epochs exceeds {CFG.epochs}.", CFG.log_path)
+                print_and_train_log("\n==================================================\n", CFG.log_path)
+                print_and_train_log(f"\nThe number of epochs exceeds {CFG.epochs}.", CFG.log_path)
+                break
+
+            if fidelities[-1] > CFG.max_fidelity:  # TODO: Maybe change this cond, to use max(fidelities)?
+                print_and_train_log("\n==================================================\n", CFG.log_path)
+                print_and_train_log(
+                    f"\nThe fidelity {fidelities[-1]} exceeds the maximum {CFG.max_fidelity}.",
+                    CFG.log_path,
+                )
                 break
 
         ###########################################################
@@ -140,5 +152,4 @@ class Training:
         save_gen_final_params(self.gen, CFG.gen_final_params_path)
 
         endtime = datetime.now()
-        print_and_train_log("{} seconds".format((endtime - starttime).seconds), CFG.log_path)
-        print_and_train_log("end", CFG.log_path)
+        print_and_train_log("\nIt took: {} seconds".format((endtime - starttime).seconds), CFG.log_path)

@@ -30,14 +30,13 @@ class Config:
         self.testing: bool = False  # True for testing mode, or False for single run
 
         # If testing = False: None for new training, or Timestamp String to load models
-        self.load_timestamp: Optional[str] = None
-        # TODO: Make loading models work.
+        self.load_timestamp: Optional[str] = "2025-06-05_20:05:38"  # e.g., "2025-06-05_19:22:43"
 
         #######################################################################
         # TRAINING CONFIGURATION
         #######################################################################
-        self.epochs: int = 10  # Number of epochs for training (default: 10)
-        self.iterations_epoch: int = 100  # Number of iterations per epoch (default: 100)
+        self.epochs: int = 3  # Number of epochs for training (default: 10)
+        self.iterations_epoch: int = 10  # Number of iterations per epoch (default: 100)
         self.log_every_x_iter: int = 10  # Log every x iterations (default: 10)
         self.max_fidelity: float = 0.99  # Maximum fidelity to reach, stopping criterion (default: 0.99)
         self.l_rate: float = 0.01  # Initial learning rate for optimizers (default: 0.01)
@@ -83,8 +82,7 @@ class Config:
         #####################################################################
         # Datetime for current run - initialized once
         self.run_timestamp: str = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-        self.base_data_path: str = "./generated_data/TESTING/" if self.testing else "./generated_data/"
-        self.base_data_path += f"{self.run_timestamp}_{self.system_size}qubits_{self.gen_layers}layers_{self.target_hamiltonian}_{self.gen_ansatz}ansatz_with_ancilla_{self.extra_ancilla}_{self.ancilla_mode}"
+        self.base_data_path: str = f"./generated_data/{'TESTING/' if self.testing else ''}{self.run_timestamp}"
 
         # File path settings (dynamic based on run_timestamp and system_size)
         self.figure_path: str = f"{self.base_data_path}/figures"

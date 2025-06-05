@@ -12,60 +12,83 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import traceback
 
-from tools.data_managers import print_and_train_log, train_log
+from config import CFG
+from tools.data_managers import load_model, print_and_train_log, train_log
 
 
-# TODO: Make this compatible with the new config format
-# def load_models_if_specified(training_instance, config_module):
-#     """
-#     Loads generator and discriminator models if a load_timestamp is provided.
-#     Modifies training_instance.gen and training_instance.dis by calling their load_model methods.
-#     """
-#     load_timestamp = config_module.load_timestamp
-#     if not load_timestamp:
-#         return
+def load_models_if_specified(training_instance):
+    """
+    Loads generator and discriminator parameters if a load_timestamp is provided.
+    Modifies training_instance.gen and training_instance.dis by calling their load_model_params methods.
+    """
 
-#     loading_msg_prefix = f"[Timestamp: {load_timestamp}] "
-#     print_and_train_log(f"{loading_msg_prefix}Attempting to load models.\\n", config_module.log_path)
+    ################################################################
+    # Conditions to skip loading models
+    ################################################################
+    if CFG.testing:
+        print_and_train_log("\nSkipping model loading in testing mode. \n", CFG.log_path)
+        print_and_train_log("==================================================\n", CFG.log_path)
+        return
 
-#     try:
-#         gen_model_filename = os.path.basename(config_module.model_gen_path)
-#         dis_model_filename = os.path.basename(config_module.model_dis_path)
+    if not CFG.load_timestamp:
+        print_and_train_log("\nStarting training from scratch (no timestamp specified).\n", CFG.log_path)
+        print_and_train_log("==================================================\n", CFG.log_path)
 
-#         # Path structure from user's file: "generated_data/<timestamp>/saved_model/<model_filename>"
-#         load_gen_path = os.path.join("generated_data", load_timestamp, "saved_model", gen_model_filename)
-#         load_dis_path = os.path.join("generated_data", load_timestamp, "saved_model", dis_model_filename)
+        return
 
-#         train_log(
-#             f"{loading_msg_prefix}Attempting to load Generator parameters from: {load_gen_path}\\n",
-#             config_module.log_path,
-#         )
-#         # TODO: Implement this gen.load_model method in the Generator class
-#         training_instance.gen.load_model(load_gen_path)
-#         print_and_train_log(
-#             f"{loading_msg_prefix}Generator parameters loaded successfully from {load_gen_path}\\n",
-#             config_module.log_path,
-#         )
-#         train_log(
-#             f"{loading_msg_prefix}Attempting to load Discriminator parameters from: {load_dis_path}\\n",
-#             config_module.log_path,
-#         )
-#         # TODO: Implement this dis.load_model method in the Discriminator class
-#         training_instance.dis.load_model(load_dis_path)
-#         print_and_train_log(
-#             f"{loading_msg_prefix}Discriminator parameters loaded successfully from {load_dis_path}\\n",
-#             config_module.log_path,
-#         )
+    ################################################################
+    # If we reach here, we have a load_timestamp
+    ################################################################
+    print_and_train_log(f"\nAttempting to load model parameters [{CFG.load_timestamp}].\n", CFG.log_path)
 
-#         print_and_train_log(
-#             f"{loading_msg_prefix}Models loaded successfully. Continuing training.\\n", config_module.log_path
-#         )
+    # Ensure the load_timestamp is valid
+    gen_model_filename = os.path.basename(CFG.model_gen_path)
+    dis_model_filename = os.path.basename(CFG.model_dis_path)
+    # Path structure: "generated_data/<timestamp>/saved_model/<model_filename>"
+    load_gen_path = os.path.join("generated_data", CFG.load_timestamp, "saved_model", gen_model_filename)
+    load_dis_path = os.path.join("generated_data", CFG.load_timestamp, "saved_model", dis_model_filename)
 
-#     except FileNotFoundError as e:
-#         error_msg = f"{loading_msg_prefix}ERROR: Could not load model files. File not found: {e}. Starting training from scratch instead.\\n"
-#         print_and_train_log(error_msg, config_module.log_path)
-#     except Exception as e:
-#         error_msg = f"{loading_msg_prefix}ERROR: An unexpected error occurred while loading models: {e}. Traceback: {traceback.format_exc()}. Starting training from scratch instead.\\n"
-#         print_and_train_log(error_msg, config_module.log_path)
+    ################################################################
+    # Attempt to load generator:
+    ################################################################
+    train_log(
+        f"Attempting to load Generator parameters from: {load_gen_path}\n",
+        CFG.log_path,
+    )
+    gen_loaded = load_model(load_gen_path)
+    if not gen_loaded:
+        print_and_train_log(
+            "Generator parameters NOT loaded (incompatible or missing).\n",
+            CFG.log_path,
+        )
+
+    ################################################################
+    # Attempt to load discriminator:
+    ################################################################
+    train_log(
+        f"Attempting to load Discriminator parameters from: {load_dis_path}\n",
+        CFG.log_path,
+    )
+    dis_loaded = load_model(load_dis_path)
+    if not dis_loaded:
+        print_and_train_log(
+            "Discriminator parameters NOT loaded (incompatible or missing).\n",
+            CFG.log_path,
+        )
+
+    ################################################################
+    # Final check: if both models are loaded, continue training
+    ################################################################
+    if gen_loaded and dis_loaded:
+        print_and_train_log("Model parameter loading complete. Continuing training.\n", CFG.log_path)
+        print_and_train_log("==================================================\n", CFG.log_path)
+    else:
+        print_and_train_log(
+            "No compatible model parameters loaded. Training from scratch.\n",
+            CFG.log_path,
+        )
+        raise ValueError("Incompatible or missing model parameters. Check the load paths or model compatibility.")
+
+    training_instance.gen = gen_loaded
+    training_instance.dis = dis_loaded

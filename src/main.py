@@ -13,7 +13,7 @@
 # limitations under the License.
 """Main module for running the quantum GAN training and testing."""
 
-from config import CFG, test_configurations
+from config import CFG
 from tools.data_managers import print_and_train_log
 from tools.training_initialization import run_single_training, run_test_configurations
 
@@ -24,18 +24,13 @@ def main():
     ##############################################################
     if CFG.testing:
         print_and_train_log("Running in TESTING mode.\n", CFG.log_path)
-        run_test_configurations(test_configurations)
+        run_test_configurations()
 
     ##############################################################
     # SINGLE RUN mode
     ##############################################################
     else:
-        # TODO: Implement loading models from timestamp
-        # if CFG.load_timestamp:
-        #     run_message = f"\nAttempting to load models from timestamp: {CFG.load_timestamp} and continue training...\n"
-        # else:
-        run_message = "\nRunning with default configuration from config.py (new training)...\n"
-        print_and_train_log(run_message, CFG.log_path)
+        print_and_train_log("Running in SINGLE RUN mode.\n", CFG.log_path)
         run_single_training()
 
 

@@ -15,7 +15,7 @@
 
 import traceback
 
-from config import CFG
+from config import CFG, test_configurations
 from tools.data_managers import print_and_train_log
 from training import Training
 
@@ -24,6 +24,9 @@ from training import Training
 # For now, let's assume Training will be passed or imported directly in main
 
 
+##################################################################
+# SINGLE RUN mode
+##################################################################
 def run_single_training():
     """
     Runs a single training instance (the default case when testing=False).
@@ -53,7 +56,10 @@ def run_single_training():
         print_and_train_log(error_msg, CFG.log_path)  # Log to file
 
 
-def run_test_configurations(test_configurations):
+###################################################################
+# TESTING mode
+###################################################################
+def run_test_configurations():
     """
     Runs a suite of test configurations.
     """
@@ -78,7 +84,7 @@ def run_test_configurations(test_configurations):
         if "target_hamiltonian" in config_params:
             CFG.target_hamiltonian = config_params["target_hamiltonian"]
         if "gen_ansatz" in config_params:
-            CFG.ansatz_gen = config_params["gen_ansatz"]
+            CFG.gen_ansatz = config_params["gen_ansatz"]
 
         try:
             ##############################################################
