@@ -174,7 +174,6 @@ class Generator:
             print_and_train_log("Generator parameters loaded", CFG.log_path)
             return True
 
-        # TODO: Check that this implementation is correct for the case of ancilla qubits.
         ##################################################################
         # When adding or removing an ancilla (one qubit difference)
         ###################################################################
