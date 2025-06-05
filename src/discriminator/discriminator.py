@@ -300,13 +300,13 @@ class Discriminator:
         # Check if the file exists and is a valid pickle file
         ########################################################################
         if not os.path.exists(file_path):
-            print_and_train_log("Discriminator model file not found", file_path)
+            print_and_train_log("Discriminator model file not found", CFG.log_path)
             return False
         try:
             with open(file_path, "rb") as f:
                 saved_dis = pickle.load(f)
         except (OSError, pickle.UnpicklingError) as e:
-            print_and_train_log(f"Could not load discriminator model: {e}", file_path)
+            print_and_train_log(f"Could not load discriminator model: {e}", CFG.log_path)
             return False
 
         ########################################################################
@@ -315,10 +315,12 @@ class Discriminator:
         if getattr(saved_dis, "size", None) == self.size and saved_dis.alpha.shape == self.alpha.shape:
             self.alpha = saved_dis.alpha.copy()
             self.beta = saved_dis.beta.copy()
-            print_and_train_log("Discriminator parameters loaded", file_path)
+            print_and_train_log("Discriminator parameters loaded", CFG.log_path)
             return True
 
         # For the discriminator the ancilla qubit doesn't pass through the model, so we can load the model normally always
 
-        print_and_train_log("Saved discriminator model is incompatible (size or shape mismatch). Skipping load.")
+        print_and_train_log(
+            "Saved discriminator model is incompatible (size or shape mismatch). Skipping load.", CFG.log_path
+        )
         return False

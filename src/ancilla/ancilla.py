@@ -19,6 +19,7 @@ from config import CFG
 
 
 # TODO: Check the next two functions for correctness and efficiency.
+# TODO: I think this code actually makes a kind of "trace out" operation, not "projecting" the ancilla.
 def project_ancilla_zero(state, num_qubits):
     """Project the last qubit onto |0> and renormalize. Assumes state is a column vector.
     Args:
@@ -90,7 +91,7 @@ def get_final_fake_state_for_discriminator(total_output_state):
 
 
 def get_final_real_state_for_discriminator(total_output_state):
-    """Return the fake state to be passed to the discriminator, according to ancilla_mode."""
+    """Return the real state to be passed to the discriminator, according to ancilla_mode."""
     total_final_state = total_output_state
     if CFG.extra_ancilla:
         n = CFG.system_size * 2 + 1  # total qubits (system + ancilla)

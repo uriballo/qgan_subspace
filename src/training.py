@@ -86,7 +86,7 @@ class Training:
             fidelities[:] = 0.0
             losses[:] = 0.0
             num_epochs += 1
-            for iter in range(CFG.iterations_epoch):
+            for epoch_iter in range(CFG.iterations_epoch):
                 ###########################################################
                 # Generator and Discriminator gradient descent
                 ###########################################################
@@ -99,19 +99,19 @@ class Training:
                 ###########################################################
                 # Compute fidelity and loss
                 ###########################################################
-                fidelities[iter] = compute_fidelity(self.gen, self.total_target_state, self.total_input_state)
-                losses[iter] = compute_cost(self.gen, self.dis, self.total_target_state, self.total_input_state)
+                fidelities[epoch_iter] = compute_fidelity(self.gen, self.total_target_state, self.total_input_state)
+                losses[epoch_iter] = compute_cost(self.gen, self.dis, self.total_target_state, self.total_input_state)
 
                 ###########################################################
                 # Every X iterations, log data
                 ###########################################################
-                if iter % CFG.log_every_x_iter == 0:
+                if epoch_iter % CFG.log_every_x_iter == 0:
                     # save log
                     param = "\nepoch:{:4d} | iters:{:4d} | fidelity:{:8f} | loss:{:8f}".format(
                         num_epochs,
-                        iter + 1,
-                        round(fidelities[iter], 6),
-                        round(losses[iter], 6),
+                        epoch_iter + 1,
+                        round(fidelities[epoch_iter], 6),
+                        round(losses[epoch_iter], 6),
                     )
                     print_and_train_log(param, CFG.log_path)
 

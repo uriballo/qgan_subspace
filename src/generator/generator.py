@@ -156,13 +156,13 @@ class Generator:
         # Check if the file exists and is a valid pickle file
         ##################################################################
         if not os.path.exists(file_path):
-            print_and_train_log("Generator model file not found", file_path)
+            print_and_train_log("Generator model file not found", CFG.log_path)
             return False
         try:
             with open(file_path, "rb") as f:
                 saved_gen = pickle.load(f)
         except (OSError, pickle.UnpicklingError) as e:
-            print_and_train_log(f"Could not load generator model: {e}", file_path)
+            print_and_train_log(f"Could not load generator model: {e}", CFG.log_path)
             return False
 
         ##################################################################
@@ -171,7 +171,7 @@ class Generator:
         if getattr(saved_gen, "size", None) == self.size and len(saved_gen.qc.gates) == len(self.qc.gates):
             for i, gate in enumerate(self.qc.gates):
                 gate.angle = saved_gen.qc.gates[i].angle
-            print_and_train_log("Generator parameters loaded", file_path)
+            print_and_train_log("Generator parameters loaded", CFG.log_path)
             return True
 
         # TODO: Check that this implementation is correct for the case of ancilla qubits.
@@ -195,8 +195,10 @@ class Generator:
                     ):
                         gate.angle = saved_gate.angle
                         break
-            print_and_train_log("Generator parameters partially loaded (excluding ancilla difference)", file_path)
+            print_and_train_log("Generator parameters partially loaded (excluding ancilla difference)", CFG.log_path)
             return True
 
-        print_and_train_log("Saved generator model is incompatible (size or depth mismatch). Skipping load.")
+        print_and_train_log(
+            "Saved generator model is incompatible (size or depth mismatch). Skipping load.", CFG.log_path
+        )
         return False

@@ -14,7 +14,7 @@
 import os
 
 from config import CFG
-from tools.data_managers import print_and_train_log, train_log
+from tools.data_managers import print_and_train_log
 
 
 def load_models_if_specified(training_instance):
@@ -52,7 +52,7 @@ def load_models_if_specified(training_instance):
     ################################################################
     # Attempt to load generator:
     ################################################################
-    train_log(
+    print_and_train_log(
         f"Attempting to load Generator parameters from: {load_gen_path}\n",
         CFG.log_path,
     )
@@ -61,7 +61,7 @@ def load_models_if_specified(training_instance):
     ################################################################
     # Attempt to load discriminator:
     ################################################################
-    train_log(
+    print_and_train_log(
         f"Attempting to load Discriminator parameters from: {load_dis_path}\n",
         CFG.log_path,
     )

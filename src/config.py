@@ -81,7 +81,7 @@ class Config:
         # SAVING AND LOGGING CONFIGURATION
         #####################################################################
         # Datetime for current run - initialized once
-        self.run_timestamp: str = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        self.run_timestamp: str = datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
         self.base_data_path: str = f"./generated_data/{'TESTING/' if self.testing else ''}{self.run_timestamp}"
 
         # File path settings (dynamic based on run_timestamp and system_size)
