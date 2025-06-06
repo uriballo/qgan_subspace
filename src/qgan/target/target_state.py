@@ -16,7 +16,7 @@
 import numpy as np
 
 from config import CFG
-from tools.qgates import Identity
+from tools.qobjects.qgates import Identity
 
 
 def get_zero_state(size: int):

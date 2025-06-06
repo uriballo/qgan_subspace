@@ -14,7 +14,7 @@
 """Optimizer file"""
 
 from config import CFG
-from tools.data_reshapers import _flatten, _unflatten
+from tools.data.data_reshapers import _flatten, _unflatten
 
 
 class MomentumOptimizer:
@@ -31,9 +31,9 @@ class MomentumOptimizer:
     miu:= momentum coefficient [0,1]
     """
 
-    def __init__(self, eta=CFG.l_rate, miu=0.9):
+    def __init__(self, eta=CFG.l_rate, miu=CFG.momentum_coeff):
         self.miu = miu
-        self.l_rate = eta
+        self.eta = eta
         self.v = None
 
     def compute_grad(self, theta, grad_list, min_or_max):
@@ -42,16 +42,16 @@ class MomentumOptimizer:
 
         if min_or_max == "min":
             if self.v is None:
-                self.v = [-self.l_rate * g for g in grad_list]
+                self.v = [-self.eta * g for g in grad_list]
             else:
-                self.v = [self.miu * v - self.l_rate * g for v, g in zip(self.v, grad_list)]
+                self.v = [self.miu * v - self.eta * g for v, g in zip(self.v, grad_list)]
 
             new_theta = [theta_i + v for theta_i, v in zip(theta_tmp, self.v)]
         else:
             if self.v is None:
-                self.v = [self.l_rate * g for g in grad_list]
+                self.v = [self.eta * g for g in grad_list]
             else:
-                self.v = [self.miu * v + self.l_rate * g for v, g in zip(self.v, grad_list)]
+                self.v = [self.miu * v + self.eta * g for v, g in zip(self.v, grad_list)]
 
             new_theta = [theta_i + v for theta_i, v in zip(theta_tmp, self.v)]
 

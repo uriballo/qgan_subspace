@@ -16,8 +16,8 @@
 import traceback
 
 from config import CFG, test_configurations
-from tools.data_managers import print_and_train_log
-from training import Training
+from qgan.training import Training
+from tools.data.data_managers import print_and_train_log
 
 # Assuming Training class is in src.training (adjust if different)
 # from ..training import Training # This relative import might need adjustment based on how you run the script

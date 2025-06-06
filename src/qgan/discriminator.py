@@ -19,10 +19,10 @@ import pickle
 import numpy as np
 from scipy.linalg import expm
 
-from ancilla.ancilla import get_final_fake_state_for_discriminator, get_final_real_state_for_discriminator
 from config import CFG
-from optimizer.momentum_optimizer import MomentumOptimizer
-from tools.data_managers import print_and_train_log
+from qgan.ancilla import get_final_fake_state_for_discriminator, get_final_real_state_for_discriminator
+from tools.data.data_managers import print_and_train_log
+from tools.optimizer import MomentumOptimizer
 
 cst1, cst2, cst3, lamb = CFG.cst1, CFG.cst2, CFG.cst3, CFG.lamb
 

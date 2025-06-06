@@ -14,8 +14,8 @@
 """Main module for running the quantum GAN training and testing."""
 
 from config import CFG
-from tools.data_managers import print_and_train_log
-from tools.training_initialization import run_single_training, run_test_configurations
+from tools.data.data_managers import print_and_train_log
+from tools.training_init import run_single_training, run_test_configurations
 
 
 def main():
