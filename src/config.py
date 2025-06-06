@@ -108,7 +108,7 @@ class Config:
             f"log_every_x_iter: {self.log_every_x_iter},\n"
             f"max_fidelity: {self.max_fidelity},\n"
             f"l_rate: {self.l_rate},\n"
-            f"ratio_step_disc_to_gen: {self.ratio_step_dis_to_gen},\n"
+            f"ratio_step_dis_to_gen: {self.ratio_step_dis_to_gen},\n"
             "================================================== \n"
         )
 
