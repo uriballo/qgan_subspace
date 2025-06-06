@@ -40,12 +40,6 @@ class Config:
         self.ratio_step_dis_to_gen: int = 1  # Ratio of Steps to train for discriminator to generator (Dis > Gen)
 
         #######################################################################
-        # OPTIMIZATION CONFIGURATION
-        #######################################################################
-        self.l_rate: float = 0.01  # Initial learning rate for optimizers (default: 0.01)
-        self.momentum_coeff: float = 0.9  # Momentum coefficient for optimizers (default: 0.9)
-
-        #######################################################################
         # QUBIT SYSTEM CONFIGURATION
         #######################################################################
         self.system_size: int = 3  # Number of qubits to study (without choi or ancilla)
@@ -80,6 +74,12 @@ class Config:
         self.log_path: str = f"{self.base_data_path}/logs/log.txt"
         self.fid_loss_path: str = f"{self.base_data_path}/fidelities/log_fidelity_loss.txt"
         self.gen_final_params_path: str = f"{self.base_data_path}/gen_final_params/gen_final_params.txt"
+
+        #######################################################################
+        # OPTIMIZATION CONFIGURATION
+        #######################################################################
+        self.l_rate: float = 0.01  # Initial learning rate for optimizers (default: 0.01)
+        self.momentum_coeff: float = 0.9  # Momentum coefficient for optimizers (default: 0.9)
 
         #####################################################################
         # HYPERPARAMETERS for Wasserstein Cost Function and Gradient
