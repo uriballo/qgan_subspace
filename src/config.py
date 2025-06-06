@@ -28,9 +28,7 @@ class Config:
         # CODE CONFIGURATION
         ########################################################################
         self.testing: bool = False  # True for testing mode, or False for single run
-
-        # If testing = False: None for new training, or Timestamp String to load models
-        self.load_timestamp: Optional[str] = None  # e.g., "2025-06-05_19:22:43"
+        self.load_timestamp: Optional[str] = "2025-06-06__01-50-14"
 
         #######################################################################
         # TRAINING CONFIGURATION
@@ -39,15 +37,18 @@ class Config:
         self.iterations_epoch: int = 10  # Number of iterations per epoch (default: 100)
         self.log_every_x_iter: int = 10  # Log every x iterations (default: 10)
         self.max_fidelity: float = 0.99  # Maximum fidelity to reach, stopping criterion (default: 0.99)
+        self.ratio_step_dis_to_gen: int = 1  # Ratio of Steps to train for discriminator to generator (Dis > Gen)
+
+        #######################################################################
+        # OPTIMIZATION CONFIGURATION
+        #######################################################################
         self.l_rate: float = 0.01  # Initial learning rate for optimizers (default: 0.01)
-        self.ratio_step_disc_to_gen: int = 1  # Ratio of Steps to train for discriminator to generator (Dis > Gen)
+        self.momentum_coeff: float = 0.9  # Momentum coefficient for optimizers (default: 0.9)
 
         #######################################################################
         # QUBIT SYSTEM CONFIGURATION
         #######################################################################
-        self.system_size: int = 3  # Number of qubits (without choi or ancilla): #3 #4 #5 ...
-
-        # If adding a helper ancilla  qubit:
+        self.system_size: int = 3  # Number of qubits to study (without choi or ancilla)
         self.extra_ancilla: bool = True  # If to include an extra ancilla: #True # False
         self.ancilla_mode: Optional[Literal["pass", "project", "trace_out"]] = "project"  # Ancilla mode from gen to dis
         self.ancilla_topology: Optional[Literal["ansatz", "bridge", "total"]] = "ansatz"  # Connectivity for the ancilla
@@ -63,19 +64,7 @@ class Config:
         # TARGET CONFIGURATION
         #######################################################################
         self.target_hamiltonian: Literal["cluster_h", "rotated_surface_h", "custom_h"] = "cluster_h"
-        self.custom_hamiltonian_terms: Optional[list[str]] = [
-            "ZZZ"
-        ]  # Custom Hamiltonian terms to use: ["ZZZ", "ZZ", "Z", "I"]
-
-        #####################################################################
-        # HYPERPARAMETERS for Wasserstein Cost Function
-        #####################################################################
-        self.lamb = float(10)
-        # Costs and gradients
-        self.s = np.exp(-1 / (2 * self.lamb)) - 1
-        self.cst1 = (self.s / 2 + 1) ** 2
-        self.cst2 = (self.s / 2) * (self.s / 2 + 1)
-        self.cst3 = (self.s / 2) ** 2
+        self.custom_hamiltonian_terms: Optional[list[str]] = ["ZZZ"]  # Custom Terms: ["ZZZ", "ZZ", "Z", "I"]
 
         #####################################################################
         # SAVING AND LOGGING CONFIGURATION
@@ -91,6 +80,15 @@ class Config:
         self.log_path: str = f"{self.base_data_path}/logs/log.txt"
         self.fid_loss_path: str = f"{self.base_data_path}/fidelities/log_fidelity_loss.txt"
         self.gen_final_params_path: str = f"{self.base_data_path}/gen_final_params/gen_final_params.txt"
+
+        #####################################################################
+        # HYPERPARAMETERS for Wasserstein Cost Function and Gradient
+        #####################################################################
+        self.lamb = float(10)
+        self.s = np.exp(-1 / (2 * self.lamb)) - 1
+        self.cst1 = (self.s / 2 + 1) ** 2
+        self.cst2 = (self.s / 2) * (self.s / 2 + 1)
+        self.cst3 = (self.s / 2) ** 2
 
     def show_data(self) -> str:
         """Return a dictionary with the current configuration data."""
@@ -110,7 +108,7 @@ class Config:
             f"log_every_x_iter: {self.log_every_x_iter},\n"
             f"max_fidelity: {self.max_fidelity},\n"
             f"l_rate: {self.l_rate},\n"
-            f"ratio_step_disc_to_gen: {self.ratio_step_disc_to_gen},\n"
+            f"ratio_step_disc_to_gen: {self.ratio_step_dis_to_gen},\n"
             "================================================== \n"
         )
 

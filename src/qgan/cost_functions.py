@@ -16,10 +16,10 @@
 import numpy as np
 from scipy.linalg import expm
 
-from ancilla.ancilla import get_final_fake_state_for_discriminator, get_final_real_state_for_discriminator
 from config import CFG
-from discriminator.discriminator import Discriminator
-from generator.generator import Generator
+from qgan.ancilla import get_final_fake_state_for_discriminator, get_final_real_state_for_discriminator
+from qgan.discriminator import Discriminator
+from qgan.generator import Generator
 
 np.random.seed()
 

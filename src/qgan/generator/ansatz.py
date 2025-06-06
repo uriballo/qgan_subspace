@@ -16,8 +16,7 @@
 import numpy as np
 
 from config import CFG
-from tools.qcircuit import QuantumCircuit
-from tools.qgates import QuantumGate
+from tools.qobjects import QuantumCircuit, QuantumGate
 
 
 def construct_qcircuit_XX_YY_ZZ_Z(qc: QuantumCircuit, size: int, layer: int) -> QuantumCircuit:

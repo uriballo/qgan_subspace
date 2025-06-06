@@ -14,7 +14,7 @@
 import os
 
 from config import CFG
-from tools.data_managers import print_and_train_log
+from tools.data.data_managers import print_and_train_log
 
 
 def load_models_if_specified(training_instance):

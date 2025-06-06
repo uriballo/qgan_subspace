@@ -17,7 +17,7 @@ import os
 
 import numpy as np
 
-from tools.qgates import Identity, QuantumGate
+from tools.qobjects.qgates import Identity, QuantumGate
 
 
 class QuantumCircuit:

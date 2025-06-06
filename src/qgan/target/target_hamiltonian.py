@@ -19,7 +19,7 @@ import numpy as np
 from scipy import linalg
 
 from config import CFG
-from tools.qgates import I, X, Y, Z
+from tools.qobjects.qgates import I, X, Z
 
 
 def term_XXXX(size: int, qubit1: int, qubit2: int, qubit3: int, qubit4: int):

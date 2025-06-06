@@ -18,23 +18,19 @@ from datetime import datetime
 import numpy as np
 
 from config import CFG
-from cost_functions.cost_and_fidelity import compute_cost, compute_fidelity
-from discriminator.discriminator import Discriminator
-from generator.ansatz import get_ansatz_func
-from generator.generator import Generator
-from target.target_hamiltonian import get_target_unitary
-from target.target_state import get_maximally_entangled_state, initialize_target_state
-from tools.data_managers import (
+from qgan.cost_functions import compute_cost, compute_fidelity
+from qgan.discriminator import Discriminator
+from qgan.generator import Generator, get_ansatz_func
+from qgan.target import get_maximally_entangled_state, get_target_unitary, initialize_target_state
+from tools.data.data_managers import (
     print_and_train_log,
     save_fidelity_loss,
     save_gen_final_params,
     save_model,
 )
-from tools.loading_helpers import load_models_if_specified
-
-# from tools.loading_helpers import load_models_if_specified
+from tools.data.loading_helpers import load_models_if_specified
 from tools.plot_hub import plt_fidelity_vs_iter
-from tools.qgates import I, X, Y, Z
+from tools.qobjects.qgates import I, X, Y, Z
 
 np.random.seed()
 
@@ -93,7 +89,7 @@ class Training:
                 # 1 step for generator
                 self.gen.update_gen(self.dis, self.total_target_state, self.total_input_state)
                 # Ratio of steps for discriminator
-                for _ in range(CFG.ratio_step_disc_to_gen):
+                for _ in range(CFG.ratio_step_dis_to_gen):
                     self.dis.update_dis(self.gen, self.total_target_state, self.total_input_state)
 
                 ###########################################################
