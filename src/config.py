@@ -28,7 +28,7 @@ class Config:
         # CODE CONFIGURATION
         ########################################################################
         self.testing: bool = False  # True for testing mode, or False for single run
-        self.load_timestamp: Optional[str] = "2025-06-06__01-50-14"
+        self.load_timestamp: Optional[str] = "2025-06-06__02-05-10"
 
         #######################################################################
         # TRAINING CONFIGURATION
