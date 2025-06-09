@@ -72,8 +72,14 @@ def run_test_configurations():
         ##############################################################
         # Set config for the current test run
         ##############################################################
+        valid_keys = dir(CFG)  # Get a list of valid attributes of CFG
         for key, value in config_params.items():
-            setattr(CFG, key, value)
+            if key in valid_keys:
+                setattr(CFG, key, value)
+            else:
+                error_msg = f"Invalid configuration key: {key}. This key does not exist in CFG."
+                print_and_train_log(error_msg, CFG.log_path)  # Log the error
+                raise AttributeError(error_msg)
 
         try:
             ##############################################################
