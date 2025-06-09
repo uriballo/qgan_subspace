@@ -34,8 +34,9 @@ class Config:
         #   - N_reps_each_init_exp: Number of repetitions for each initial experiment afterwards (with changes), (default: 5).
         #
         ########################################################################
-        self.N_initial_exp: int = 20  # TODO:
-        self.N_reps_each_init_exp: int = 5  # TODO:
+        self.N_initial_exp: int = 20  # TODO: For loop twice, first for initial experiments, second for repetitions.
+        self.N_reps_each_init_exp: int = 5  # TODO: Change the ancilla mode and topology after the initial experiments.
+        # TODO: Also add so that automatically makes the analysis graphs of the improvements, and plots them in folder.
 
         ########################################################################
         # ---------------------
