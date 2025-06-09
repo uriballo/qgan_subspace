@@ -44,7 +44,7 @@ class Config:
         #   - testing: bool: Enables testing mode for running several different quick configurations.
         #
         ########################################################################
-        self.testing: bool = True
+        self.testing: bool = False
 
         #######################################################################
         # ---------------------
@@ -79,7 +79,7 @@ class Config:
         #   - ratio_step_dis_to_gen: Discriminator to generator training steps, ratio (dis > gen), (default: 1-5).
         #
         #######################################################################
-        self.epochs: int = 1
+        self.epochs: int = 2
         self.iterations_epoch: int = 20
         self.log_every_x_iter: int = 10
         self.max_fidelity: float = 0.99
@@ -116,10 +116,10 @@ class Config:
         # |-----|-----------------|-----------------|-----------------|-----------------------|------------------------|
         #
         #######################################################################
-        self.system_size: int = 4
+        self.system_size: int = 2
         self.extra_ancilla: bool = False
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "trace"
-        self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "ansatz"
+        self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "total"
 
         #######################################################################
         # -----------------------
@@ -311,7 +311,7 @@ test_configurations = [
     {
         "system_size": 2,
         "extra_ancilla": False,
-        "load_timestamp": "2025-06-10__00-12-51",
+        "load_timestamp": "2025-06-10__00-53-18",
         "type_of_warm_start": "none",
         "warm_start_strength": 0.1,
         "epochs": 1,
@@ -325,7 +325,7 @@ test_configurations = [
     {
         "system_size": 2,
         "extra_ancilla": False,
-        "load_timestamp": "2025-06-10__00-12-51",
+        "load_timestamp": "2025-06-10__00-53-18",
         "type_of_warm_start": "all",
         "warm_start_strength": 0.1,
         "epochs": 1,
@@ -340,7 +340,7 @@ test_configurations = [
         "extra_ancilla": True,
         "ancilla_mode": "pass",
         "ancilla_topology": "ansatz",
-        "load_timestamp": "2025-06-10__00-12-51",
+        "load_timestamp": "2025-06-10__00-53-18",
         "type_of_warm_start": "some",
         "warm_start_strength": 0.1,
         "epochs": 1,

@@ -64,7 +64,7 @@ def load_models_if_specified(training_instance):
     # Attempt to load discriminator:
     ################################################################
     print_and_train_log(
-        f"\n Attempting to load Discriminator parameters from: {load_dis_path}\n",
+        f"\nAttempting to load Discriminator parameters from: {load_dis_path}\n",
         CFG.log_path,
     )
     dis_loaded = training_instance.dis.load_model_params(load_dis_path)
