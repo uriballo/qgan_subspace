@@ -13,30 +13,33 @@
 # limitations under the License.
 """Optimizer file"""
 
+import numpy as np
+
 from config import CFG
 from tools.data.data_reshapers import _flatten, _unflatten
 
 
 class MomentumOptimizer:
-    """
-    gradient descent with momentum, given an objective function to be minimized.
-    the update formula from
-    On the importance of initialization and momentum in deep learning
-    http://proceedings.mlr.press/v28/sutskever13.pdf
+    """Gradient descent with momentum, given an objective function to be minimized.
+
+    The update formula is from:
+    "On the importance of initialization and momentum in deep learning
+    http://proceedings.mlr.press/v28/sutskever13.pdf"
 
     v_{t+1} = miu * v_{t} - eta * grad(theta_t)
     theta_{t+1} = theta_{t} + v_{t+1}
 
-    eta:= learning rate > 0
-    miu:= momentum coefficient [0,1]
+    Args:
+        eta: learning rate > 0
+        miu: momentum coefficient [0,1]
     """
 
-    def __init__(self, eta=CFG.l_rate, miu=CFG.momentum_coeff):
-        self.miu = miu
-        self.eta = eta
+    def __init__(self, eta: float = CFG.l_rate, miu: float = CFG.momentum_coeff):
+        self.miu: float = miu
+        self.eta: float = eta
         self.v = None
 
-    def compute_grad(self, theta, grad_list, min_or_max):
+    def move_in_grad(self, theta: np.ndarray, grad_list: np.ndarray, min_or_max: str) -> np.ndarray:
         grad_list = _flatten(grad_list)
         theta_tmp = _flatten(theta)
 

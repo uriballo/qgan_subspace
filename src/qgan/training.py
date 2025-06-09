@@ -20,8 +20,8 @@ import numpy as np
 from config import CFG
 from qgan.cost_functions import compute_cost, compute_fidelity
 from qgan.discriminator import Discriminator
-from qgan.generator import Generator, get_ansatz_func
-from qgan.target import get_maximally_entangled_state, get_target_unitary, initialize_target_state
+from qgan.generator import Generator
+from qgan.target import get_maximally_entangled_state, initialize_target_state
 from tools.data.data_managers import (
     print_and_train_log,
     save_fidelity_loss,
@@ -30,7 +30,6 @@ from tools.data.data_managers import (
 )
 from tools.data.loading_helpers import load_models_if_specified
 from tools.plot_hub import plt_fidelity_vs_iter
-from tools.qobjects.qgates import I, X, Y, Z
 
 np.random.seed()
 
@@ -39,23 +38,17 @@ class Training:
     def __init__(self):
         """Builds the configuration for the Training. You might wanna comment/discomment lines, for changing the model."""
 
-        self.total_input_state = get_maximally_entangled_state(CFG.system_size)
+        self.total_input_state: np.ndarray = get_maximally_entangled_state(CFG.system_size)
         """Preparation of max. entgl. state with ancilla qubit if needed."""
 
-        self.target_unitary = get_target_unitary(CFG.target_hamiltonian, CFG.system_size)
-        """Define target gates. First option is to specify the Z, ZZ, ZZZ and/or I terms, second and third is for the respective hardcoded Hamiltonians."""
+        self.total_target_state: np.ndarray = initialize_target_state(self.total_input_state)
+        """Prepare the target state, with the size and Target unitary defined in config."""
 
-        self.gen_system_size = CFG.system_size + (1 if CFG.extra_ancilla else 0)
-        self.gen = Generator(self.gen_system_size)
-        self.gen.set_qcircuit(get_ansatz_func(CFG.gen_ansatz)(self.gen.qc, self.gen_system_size, CFG.gen_layers))
-        """Defines the Generator. First option is for XYZ and Z, second option is for ZZ and XZ."""
+        self.gen: Generator = Generator()
+        """Prepares the Generator with the size, ansatz, layers and ancilla, defined in config."""
 
-        self.total_target_state = initialize_target_state(self.target_unitary, self.total_input_state)
-        """Define the size of target state (with ancilla or not, depending on value of `config.extra_ancilla`)."""
-
-        self.dis_system_size = CFG.system_size * 2 + (1 if CFG.extra_ancilla and CFG.ancilla_mode == "pass" else 0)
-        self.dis = Discriminator([I, X, Y, Z], self.dis_system_size)
-        """Defines the size of Discriminator (with ancilla or not, depending on value of `config.extra_ancilla`)."""
+        self.dis: Discriminator = Discriminator()
+        """Prepares the Discriminatos, with the size, and ancilla defined in config."""
 
     def run(self):
         """Run the training, saving the data, the model, the logs, and the results plots."""
@@ -72,7 +65,7 @@ class Training:
         fidelities, losses = np.zeros(CFG.iterations_epoch), np.zeros(CFG.iterations_epoch)
         fidelities_history, losses_history = [], []
         starttime = datetime.now()
-        num_epochs = 0
+        num_epochs: int = 0
 
         ###########################################################
         # Main Training Block
@@ -102,14 +95,10 @@ class Training:
                 # Every X iterations, log data
                 ###########################################################
                 if epoch_iter % CFG.log_every_x_iter == 0:
-                    # save log
-                    param = "\nepoch:{:4d} | iters:{:4d} | fidelity:{:8f} | loss:{:8f}".format(
-                        num_epochs,
-                        epoch_iter + 1,
-                        round(fidelities[epoch_iter], 6),
-                        round(losses[epoch_iter], 6),
+                    info = "\nepoch:{:4d} | iters:{:4d} | fidelity:{:8f} | loss:{:8f}".format(
+                        num_epochs, epoch_iter + 1, round(fidelities[epoch_iter], 6), round(losses[epoch_iter], 6)
                     )
-                    print_and_train_log(param, CFG.log_path)
+                    print_and_train_log(info, CFG.log_path)
 
             ###########################################################
             # End of epoch, store data and plot
@@ -148,4 +137,4 @@ class Training:
         save_gen_final_params(self.gen, CFG.gen_final_params_path)
 
         endtime = datetime.now()
-        print_and_train_log("\nIt took: {} seconds".format((endtime - starttime).seconds), CFG.log_path)
+        print_and_train_log("\nRun took: {} time.".format((endtime - starttime)), CFG.log_path)

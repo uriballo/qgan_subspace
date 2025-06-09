@@ -47,7 +47,7 @@ def run_single_training():
         tb_str = traceback.format_exc()
         error_msg = (
             f"\n{'-' * 60}\n"
-            f"Default configuration run FAILED!\n"
+            f"FAILED: Default configuration run!\n"
             f"Error Type: {type(e).__name__}\n"
             f"Error Message: {e!s}\n"
             f"Traceback:\n{tb_str}"
@@ -72,19 +72,8 @@ def run_test_configurations():
         ##############################################################
         # Set config for the current test run
         ##############################################################
-        CFG.system_size = config_params["system_size"]
-        CFG.gen_layers = config_params["gen_layers"]  # Corrected key
-        CFG.extra_ancilla = config_params["extra_ancilla"]
-        CFG.iterations_epoch = config_params["iterations_epoch"]
-        CFG.epochs = config_params["epochs"]
-        setattr(CFG, "plot_every_epochs", config_params["epochs"])  # Plot at the end of this short run
-        current_run_label = f"run_default_label_{config_params['label_suffix']}"
-        setattr(CFG, "current_run_label", current_run_label)
-        # Apply other test-specific config overrides from config_params
-        if "target_hamiltonian" in config_params:
-            CFG.target_hamiltonian = config_params["target_hamiltonian"]
-        if "gen_ansatz" in config_params:
-            CFG.gen_ansatz = config_params["gen_ansatz"]
+        for key, value in config_params.items():
+            setattr(CFG, key, value)
 
         try:
             ##############################################################
@@ -103,7 +92,7 @@ def run_test_configurations():
             tb_str = traceback.format_exc()
             error_msg = (
                 f"\n{'-' * 60}\n"
-                f"Test Configuration {i + 1} ({config_params['label_suffix']}) FAILED!\n"
+                f"FAILED: Test Configuration {i + 1} ({config_params['label_suffix']})!\n"
                 f"Error Type: {type(e).__name__}\n"
                 f"Error Message: {e!s}\n"
                 f"Traceback:\n{tb_str}"
@@ -117,7 +106,7 @@ def run_test_configurations():
     ##############################################################
     final_summary_msg = ""
     if all_passed:
-        final_summary_msg = "\nAll test configurations ran successfully! No errors detected during these runs.\n"
+        final_summary_msg = "\nAll test configurations ran SUCCESSFULLY! No errors detected during these runs.\n"
     else:
-        final_summary_msg = "\nSome test configurations failed. Please review the logs above and the log file.\n"
+        final_summary_msg = "\nSome test configurations FAILED. Please review the logs above and the log file.\n"
     print_and_train_log(final_summary_msg, CFG.log_path)

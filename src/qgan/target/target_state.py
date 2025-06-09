@@ -16,10 +16,11 @@
 import numpy as np
 
 from config import CFG
+from qgan.target.target_hamiltonian import get_target_unitary
 from tools.qobjects.qgates import Identity
 
 
-def get_zero_state(size: int):
+def get_zero_state(size: int) -> np.ndarray:
     """Get the zero quantum state |0,...0>
 
     Args:
@@ -34,7 +35,7 @@ def get_zero_state(size: int):
     return zero_state
 
 
-def get_maximally_entangled_state(size: int):
+def get_maximally_entangled_state(size: int) -> np.ndarray:
     """Get the maximally entangled state for the system size (With Ancilla if needed).
 
     Args:
@@ -51,8 +52,17 @@ def get_maximally_entangled_state(size: int):
     return np.asmatrix(state).T
 
 
-def initialize_target_state(target_unitary: np.ndarray, total_input_state: np.ndarray) -> np.ndarray:
-    """Initialize the target state."""
+def initialize_target_state(total_input_state: np.ndarray) -> np.ndarray:
+    """Initialize the target state. Applying the target unitary to the maximally entangled state.
+
+    Args:
+        total_input_state (np.ndarray): the input state, which is the maximally entangled state.
+
+    Returns:
+        np.ndarray: the target state after applying the target unitary.
+    """
+    target_unitary = get_target_unitary(CFG.target_hamiltonian, CFG.system_size)
+
     target_op = np.kron(Identity(CFG.system_size), target_unitary)
     if CFG.extra_ancilla:
         target_op = np.kron(target_op, Identity(1))

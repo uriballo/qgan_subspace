@@ -22,7 +22,8 @@ from config import CFG
 from tools.qobjects.qgates import I, X, Z
 
 
-def term_XXXX(size: int, qubit1: int, qubit2: int, qubit3: int, qubit4: int):
+def term_XXXX(size: int, qubit1: int, qubit2: int, qubit3: int, qubit4: int) -> np.ndarray:
+    """Construct a term for the Hamiltonian with four X gates acting on specified qubits."""
     matrix = 1
     for i in range(size):
         if (qubit1 == i) or (qubit2 == i) or (qubit3 == i) or (qubit4 == i):
@@ -32,7 +33,8 @@ def term_XXXX(size: int, qubit1: int, qubit2: int, qubit3: int, qubit4: int):
     return matrix
 
 
-def term_ZZZZ(size: int, qubit1: int, qubit2: int, qubit3: int, qubit4: int):
+def term_ZZZZ(size: int, qubit1: int, qubit2: int, qubit3: int, qubit4: int) -> np.ndarray:
+    """Construct a term for the Hamiltonian with four Z gates acting on specified qubits"""
     matrix = 1
     for i in range(size):
         if (qubit1 == i) or (qubit2 == i) or (qubit3 == i) or (qubit4 == i):
@@ -42,7 +44,8 @@ def term_ZZZZ(size: int, qubit1: int, qubit2: int, qubit3: int, qubit4: int):
     return matrix
 
 
-def term_ZZZ(size: int, qubit1: int, qubit2: int, qubit3: int):
+def term_ZZZ(size: int, qubit1: int, qubit2: int, qubit3: int) -> np.ndarray:
+    """Construct a term for the Hamiltonian with three Z gates acting on specified qubits."""
     matrix = 1
     for i in range(size):
         if (qubit1 == i) or (qubit2 == i) or (qubit3 == i):
@@ -52,7 +55,8 @@ def term_ZZZ(size: int, qubit1: int, qubit2: int, qubit3: int):
     return matrix
 
 
-def term_XZX(size: int, qubit1: int, qubit2: int, qubit3: int):
+def term_XZX(size: int, qubit1: int, qubit2: int, qubit3: int) -> np.ndarray:
+    """Construct a term for the Hamiltonian with X and Z gates acting on specified qubits."""
     matrix = 1
     for i in range(size):
         if (qubit1 == i) or (qubit3 == i):
@@ -64,7 +68,8 @@ def term_XZX(size: int, qubit1: int, qubit2: int, qubit3: int):
     return matrix
 
 
-def term_XX(size: int, qubit1: int, qubit2: int):
+def term_XX(size: int, qubit1: int, qubit2: int) -> np.ndarray:
+    """Construct a term for the Hamiltonian with two X gates acting on specified qubits."""
     matrix = 1
     for i in range(size):
         if (qubit1 == i) or (qubit2 == i):
@@ -74,7 +79,8 @@ def term_XX(size: int, qubit1: int, qubit2: int):
     return matrix
 
 
-def term_ZZ(size: int, qubit1: int, qubit2: int):
+def term_ZZ(size: int, qubit1: int, qubit2: int) -> np.ndarray:
+    """Construct a term for the Hamiltonian with two Z gates acting on specified qubits."""
     matrix = 1
     for i in range(size):
         if (qubit1 == i) or (qubit2 == i):
@@ -84,7 +90,8 @@ def term_ZZ(size: int, qubit1: int, qubit2: int):
     return matrix
 
 
-def term_Z(size: int, qubit1: int):
+def term_Z(size: int, qubit1: int) -> np.ndarray:
+    """Construct a term for the Hamiltonian with a single Z gate acting on a specified qubit."""
     matrix = 1
     for i in range(size):
         if qubit1 == i:

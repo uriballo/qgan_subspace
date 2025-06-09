@@ -24,44 +24,155 @@ import numpy as np
 ################################################################
 class Config:
     def __init__(self):
+        """Configuration for the QGAN experiment, which sets up all parameters required for training it."""
+
         ########################################################################
-        # CODE CONFIGURATION
+        # ---------------------
+        # TESTING CONFIGURATION
+        # ---------------------
+        #   - testing: bool: Enables testing mode for running several different quick configurations.
+        #
         ########################################################################
-        self.testing: bool = False  # True for testing mode, or False for single run
-        self.load_timestamp: Optional[str] = "2025-06-06__02-05-10"
+        self.testing: bool = True
 
         #######################################################################
+        # ---------------------
+        # LOADING CONFIGURATION
+        # ---------------------
+        #   - load_timestamp: Timestamp to load a previous run (ex. None, 2025-06-06__02-05-10").
+        #
+        #   - type_of_warm_start: Warm start type for loading models (only if loading).
+        #       + "none": No warm start.
+        #       + "all": Warm start all parameters, by a bit (strength).
+        #       + "some": Warm start some parameters (strength), to completely random.
+        #
+        #   - warm_start_strength: Strength of warm start for generator (only if loading).
+        #
+        ########################################################################
+        self.load_timestamp: Optional[str] = None  # "2025-06-06__02-05-10"
+        self.type_of_warm_start: Literal["none", "all", "some"] = "all"
+        self.warm_start_strength: Optional[float] = 0.1
+
+        #######################################################################
+        # ----------------------
         # TRAINING CONFIGURATION
+        # ----------------------
+        #   - epochs: Number of training epochs (default: ~10)
+        #
+        #   - iterations_epoch: Number of iterations per epoch (default: ~100)
+        #
+        #   - log_every_x_iter: Logging every x iterations (default: ~10)
+        #
+        #   - max_fidelity: Stopping criterion for fidelity (default: ~0.99)
+        #
+        #   - ratio_step_dis_to_gen: Discriminator to generator training steps, ratio (dis > gen), (default: 1-5).
+        #
         #######################################################################
-        self.epochs: int = 3  # Number of epochs for training (default: 10)
-        self.iterations_epoch: int = 10  # Number of iterations per epoch (default: 100)
-        self.log_every_x_iter: int = 10  # Log every x iterations (default: 10)
-        self.max_fidelity: float = 0.99  # Maximum fidelity to reach, stopping criterion (default: 0.99)
-        self.ratio_step_dis_to_gen: int = 1  # Ratio of Steps to train for discriminator to generator (Dis > Gen)
+        self.epochs: int = 1
+        self.iterations_epoch: int = 20
+        self.log_every_x_iter: int = 10
+        self.max_fidelity: float = 0.99
+        self.ratio_step_dis_to_gen: int = 1
 
         #######################################################################
-        # QUBIT SYSTEM CONFIGURATION
+        # ---------------------
+        # QUBITS CONFIGURATION
+        # ---------------------
+        #   - system_size: Number of qubits to study (excluding choi or ancilla), (default: 2-4)
+        #
+        #   - extra_ancilla: Whether to include an extra ancilla.
+        #
+        #   - ancilla_mode: How ancilla is handled, between gen to dis.
+        #       + "pass": Pass the ancilla qubit to the discriminator, after passes through gen.
+        #       + "project": Project the ancilla qubit to the |0> state after gen (doesn't arrive to dis).
+        #       + "trace": Trace out the ancilla qubit after gen (doesn't arrive to dis).
+        #
+        #   - ancilla_topology: Topology for the ancilla connections:
+        #       |-----------------|-----------------|-----------------|-----------------------|------------------------|
+        #       |    "trivial"    |  "disconnected" |     "ansatz"    |        "bridge"       |         "total"        |
+        # |-----|-----------------|-----------------|-----------------|-----------------------|------------------------|
+        # | Q0: |  ───|     |───  |  ───|     |───  |  ───|     |───  |  ───|     |───■─────  |  ───|     |───■─────── |
+        # | Q1: |  ───|  G  |───  |  ───|  G  |───  |  ───|     |───  |  ───|  G  |───│─────  |  ───|  G  |───│─■───── |
+        # | Q2: |  ───|     |───  |  ───|     |───  |  ───|  G  |───  |  ───|     |───│─■───  |  ───|     |───│─│─■─── |
+        # |     |                 |                 |     |     |     |               │ │     |               │ │ │    |
+        # | A:  |  ─────────────  |  ────X...X────  |  ───|     |───  |  ────X...X────■─■───  |  ────X...X────■─■─■─── |
+        # |     |                 |                 |                 |                       |                        |
+        # |     |        or       |       or        |         or      |          or           |          or            |
+        # |     |                 |                 |                 |                       |                        |
+        # |  M  |                 |                 |                 |      Q0──Q1──Q2       |      Q0──Q1──Q2        |
+        # |  A  |  Q0──Q1──Q2  A  |  Q0──Q1──Q2  A  |  Q0──Q1──Q2──A  |      │       │        |      │   │   │         |
+        # |  P  |                 |                 |                 |      A────────        |      A────────         |
+        # |-----|-----------------|-----------------|-----------------|-----------------------|------------------------|
+        #
         #######################################################################
-        self.system_size: int = 3  # Number of qubits to study (without choi or ancilla)
-        self.extra_ancilla: bool = True  # If to include an extra ancilla: #True # False
-        self.ancilla_mode: Optional[Literal["pass", "project", "trace_out"]] = "project"  # Ancilla mode from gen to dis
-        self.ancilla_topology: Optional[Literal["ansatz", "bridge", "total"]] = "ansatz"  # Connectivity for the ancilla
-        # TODO: Make handling of ancilla_mode more efficient, by never creating ancilla in Target.
+        self.system_size: int = 4
+        self.extra_ancilla: bool = False
+        self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "trace"
+        self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "ansatz"
 
         #######################################################################
+        # -----------------------
         # GENERATOR CONFIGURATION
+        # -----------------------
+        #   - gen_layers: Number of layers in the generator ansatz (default: ~4)
+        #
+        #   - gen_ansatz: Ansatz type for generator:
+        #       + "XX_YY_ZZ_Z": 2 body X, 2 body Y, 2 body Z and 1 body Z terms.
+        #       + "ZZ_X_Z": 2 body Z, 1 body X and 1 body Z terms.
+        #
         #######################################################################
-        self.gen_layers: int = 4  # Number of layers in the Generator ansatz: #20 #15 #10 #4 #3 #2 ...
-        self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "XX_YY_ZZ_Z"  # Ansatz for the Generator
+        self.gen_layers: int = 1  # 20 #15 #10 #4 #3 #2 ...
+        self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "XX_YY_ZZ_Z"
 
         #######################################################################
+        # ---------------------
         # TARGET CONFIGURATION
+        # ---------------------
+        #   - target_hamiltonian: Target Hamiltonian type:
+        #       + "cluster_h": Cluster Hamiltonian (default).
+        #       + "rotated_surface_h": Rotated surface code (only for squared sizes: 4, 9, 16...).
+        #       + "custom_h": Custom Hamiltonian terms.
+        #
+        #   - custom_hamiltonian_terms: Custom Hamiltonian terms (only apply if target_hamiltonian is "custom_h").
+        #       + "ZZZ": Adds a 3 body Z term.
+        #       + "ZZ": Adds a 2 body Z term.
+        #       + "Z": Adds a 1 body Z term.
+        #       + "I": Adds a 1 body identity term.
+        #
         #######################################################################
         self.target_hamiltonian: Literal["cluster_h", "rotated_surface_h", "custom_h"] = "cluster_h"
         self.custom_hamiltonian_terms: Optional[list[str]] = ["ZZZ"]  # Custom Terms: ["ZZZ", "ZZ", "Z", "I"]
 
+        #######################################################################
+        # -----------------------------------
+        # MOMENTUM OPTIMIZATION CONFIGURATION
+        # -----------------------------------
+        #   - l_rate: Learning rate for optimizers (default: 0.01)
+        #   - momentum_coeff: Momentum coefficient for optimizers (default: 0.9)
+        #
+        #######################################################################
+        self.l_rate: float = 0.01
+        self.momentum_coeff: float = 0.9
+
         #####################################################################
+        # ------------------------------------
+        # HYPERPARAMETERS for Wasserstein Cost
+        # ------------------------------------
+        #  - lamb, s, cst1, cst2, cst3: Constants for Wasserstein cost and gradient.
+        #
+        #####################################################################
+        self.lamb = float(10)
+        self.s = np.exp(-1 / (2 * self.lamb)) - 1
+        self.cst1 = (self.s / 2 + 1) ** 2
+        self.cst2 = (self.s / 2) * (self.s / 2 + 1)
+        self.cst3 = (self.s / 2) ** 2
+
+        #####################################################################
+        # ----------------------------------
         # SAVING AND LOGGING CONFIGURATION
+        # ---------------------------------
+        #   - several paths for saving outputs.
+        #
         #####################################################################
         # Datetime for current run - initialized once
         self.run_timestamp: str = datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
@@ -75,26 +186,14 @@ class Config:
         self.fid_loss_path: str = f"{self.base_data_path}/fidelities/log_fidelity_loss.txt"
         self.gen_final_params_path: str = f"{self.base_data_path}/gen_final_params/gen_final_params.txt"
 
-        #######################################################################
-        # OPTIMIZATION CONFIGURATION
-        #######################################################################
-        self.l_rate: float = 0.01  # Initial learning rate for optimizers (default: 0.01)
-        self.momentum_coeff: float = 0.9  # Momentum coefficient for optimizers (default: 0.9)
-
-        #####################################################################
-        # HYPERPARAMETERS for Wasserstein Cost Function and Gradient
-        #####################################################################
-        self.lamb = float(10)
-        self.s = np.exp(-1 / (2 * self.lamb)) - 1
-        self.cst1 = (self.s / 2 + 1) ** 2
-        self.cst2 = (self.s / 2) * (self.s / 2 + 1)
-        self.cst3 = (self.s / 2) ** 2
-
     def show_data(self) -> str:
         """Return a dictionary with the current configuration data."""
         return (
             "================================================== \n"
             f"run_timestamp: {self.run_timestamp},\n"
+            f"load_timestamp: {self.load_timestamp},\n"
+            f"type_of_warm_start: {self.type_of_warm_start},\n"
+            f"warm_start_strength: {self.warm_start_strength},\n"
             f"system_size: {self.system_size},\n"
             f"extra_ancilla: {self.extra_ancilla},\n"
             f"ancilla_mode: {self.ancilla_mode},\n"
@@ -123,6 +222,7 @@ CFG = Config()
 # Test Configurations
 #####################################################################
 test_configurations = [
+    # Testing Custom Hamiltonian ZZZ
     {
         "system_size": 2,
         "extra_ancilla": False,
@@ -134,11 +234,12 @@ test_configurations = [
         "custom_hamiltonian_terms": ["ZZZ"],
         "label_suffix": "c1_2q_1l_noanc_XXYYZZZ_CustomH_ZZZ",
     },
+    # Testing extra ancilla with different modes and topologies
     {
         "system_size": 2,
         "extra_ancilla": True,
         "ancilla_mode": "pass",
-        "ancilla_topology": "ansatz",
+        "ancilla_topology": "trivial",
         "epochs": 1,
         "iterations_epoch": 3,
         "gen_layers": 1,
@@ -150,7 +251,7 @@ test_configurations = [
         "system_size": 2,
         "extra_ancilla": True,
         "ancilla_mode": "project",
-        "ancilla_topology": "ansatz",
+        "ancilla_topology": "disconnected",
         "epochs": 2,
         "iterations_epoch": 2,
         "gen_layers": 2,
@@ -161,7 +262,7 @@ test_configurations = [
     {
         "system_size": 3,
         "extra_ancilla": True,
-        "ancilla_mode": "trace_out",
+        "ancilla_mode": "trace",
         "ancilla_topology": "ansatz",
         "epochs": 1,
         "iterations_epoch": 3,
@@ -182,6 +283,7 @@ test_configurations = [
         "target_hamiltonian": "cluster_h",
         "label_suffix": "c5_2q_1l_anc_pass_total_ZZXZ_ClusterH",
     },
+    # Testing rotated surface code Hamiltonian
     {
         "system_size": 4,
         "extra_ancilla": True,
@@ -193,6 +295,49 @@ test_configurations = [
         "gen_ansatz": "ZZ_X_Z",
         "target_hamiltonian": "rotated_surface_h",
         "label_suffix": "c6_2q_1l_anc_project_total_ZZXZ_RotatedSurfaceH",
+    },
+    # Testing model loading:
+    {
+        "system_size": 2,
+        "extra_ancilla": False,
+        "load_timestamp": "2025-06-10__00-12-51",
+        "type_of_warm_start": "none",
+        "warm_start_strength": 0.1,
+        "epochs": 1,
+        "iterations_epoch": 3,
+        "gen_layers": 1,
+        "gen_ansatz": "XX_YY_ZZ_Z",
+        "target_hamiltonian": "cluster_h",
+        "label_suffix": "c7_2q_noanc_load_warmstart_XXYYZZZ_ClusterH",
+    },
+    # Testing model loading with warm start:
+    {
+        "system_size": 2,
+        "extra_ancilla": False,
+        "load_timestamp": "2025-06-10__00-12-51",
+        "type_of_warm_start": "all",
+        "warm_start_strength": 0.1,
+        "epochs": 1,
+        "iterations_epoch": 3,
+        "gen_layers": 1,
+        "gen_ansatz": "XX_YY_ZZ_Z",
+        "target_hamiltonian": "cluster_h",
+        "label_suffix": "c8_2q_noanc_load_warmstart_all_XXYYZZZ_ClusterH",
+    },
+    {
+        "system_size": 2,
+        "extra_ancilla": True,
+        "ancilla_mode": "pass",
+        "ancilla_topology": "ansatz",
+        "load_timestamp": "2025-06-10__00-12-51",
+        "type_of_warm_start": "some",
+        "warm_start_strength": 0.1,
+        "epochs": 1,
+        "iterations_epoch": 3,
+        "gen_layers": 1,
+        "gen_ansatz": "XX_YY_ZZ_Z",
+        "target_hamiltonian": "cluster_h",
+        "label_suffix": "c9_2q_anc_pass_load_warmstart_some_XXYYZZZ_ClusterH",
     },
     # Add more configurations as needed
 ]

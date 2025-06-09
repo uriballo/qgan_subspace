@@ -14,19 +14,34 @@
 """Cost and Fidelity Functions"""
 
 import numpy as np
-from scipy.linalg import expm
 
 from config import CFG
 from qgan.ancilla import get_final_fake_state_for_discriminator, get_final_real_state_for_discriminator
-from qgan.discriminator import Discriminator
-from qgan.generator import Generator
 
 np.random.seed()
 
 
-def compute_cost(
-    gen: Generator, dis: Discriminator, total_real_state: np.ndarray, total_input_state: np.ndarray
-) -> float:
+def get_final_comp_states_for_dis(gen, total_input_state: np.ndarray, total_real_state: np.ndarray) -> np.ndarray:
+    """Get the final fake state for the discriminator
+
+    Args:
+        gen (Generator): the generator.
+        total_input_state (np.ndarray): the input state, which is the maximally entangled state.
+        total_real_state (np.ndarray): the real state, which is the target state.
+
+    Returns:
+        np.ndarray: the final fake state for the discriminator.
+    """
+    Untouched_x_G: np.ndarray = gen.get_Untouched_qubits_and_Gen()
+
+    total_output_state: np.ndarray = np.matmul(Untouched_x_G, total_input_state)
+
+    final_fake_state: np.ndarray = get_final_fake_state_for_discriminator(total_output_state)
+    final_real_state: np.ndarray = get_final_real_state_for_discriminator(total_real_state)
+    return final_fake_state, final_real_state
+
+
+def compute_cost(gen, dis, total_real_state: np.ndarray, total_input_state: np.ndarray) -> float:
     """Calculate the cost function
 
     Args:
@@ -38,27 +53,10 @@ def compute_cost(
     Returns:
         float: the cost function.
     """
-    Untouched_x_G = gen.get_Untouched_qubits_and_Gen()
-    psi = dis.getPsi()
-    phi = dis.getPhi()
+    final_fake_state, final_real_state = get_final_comp_states_for_dis(gen, total_input_state, total_real_state)
+    A, B, psi, phi = dis.get_dis_matrices_rep()
 
-    total_output_state = np.matmul(Untouched_x_G, total_input_state)
-
-    final_fake_state = get_final_fake_state_for_discriminator(total_output_state)
-    final_real_state = get_final_real_state_for_discriminator(total_real_state)
-
-    try:
-        A = expm(float(-1 / CFG.lamb) * phi)
-    except Exception:
-        print("cost function -1/CFG.lamb:\n", (-1 / CFG.lamb))
-        print("size of phi:\n", phi.shape)
-
-    try:
-        B = expm(float(1 / CFG.lamb) * psi)
-    except Exception:
-        print("cost function 1/CFG.lamb:\n", (1 / CFG.lamb))
-        print("size of psi:\n", psi.shape)
-
+    # fmt: off
     term1 = np.matmul(final_fake_state.getH(), np.matmul(A, final_fake_state))
     term2 = np.matmul(final_real_state.getH(), np.matmul(B, final_real_state))
 
@@ -74,20 +72,16 @@ def compute_cost(
     psiterm = np.trace(np.matmul(np.matmul(final_real_state, final_real_state.getH()), psi))
     phiterm = np.trace(np.matmul(np.matmul(final_fake_state, final_fake_state.getH()), phi))
 
-    regterm = np.ndarray.item(
-        CFG.lamb
-        / np.e
-        * (CFG.cst1 * term1 * term2 - CFG.cst2 * term3 * term4 - CFG.cst2 * term5 * term6 + CFG.cst3 * term7 * term8)
-    )
-    # regterm = np.asscalar(
-    #     CFG.lamb / np.e * (CFG.cst1 * term1 * term2 - CFG.cst2 * term3 * term4 - CFG.cst2 * term5 * term6 + CFG.cst3 * term7 * term8))
+    regterm = np.ndarray.item(CFG.lamb / np.e * (CFG.cst1 * term1 * term2 - CFG.cst2 * term3 * term4 - CFG.cst2 * term5 * term6 + CFG.cst3 * term7 * term8))
+    # regterm = np.asscalar(CFG.lamb / np.e * (CFG.cst1 * term1 * term2 - CFG.cst2 * term3 * term4 - CFG.cst2 * term5 * term6 + CFG.cst3 * term7 * term8))
+    # fmt: on
 
     loss = np.real(psiterm - phiterm - regterm)
 
     return loss
 
 
-def compute_fidelity(gen: Generator, total_real_state: np.ndarray, total_input_state: np.ndarray) -> float:
+def compute_fidelity(gen, total_real_state: np.ndarray, total_input_state: np.ndarray) -> float:
     """Calculate the fidelity between target state and fake state
 
     Args:
@@ -98,11 +92,7 @@ def compute_fidelity(gen: Generator, total_real_state: np.ndarray, total_input_s
     Returns:
         float: the fidelity between the target state and the fake state.
     """
-    Untouched_x_G = gen.get_Untouched_qubits_and_Gen()
-    total_output_state = np.matmul(Untouched_x_G, total_input_state)
-
-    final_fake_state = get_final_fake_state_for_discriminator(total_output_state)
-    final_real_state = get_final_real_state_for_discriminator(total_real_state)
+    final_fake_state, final_real_state = get_final_comp_states_for_dis(gen, total_input_state, total_real_state)
 
     return np.abs(np.ndarray.item(np.matmul(final_real_state.getH(), final_fake_state))) ** 2
     # return np.abs(np.asscalar(np.matmul(real_state.getH(), total_final_state))) ** 2
