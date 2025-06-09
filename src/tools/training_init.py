@@ -74,7 +74,7 @@ def run_test_configurations():
         ##############################################################
         valid_keys = dir(CFG)  # Get a list of valid attributes of CFG
         for key, value in config_params.items():
-            if key in valid_keys:
+            if key in valid_keys or key == "label_suffix":
                 setattr(CFG, key, value)
             else:
                 error_msg = f"Invalid configuration key: {key}. This key does not exist in CFG."

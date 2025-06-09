@@ -28,6 +28,17 @@ class Config:
 
         ########################################################################
         # ---------------------
+        # RUNS CONFIGURATION
+        # ---------------------
+        #   - N_initial_exp: Number of initial experiments to run (without change), (default: 20).
+        #   - N_reps_each_init_exp: Number of repetitions for each initial experiment afterwards (with changes), (default: 5).
+        #
+        ########################################################################
+        self.N_initial_exp: int = 20  # TODO:
+        self.N_reps_each_init_exp: int = 5  # TODO:
+
+        ########################################################################
+        # ---------------------
         # TESTING CONFIGURATION
         # ---------------------
         #   - testing: bool: Enables testing mode for running several different quick configurations.

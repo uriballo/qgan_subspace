@@ -43,8 +43,8 @@ class Generator:
         self.ansatz: str = CFG.gen_ansatz
         self.layers: int = CFG.gen_layers
 
-    def __post_init__(self):
-        self.set_qcircuit(get_ansatz_func(CFG.gen_ansatz)(self.qc, self.size, CFG.gen_layers))
+        # Set the ansatz circuit:
+        self.set_qcircuit(get_ansatz_func(self.ansatz)(self.qc, self.size, self.layers))
 
     def set_qcircuit(self, qc: QuantumCircuit):
         self.qc = qc
