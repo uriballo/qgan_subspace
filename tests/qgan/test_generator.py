@@ -16,7 +16,6 @@ class TestGenerator(unittest.TestCase):
         self.assertIsNotNone(self.gen.qc)
 
     def test_update_gen(self):
-        # Dummy objects for dis, total_real_state, total_input_state
         dis = Discriminator()
         total_real_state = np.ones((2**CFG.system_size, 1))
         total_input_state = np.ones((2**CFG.system_size, 1))
