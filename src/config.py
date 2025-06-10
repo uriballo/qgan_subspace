@@ -80,8 +80,8 @@ class Config:
         #   - ratio_step_dis_to_gen: Discriminator to generator training steps, ratio (dis > gen), (default: 1-5).
         #
         #######################################################################
-        self.epochs: int = 2
-        self.iterations_epoch: int = 20
+        self.epochs: int = 5
+        self.iterations_epoch: int = 50
         self.log_every_x_iter: int = 10
         self.max_fidelity: float = 0.99
         self.ratio_step_dis_to_gen: int = 1
@@ -118,7 +118,7 @@ class Config:
         #
         #######################################################################
         self.system_size: int = 2
-        self.extra_ancilla: bool = False
+        self.extra_ancilla: bool = True
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "trace"
         self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "total"
 

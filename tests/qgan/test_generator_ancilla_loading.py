@@ -2,9 +2,9 @@ import unittest
 import os
 import pickle
 import numpy as np
-from src.qgan.generator.generator import Generator
-from src.qgan.generator.ansatz import get_ansatz_func
-from src.config import CFG
+from qgan.generator.generator import Generator
+from qgan.generator.ansatz import get_ansatz_func
+from config import CFG
 
 class TestGeneratorAncillaLoading(unittest.TestCase):
     def setUp(self):

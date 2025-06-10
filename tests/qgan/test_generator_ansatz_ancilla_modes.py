@@ -1,9 +1,9 @@
 import unittest
 import os
 import pickle
-from src.qgan.generator.generator import Generator
-from src.qgan.generator.ansatz import get_ansatz_func
-from src.config import CFG
+from qgan.generator.generator import Generator
+from qgan.generator.ansatz import get_ansatz_func
+from config import CFG
 
 class TestGeneratorAnsatzAncillaModes(unittest.TestCase):
     def test_all_ansatz_types(self):

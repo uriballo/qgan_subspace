@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
-from src.qgan.discriminator import Discriminator
-from src.config import CFG
+from qgan.discriminator import Discriminator
+from config import CFG
 
 class TestDiscriminator(unittest.TestCase):
     def setUp(self):

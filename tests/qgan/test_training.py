@@ -1,5 +1,5 @@
 import unittest
-from src.qgan.training import Training
+from qgan.training import Training
 
 class TestTraining(unittest.TestCase):
     def test_training_init(self):

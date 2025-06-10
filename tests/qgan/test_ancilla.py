@@ -1,5 +1,5 @@
 import unittest
-from src.qgan.ancilla import get_final_fake_state_for_discriminator, get_final_real_state_for_discriminator
+from qgan.ancilla import get_final_fake_state_for_discriminator, get_final_real_state_for_discriminator
 import numpy as np
 
 class TestAncilla(unittest.TestCase):

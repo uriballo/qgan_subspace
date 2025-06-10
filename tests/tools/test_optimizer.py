@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from src.tools.optimizer import MomentumOptimizer
+from tools.optimizer import MomentumOptimizer
 
 class TestMomentumOptimizer(unittest.TestCase):
     def test_compute_grad(self):

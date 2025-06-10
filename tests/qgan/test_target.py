@@ -1,7 +1,7 @@
 import unittest
-from src.qgan.target.target_hamiltonian import get_target_unitary
-from src.qgan.target.target_state import get_maximally_entangled_state, initialize_target_state
-from src.config import CFG
+from qgan.target.target_hamiltonian import get_target_unitary
+from qgan.target.target_state import get_maximally_entangled_state, initialize_target_state
+from config import CFG
 
 class TestTarget(unittest.TestCase):
     def test_get_target_unitary(self):

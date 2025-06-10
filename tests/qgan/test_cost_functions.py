@@ -1,9 +1,13 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
+
 import unittest
 import numpy as np
-from src.qgan.cost_functions import compute_cost, compute_fidelity
-from src.qgan.generator.generator import Generator
-from src.qgan.discriminator import Discriminator
-from src.config import CFG
+from qgan.cost_functions import compute_cost, compute_fidelity
+from qgan.generator.generator import Generator
+from qgan.discriminator import Discriminator
+from config import CFG
 
 class DummyDiscriminator:
     def getPhi(self): return np.eye(2**CFG.system_size)
