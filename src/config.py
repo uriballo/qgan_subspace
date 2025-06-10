@@ -14,7 +14,7 @@
 """the configuration for hamiltonian simulation task"""
 
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 import numpy as np
 
@@ -36,6 +36,15 @@ class Config:
         ########################################################################
         self.N_initial_exp: int = 20  # TODO: For loop twice, first for initial experiments, second for repetitions.
         self.N_reps_each_init_exp: int = 5  # TODO: Change the ancilla mode and topology after the initial experiments.
+        self.reps_new_config: dict[str, Any] = (
+            {
+                "extra_ancilla": True,
+                "ancilla_mode": "pass",
+                "ancilla_topology": "trivial",
+                "type_of_warm_star": "all",
+                "warm_start_strength": 0.1,
+            },
+        )
         # TODO: Also add so that automatically makes the analysis graphs of the improvements, and plots them in folder.
 
         ########################################################################
@@ -119,7 +128,7 @@ class Config:
         #######################################################################
         self.system_size: int = 2
         self.extra_ancilla: bool = False
-        self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "trace"
+        self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "project"
         self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "total"
 
         #######################################################################
