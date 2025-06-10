@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 import os
+from qgan.discriminator import Discriminator
 from qgan.generator.generator import Generator
 from qgan.generator.ansatz import get_ansatz_func
 from config import CFG
@@ -16,10 +17,7 @@ class TestGenerator(unittest.TestCase):
 
     def test_update_gen(self):
         # Dummy objects for dis, total_real_state, total_input_state
-        class DummyDis:
-            def getPhi(self): return np.eye(2**CFG.system_size)
-            def getPsi(self): return np.eye(2**CFG.system_size)
-        dis = DummyDis()
+        dis = Discriminator()
         total_real_state = np.ones((2**CFG.system_size, 1))
         total_input_state = np.ones((2**CFG.system_size, 1))
         try:
