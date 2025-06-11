@@ -44,11 +44,15 @@ def get_maximally_entangled_state(size: int) -> np.ndarray:
     Returns:
         np.ndarray: the maximally entangled state.
     """
-    state = np.zeros(2 ** (2 * size + (1 if CFG.extra_ancilla else 0)), dtype=complex)
+    # Generate the maximally entangled state for the system size
+    state = np.zeros(2 ** (2 * size), dtype=complex)
     dim_register = 2**size
     for i in range(dim_register):
         state[i * dim_register + i] = 1.0
     state /= np.sqrt(dim_register)
+    # Add ancilla qubit at the end, if needed
+    if CFG.extra_ancilla:
+        state = np.kron(state, np.array([1, 0], dtype=complex))  # Ancilla in |0>
     return np.asmatrix(state).T
 
 
