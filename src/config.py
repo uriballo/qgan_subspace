@@ -129,7 +129,10 @@ class Config:
         self.system_size: int = 2
         self.extra_ancilla: bool = True
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "project"
+        # TODO: [FUTURE] Implement "project" with norm somewhere (pass unormalized state, or add a penalizer in cost?).
+        # TODO: [FUTURE] Decide what to do with trace (work with rho, instead than sampling?).
         self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "total"
+        # TODO: [URGENT] Try "project" and "total" and see if you observe any difference in the results, to Ayaka.
 
         #######################################################################
         # -----------------------

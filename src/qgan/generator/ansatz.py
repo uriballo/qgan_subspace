@@ -58,6 +58,8 @@ def construct_qcircuit_XX_YY_ZZ_Z(qc: QuantumCircuit, size: int, layer: int) -> 
                 for gate in entg_list:
                     qc.add_gate(QuantumGate(gate, 0, size, angle=0))
                     qc.add_gate(QuantumGate(gate, size - 1, size, angle=0))
+                    # TODO: Check that adding a gate in last qubit ("size") works correctly
+                    # with how we define the ancilla qubit in our arrays and matrices.
 
     # Make uniform random angles for the gates (0 to 2*pi)
     theta = np.random.uniform(0, 2 * np.pi, len(qc.gates))
