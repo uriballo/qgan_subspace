@@ -101,7 +101,7 @@ class Generator:
         #######################################################################
         # Get the current Generator and Discriminator states:
         #######################################################################
-        final_gen_state, final_target_state = get_final_comp_states_for_dis(self, total_input_state, total_target_state)
+        final_target_state, final_gen_state = get_final_comp_states_for_dis(self, total_target_state, total_input_state)
         A, B, _, phi = dis.get_dis_matrices_rep()
 
         grad_g_psi, grad_g_phi, grad_g_reg = [], [], []

@@ -4,37 +4,42 @@ import pickle
 import numpy as np
 from qgan.discriminator import Discriminator
 from config import CFG
+from tools.data.data_managers import save_model
 
 class TestDiscriminatorAncillaLoading(unittest.TestCase):
     def setUp(self):
         self.herm = [np.eye(2)]*4
-        self.cfg_no_ancilla = CFG
-        self.cfg_no_ancilla.extra_ancilla = False
-        self.cfg_no_ancilla.system_size = 2
-        self.dis_no_ancilla = Discriminator(self.herm, self.cfg_no_ancilla.system_size)
-        self.cfg_with_ancilla = CFG
-        self.cfg_with_ancilla.extra_ancilla = True
-        self.cfg_with_ancilla.system_size = 2
-        self.dis_with_ancilla = Discriminator(self.herm, self.cfg_with_ancilla.system_size + 1)
+        CFG.extra_ancilla = False
+        CFG.system_size = 2
+        self.dis_no_ancilla = Discriminator()
+        save_model(self.dis_no_ancilla, "tests/qgan/test_dis_no_ancilla.pkl")
 
+        CFG.extra_ancilla = True
+        CFG.ancilla_mode = "pass"
+        self.dis_ancilla = Discriminator()
+        save_model(self.dis_ancilla, "tests/qgan/test_dis_ancilla.pkl")
+        
+    # Test that you can load models with different ancillas:
     def test_load_from_no_ancilla_to_with_ancilla(self):
         path = "test_dis_no_ancilla.pkl"
         with open(path, "wb") as f:
             pickle.dump(self.dis_no_ancilla, f)
-        result = self.dis_with_ancilla.load_model_params(path)
+        result = self.dis_ancilla.load_model_params(path)
         self.assertTrue(result)
         os.remove(path)
 
     def test_load_from_with_ancilla_to_no_ancilla(self):
         path = "test_dis_with_ancilla.pkl"
         with open(path, "wb") as f:
-            pickle.dump(self.dis_with_ancilla, f)
+            pickle.dump(self.dis_ancilla, f)
         result = self.dis_no_ancilla.load_model_params(path)
         self.assertTrue(result)
         os.remove(path)
 
+    # But you cannot load models with different Target sizes
     def test_load_incompatible(self):
-        dis_other = Discriminator(self.herm, 3)
+        CFG.system_size = 3  # Different system size
+        dis_other = Discriminator()
         path = "test_dis_incompatible.pkl"
         with open(path, "wb") as f:
             pickle.dump(dis_other, f)

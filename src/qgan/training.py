@@ -18,7 +18,7 @@ from datetime import datetime
 import numpy as np
 
 from config import CFG
-from qgan.cost_functions import compute_cost, compute_fidelity, compute_fidelity_and_cost, get_final_comp_states_for_dis
+from qgan.cost_functions import compute_fidelity_and_cost
 from qgan.discriminator import Discriminator
 from qgan.generator import Generator
 from qgan.target import get_maximally_entangled_state, initialize_target_state
@@ -38,10 +38,10 @@ class Training:
     def __init__(self):
         """Builds the configuration for the Training. You might wanna comment/discomment lines, for changing the model."""
 
-        self.total_input_state: np.ndarray = get_maximally_entangled_state(CFG.system_size)
+        self.total_input_state: np.matrix = get_maximally_entangled_state(CFG.system_size)
         """Preparation of max. entgl. state with ancilla qubit if needed."""
 
-        self.total_target_state: np.ndarray = initialize_target_state(self.total_input_state)
+        self.total_target_state: np.matrix = initialize_target_state(self.total_input_state)
         """Prepare the target state, with the size and Target unitary defined in config."""
 
         self.gen: Generator = Generator()
@@ -88,10 +88,10 @@ class Training:
                 ###########################################################
                 # Compute fidelity and loss
                 ###########################################################
-                fid, cost = compute_fidelity_and_cost(
+                fidelities[epoch_iter], losses[epoch_iter] = compute_fidelity_and_cost(
                     self.gen, self.dis, self.total_target_state, self.total_input_state
                 )
-                # fidelities[epoch_iter], losses[epoch_iter] =
+
                 ###########################################################
                 # Every X iterations, log data
                 ###########################################################

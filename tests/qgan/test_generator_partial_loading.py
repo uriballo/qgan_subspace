@@ -8,11 +8,10 @@ from config import CFG
 
 class TestGeneratorPartialLoading(unittest.TestCase):
     def setUp(self):
-        self.cfg = CFG
-        self.cfg.system_size = 2
-        self.cfg.gen_layers = 1
-        self.gen = Generator(self.cfg.system_size)
-        self.gen.set_qcircuit(get_ansatz_func(self.cfg.gen_ansatz)(self.gen.qc, self.gen.size, self.cfg.gen_layers))
+        CFG.system_size = 2
+        CFG.gen_layers = 1
+        CFG.extra_ancilla = False
+        self.gen = Generator()
 
     def test_partial_angle_loading(self):
         # Save a model with a known angle
@@ -22,8 +21,8 @@ class TestGeneratorPartialLoading(unittest.TestCase):
         with open(path, "wb") as f:
             pickle.dump(self.gen, f)
         # Create a new model with an ancilla (one more qubit)
-        gen_with_ancilla = Generator(self.cfg.system_size + 1)
-        gen_with_ancilla.set_qcircuit(get_ansatz_func(self.cfg.gen_ansatz)(gen_with_ancilla.qc, gen_with_ancilla.size, self.cfg.gen_layers))
+        CFG.extra_ancilla = True
+        gen_with_ancilla = Generator()
         # All angles should be different before loading
         self.assertFalse(all(g.angle == 0.123 for g in gen_with_ancilla.qc.gates))
         # Load

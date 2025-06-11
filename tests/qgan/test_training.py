@@ -1,4 +1,5 @@
 import unittest
+from config import CFG
 from qgan.training import Training
 
 class TestTraining(unittest.TestCase):
@@ -10,11 +11,5 @@ class TestTraining(unittest.TestCase):
         self.assertIsNotNone(t.total_target_state)
 
     def test_training_run(self):
-        t = Training()
-        # Only test that it runs for a few iterations, not full training
-        t.gen.qc.depth = 1  # speed up
-        t.dis.size = 1
-        try:
-            t.run()
-        except Exception as e:
-            self.fail(f"Training.run raised {e}")
+        # No need for this, since I'll do that with running main_testing.py
+        ...

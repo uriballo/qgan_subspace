@@ -5,23 +5,20 @@ import numpy as np
 from qgan.generator.generator import Generator
 from qgan.generator.ansatz import get_ansatz_func
 from config import CFG
+from tools.data.data_managers import save_model
 
 class TestGeneratorAncillaLoading(unittest.TestCase):
     def setUp(self):
         # Create a generator with and without ancilla
-        self.cfg_no_ancilla = CFG
-        self.cfg_no_ancilla.extra_ancilla = False
-        self.cfg_no_ancilla.system_size = 2
-        self.cfg_no_ancilla.gen_layers = 1
-        self.gen_no_ancilla = Generator(self.cfg_no_ancilla.system_size)
-        self.gen_no_ancilla.set_qcircuit(get_ansatz_func(self.cfg_no_ancilla.gen_ansatz)(self.gen_no_ancilla.qc, self.gen_no_ancilla.size, self.cfg_no_ancilla.gen_layers))
-
-        self.cfg_with_ancilla = CFG
-        self.cfg_with_ancilla.extra_ancilla = True
-        self.cfg_with_ancilla.system_size = 2
-        self.cfg_with_ancilla.gen_layers = 1
-        self.gen_with_ancilla = Generator(self.cfg_with_ancilla.system_size + 1)
-        self.gen_with_ancilla.set_qcircuit(get_ansatz_func(self.cfg_with_ancilla.gen_ansatz)(self.gen_with_ancilla.qc, self.gen_with_ancilla.size, self.cfg_with_ancilla.gen_layers))
+        CFG.extra_ancilla = False
+        CFG.system_size = 2
+        CFG.gen_layers = 1
+        self.gen_no_ancilla = Generator()
+        save_model(self.gen_no_ancilla, "tests/qgan/test_gen_no_ancilla.pkl")
+        
+        CFG.extra_ancilla = True
+        self.gen_with_ancilla = Generator()
+        save_model(self.gen_with_ancilla, "tests/qgan/test_gen_with_ancilla.pkl")
 
     def test_load_from_no_ancilla_to_with_ancilla(self):
         # Save no-ancilla model
@@ -45,7 +42,8 @@ class TestGeneratorAncillaLoading(unittest.TestCase):
 
     def test_load_incompatible(self):
         # Change layers to make models incompatible
-        gen_other = Generator(3)
+        CFG.gen_layers = 2
+        gen_other = Generator()
         path = "test_gen_incompatible.pkl"
         with open(path, "wb") as f:
             pickle.dump(gen_other, f)

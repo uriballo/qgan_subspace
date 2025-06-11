@@ -37,10 +37,10 @@ def print_and_train_log(param, file_path):
 #     return model
 
 
-def save_model(gen, file_path):
+def save_model(model, file_path):
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     with open(file_path, "wb+") as file:
-        pickle.dump(gen, file)
+        pickle.dump(model, file)
 
 
 def save_fidelity_loss(fidelities_history, losses_history, file_path):

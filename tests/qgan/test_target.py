@@ -15,8 +15,10 @@ class TestTarget(unittest.TestCase):
         self.assertEqual(len(state.shape), 2)
 
     def test_initialize_target_state(self):
-        unitary = get_target_unitary(CFG.target_hamiltonian, CFG.system_size)
-        input_state = get_maximally_entangled_state(CFG.system_size)
-        state = initialize_target_state(unitary, input_state)
-        self.assertIsNotNone(state)
-        self.assertEqual(state.shape[0], unitary.shape[0])
+        for ancilla in [False, True]:
+            CFG.extra_ancilla = ancilla
+            unitary = get_target_unitary(CFG.target_hamiltonian, CFG.system_size)
+            input_state = get_maximally_entangled_state(CFG.system_size)
+            state = initialize_target_state(input_state)
+            self.assertIsNotNone(state)
+            self.assertEqual(state.shape[0], 2**(unitary.shape[0]+(1 if CFG.extra_ancilla else 0)))

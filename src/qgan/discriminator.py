@@ -103,7 +103,7 @@ class Discriminator:
         ################################################################
         # Get the current Generator and Discriminator states:
         ################################################################
-        final_gen_state, final_target_state = get_final_comp_states_for_dis(gen, total_input_state, total_target_state)
+        final_target_state, final_gen_state = get_final_comp_states_for_dis(gen, total_target_state, total_input_state)
         A, B, _, _ = self.get_dis_matrices_rep()
 
         ####################################################
