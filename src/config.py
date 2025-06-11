@@ -38,15 +38,6 @@ class Config:
         self.N_reps_each_init_exp: int = 5  # TODO: Change the ancilla mode and topology after the initial experiments.
         # TODO: Also add so that automatically makes the analysis graphs of the improvements, and plots them in folder.
 
-        ########################################################################
-        # ---------------------
-        # TESTING CONFIGURATION
-        # ---------------------
-        #   - testing: bool: Enables testing mode for running several different quick configurations.
-        #
-        ########################################################################
-        self.testing: bool = False
-
         #######################################################################
         # ---------------------
         # LOADING CONFIGURATION
@@ -188,9 +179,12 @@ class Config:
         #####################################################################
         # Datetime for current run - initialized once
         self.run_timestamp: str = datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
-        self.base_data_path: str = f"./generated_data/{'TESTING/' if self.testing else ''}{self.run_timestamp}"
-
+        self.base_data_path: str = f"./generated_data/{self.run_timestamp}"
         # File path settings (dynamic based on run_timestamp and system_size)
+        self.set_results_paths()
+
+    def set_results_paths(self) -> None:
+        """Set the paths for saving results based on the base data path."""
         self.figure_path: str = f"{self.base_data_path}/figures"
         self.model_gen_path: str = f"{self.base_data_path}/saved_model/model-gen(hs).pkl"
         self.model_dis_path: str = f"{self.base_data_path}/saved_model/model-dis(hs).pkl"

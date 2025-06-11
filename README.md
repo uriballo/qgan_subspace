@@ -36,7 +36,10 @@ Now you can run all necessary commands (run, tests, etc.) within this environmen
 
 4. **Testing**:
     If you need, to test anything (development), there are 2 ways:
-    - Set the flag `testing=True` in `config.py`, and add any case you want to run in the end of the file, to the `test_configurations` dictionary.
+    - Add any concrete case you want to run in the `test_configurations` dictionary at the end of `config.py`, and run:
+    ```
+    .venv/bin/python src/main_testing.py
+    ```
     - There will also be unit test for parts of the code, to execute them, run:
     ```
     PYTHONPATH=src .venv/bin/pytest
