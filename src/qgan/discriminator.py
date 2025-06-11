@@ -32,17 +32,20 @@ cs = -1 / lamb
 class Discriminator:
     """Discriminator class for the Quantum GAN.
 
-    Relevant parameters/matrices:
+    Representation with coeff. in front of each herm operator (N x 4):
+    ------------------------------------------------------------------
+        - alpha: Parameters for the real part of the discriminator (coeff for I, X, Y, Z).
+        - beta: Parameters for the imaginary part of the discriminator (coeff for I, X, Y, Z).
 
-        psi: Real part of the discriminator (matrix).
-        phi: Imaginary part of the discriminator (matrix).
+    Representation with matrices, spanning the full space  (2^N x 2^N):
+    -------------------------------------------------------------------
+        - psi: Real part of the discriminator (matrix).
+        - phi: Imaginary part of the discriminator (matrix).
 
-        A: -1/lamb * phi
-        B: 1/lamb * psi
-
-        alpha: Parameters for the real part of the discriminator (coeff for I, X, Y, Z).
-        beta: Parameters for the imaginary part of the discriminator (coeff for Ij, Xj, Yj, Zj).
-
+    For computing the gradients, we use the following matrices:
+    -----------------------------------------------------------
+        - A: -1/lamb * phi
+        - B: 1/lamb * psi
     """
 
     def __init__(self):
@@ -69,8 +72,13 @@ class Discriminator:
     def getPsiPhi(self) -> np.ndarray:
         """Get matrix representation of real (psi) & imaginary (phi) part of the discriminator
 
-        Size of psi/phi (ndarray) = [num_qubit, 4]
+        Size of alpha/beta params (coefficients for each herm) = (num_qubit, 4)
             0: I,   1: X,   2: Y,   3: Z
+
+        The Psi and Phi matrices are constructed by taking the Kronecker product of the individual
+        hermitian operators for each qubit, scaled by the corresponding alpha and beta parameters.
+
+        Therefore, the Psi and Phi size is = (2^N, 2^N), where N is the num_qubits in the discriminator.
 
         Returns:
             tuple[np.ndarray]: Tuple of Psi and Phi, matrix representations of real and imaginary part of discriminator.
@@ -78,54 +86,55 @@ class Discriminator:
         psi, phi = 1, 1
         for i in range(self.size):
             psi_i, phi_i = np.zeros_like(self.herm[0], dtype=complex), np.zeros_like(self.herm[0], dtype=complex)
-            for j in range(len(self.herm)):
-                psi_i += self.alpha[i][j] * self.herm[j]
-                phi_i += self.beta[i][j] * self.herm[j]
+            for j, herm_j in enumerate(self.herm):
+                psi_i += self.alpha[i][j] * herm_j
+                phi_i += self.beta[i][j] * herm_j
             psi, phi = np.kron(psi, psi_i), np.kron(phi, phi_i)
         return psi, phi
 
-    def update_dis(self, gen, total_real_state: np.ndarray, total_input_state: np.ndarray):
+    def update_dis(self, gen, total_target_state: np.ndarray, total_input_state: np.ndarray):
         """Update the discriminator parameters (alpha, beta) using the gradients.
 
         Args:
             gen (Generator): The generator object.
-            total_real_state (np.ndarray): The total real state of the system.
+            total_target_state (np.ndarray): The total target state of the system.
             total_input_state (np.ndarray): The total input state of the system.
         """
+        ################################################################
+        # Get the current Generator and Discriminator states:
+        ################################################################
+        final_target_state, final_gen_state = get_final_comp_states_for_dis(gen, total_target_state, total_input_state)
+        A, B, _, _ = self.get_dis_matrices_rep()
+
         ####################################################
         # Update alpha
         ####################################################
-        grad_alpha = self._compute_grad(gen, total_real_state, total_input_state, "alpha")
+        grad_alpha = self._compute_grad(final_target_state, final_gen_state, A, B, "alpha")
         new_alpha = self.optimizer_psi.move_in_grad(self.alpha, grad_alpha, "max")
 
         ####################################################
         # Update beta
         ####################################################
-        grad_beta = self._compute_grad(gen, total_real_state, total_input_state, "beta")
+        grad_beta = self._compute_grad(final_target_state, final_gen_state, A, B, "beta")
         new_beta = self.optimizer_phi.move_in_grad(self.beta, grad_beta, "max")
 
         # Update the parameters later, to avoid affecting gradient computations:
         self.alpha = new_alpha
         self.beta = new_beta
 
-    def _compute_grad(self, gen, total_real_state: np.ndarray, total_input_state: np.ndarray, param: str) -> np.ndarray:
+    def _compute_grad(self, final_target_state, final_gen_state, A, B, param: str) -> np.ndarray:
         """Calculate the gradient of the discriminator with respect to the param (alpha or beta).
 
         Args:
-            gen (Generator): The generator object.
-            total_real_state (np.ndarray): The total real state of the system.
-            total_input_state (np.ndarray): The total input state of the system.
+            final_target_state (np.ndarray): The final target state of the system.
+            final_gen_state (np.ndarray): The final gen state of the system.
+            A (np.ndarray): The matrix representation of the real part of the discriminator.
+            B (np.ndarray): The matrix representation of the imaginary part of the discriminator.
             param (str): The parameter to compute the gradient for ("alpha" or "beta").
 
         Returns:
             np.ndarray: The gradient of the discriminator with respect to beta.
         """
-        ################################################################
-        # Get the current Generator and Discriminator states:
-        ################################################################
-        final_fake_state, final_real_state = get_final_comp_states_for_dis(gen, total_input_state, total_real_state)
-        A, B, _, _ = self.get_dis_matrices_rep()
-
         ################################################################
         # Initialize gradients on 0:
         #################################################################
@@ -138,7 +147,7 @@ class Discriminator:
             # Compute the alpha or beta gradient step:
             ############################################################
             grad_step = DiscriminatorGradientStep(self).grad_step(param)
-            gradpsi_list, gradphi_list, gradreg_list = grad_step(final_fake_state, final_real_state, A, B, type)
+            gradpsi_list, gradphi_list, gradreg_list = grad_step(final_target_state, final_gen_state, A, B, type)
 
             # Add grad of psi, phi and reg terms
             grad_psi_term[:, type] = np.asarray(gradpsi_list)
@@ -261,21 +270,14 @@ class DiscriminatorGradientStep:
         """
         return self._grad_alpha if param == "alpha" else self._grad_beta if param == "beta" else None
 
-    def _grad_alpha(
-        self,
-        final_fake_state: np.ndarray,
-        final_real_state: np.ndarray,
-        A: np.ndarray,
-        B: np.ndarray,
-        type: str,
-    ) -> np.ndarray:
+    def _grad_alpha(self, final_target_state, final_gen_state, A: np.ndarray, B: np.ndarray, type: str) -> np.ndarray:
         """Calculate a step of the gradient of the discriminator with respect to alpha.
 
         Args:
-            final_fake_state (np.ndarray): The final fake state of the system.
-            final_real_state (np.ndarray): The final real state of the system.
+            final_target_state (np.ndarray): The final target state of the system.
+            final_gen_state (np.ndarray): The final gen state of the system.
             A (np.ndarray): The matrix representation of the real part of the discriminator.
-            B (np.ndarray): The matrix representation of the fake part of the discriminator.
+            B (np.ndarray): The matrix representation of the imaginary part of the discriminator.
             type (str): The type of hermitian operator (0: I, 1: X, 2: Y, 3: Z).
 
         Returns:
@@ -289,8 +291,8 @@ class DiscriminatorGradientStep:
             ##################################################################
             # Compute the gradient of psi with respect to alpha
             ##################################################################
-            gradpsi_list.append(np.ndarray.item(np.matmul(final_real_state.getH(), np.matmul(grad_psi, final_real_state))))
-            # gradpsi_list.append(np.asscalar(np.matmul(real_state.getH(), np.matmul(grad_psi, real_state))))
+            gradpsi_list.append(np.ndarray.item(np.matmul(final_target_state.getH(), np.matmul(grad_psi, final_target_state))))
+            # gradpsi_list.append(np.asscalar(np.matmul(target_state.getH(), np.matmul(grad_psi, target_state))))
 
             ##################################################################
             # No gradient of phi with respect to alpha, so append 0
@@ -300,24 +302,24 @@ class DiscriminatorGradientStep:
             ##################################################################
             # Compute the regularization terms:
             ##################################################################
-            term1 = cs * np.matmul(final_fake_state.getH(), np.matmul(A, final_fake_state)) * np.matmul(final_real_state.getH(), np.matmul(grad_psi, np.matmul(B, final_real_state)))
-            term2 = cs * np.matmul(final_fake_state.getH(), np.matmul(grad_psi, np.matmul(B, final_real_state))) * np.matmul(final_real_state.getH(), np.matmul(A, final_fake_state))
-            term3 = cs * np.matmul(final_fake_state.getH(), np.matmul(A, final_real_state)) * np.matmul(final_real_state.getH(), np.matmul(grad_psi, np.matmul(B, final_fake_state)))
-            term4 = cs * np.matmul(final_fake_state.getH(), np.matmul(grad_psi, np.matmul(B, final_fake_state))) * np.matmul(final_real_state.getH(), np.matmul(A, final_real_state))
+            term1 = cs * np.matmul(final_gen_state.getH(), np.matmul(A, final_gen_state)) * np.matmul(final_target_state.getH(), np.matmul(grad_psi, np.matmul(B, final_target_state)))
+            term2 = cs * np.matmul(final_gen_state.getH(), np.matmul(grad_psi, np.matmul(B, final_target_state))) * np.matmul(final_target_state.getH(), np.matmul(A, final_gen_state))
+            term3 = cs * np.matmul(final_gen_state.getH(), np.matmul(A, final_target_state)) * np.matmul(final_target_state.getH(), np.matmul(grad_psi, np.matmul(B, final_gen_state)))
+            term4 = cs * np.matmul(final_gen_state.getH(), np.matmul(grad_psi, np.matmul(B, final_gen_state))) * np.matmul(final_target_state.getH(), np.matmul(A, final_target_state))
             gradreg_list.append(np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4)))
             # gradreg_list.append(np.asscalar(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4)))
         # fmt: on
 
         return gradpsi_list, gradphi_list, gradreg_list
 
-    def _grad_beta(self, final_fake_state, final_real_state, A: np.ndarray, B: np.ndarray, type: str):
+    def _grad_beta(self, final_target_state, final_gen_state, A: np.ndarray, B: np.ndarray, type: str):
         """Calculate a step of the gradient of the discriminator with respect to beta.
 
         Args:
-            final_fake_state (np.ndarray): The final fake state of the system.
-            final_real_state (np.ndarray): The final real state of the system.
+            final_target_state (np.ndarray): The final target state of the system.
+            final_gen_state (np.ndarray): The final gen state of the system.
             A (np.ndarray): The matrix representation of the real part of the discriminator.
-            B (np.ndarray): The matrix representation of the fake part of the discriminator.
+            B (np.ndarray): The matrix representation of the imaginary part of the discriminator..
             type (str): The type of hermitian operator (0: I, 1: X, 2: Y, 3: Z).
 
         Returns:
@@ -336,16 +338,16 @@ class DiscriminatorGradientStep:
             ##################################################################
             # Compute the gradient of phi with respect to beta
             ##################################################################
-            gradphi_list.append(np.ndarray.item(np.matmul(final_fake_state.getH(), np.matmul(grad_phi, final_fake_state))))
-            # gradphi_list.append(np.asscalar(np.matmul(total_fake_state.getH(), np.matmul(grad_phi, total_fake_state))))
+            gradphi_list.append(np.ndarray.item(np.matmul(final_gen_state.getH(), np.matmul(grad_phi, final_gen_state))))
+            # gradphi_list.append(np.asscalar(np.matmul(total_gen_state.getH(), np.matmul(grad_phi, total_gen_state))))
 
             ##################################################################
             # Compute the regularization terms:
             ##################################################################
-            term1 = cs * np.matmul(final_fake_state.getH(), np.matmul(grad_phi, np.matmul(A, final_fake_state))) * np.matmul(final_real_state.getH(), np.matmul(B, final_real_state))
-            term2 = cs * np.matmul(final_fake_state.getH(), np.matmul(B, final_real_state)) * np.matmul(final_real_state.getH(), np.matmul(grad_phi, np.matmul(A, final_fake_state)))
-            term3 = cs * np.matmul(final_fake_state.getH(), np.matmul(grad_phi, np.matmul(A, final_real_state))) * np.matmul(final_real_state.getH(), np.matmul(B, final_fake_state))
-            term4 = cs * np.matmul(final_fake_state.getH(), np.matmul(B, final_fake_state)) * np.matmul(final_real_state.getH(), np.matmul(grad_phi, np.matmul(A, final_real_state)))
+            term1 = cs * np.matmul(final_gen_state.getH(), np.matmul(grad_phi, np.matmul(A, final_gen_state))) * np.matmul(final_target_state.getH(), np.matmul(B, final_target_state))
+            term2 = cs * np.matmul(final_gen_state.getH(), np.matmul(B, final_target_state)) * np.matmul(final_target_state.getH(), np.matmul(grad_phi, np.matmul(A, final_gen_state)))
+            term3 = cs * np.matmul(final_gen_state.getH(), np.matmul(grad_phi, np.matmul(A, final_target_state))) * np.matmul(final_target_state.getH(), np.matmul(B, final_gen_state))
+            term4 = cs * np.matmul(final_gen_state.getH(), np.matmul(B, final_gen_state)) * np.matmul(final_target_state.getH(), np.matmul(grad_phi, np.matmul(A, final_target_state)))
             gradreg_list.append(np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4)))
             # gradreg_list.append(np.asscalar(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4)))
         # fmt: on
@@ -381,8 +383,8 @@ class DiscriminatorGradientStep:
                     grad_psi_phi_i = self.dis.herm[type]
                 else:
                     grad_psi_phi_i = np.zeros_like(self.dis.herm[0], dtype=complex)
-                    for k in range(len(self.dis.herm)):
-                        grad_psi_phi_i += alpha_or_beta[j][k] * self.dis.herm[k]
+                    for k, herm_k in enumerate(self.dis.herm):
+                        grad_psi_phi_i += alpha_or_beta[j][k] * herm_k
                 grad_psi_phi_I = np.kron(grad_psi_phi_I, grad_psi_phi_i)
             grad_psi_phi.append(grad_psi_phi_I)
         return grad_psi_phi

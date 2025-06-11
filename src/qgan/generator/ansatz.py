@@ -63,8 +63,8 @@ def construct_qcircuit_XX_YY_ZZ_Z(qc: QuantumCircuit, size: int, layer: int) -> 
 
     # Make uniform random angles for the gates (0 to 2*pi)
     theta = np.random.uniform(0, 2 * np.pi, len(qc.gates))
-    for i in range(len(qc.gates)):
-        qc.gates[i].angle = theta[i]
+    for i, gate_i in enumerate(qc.gates):
+        gate_i.angle = theta[i]
 
     return qc
 
@@ -108,8 +108,8 @@ def construct_qcircuit_ZZ_X_Z(qc: QuantumCircuit, size: int, layer: int) -> Quan
 
     # Make uniform random angles for the gates (0 to 2*pi)
     theta = np.random.uniform(0, 2 * np.pi, len(qc.gates))
-    for i in range(len(qc.gates)):
-        qc.gates[i].angle = theta[i]
+    for i, gate_i in enumerate(qc.gates):
+        gate_i.angle = theta[i]
 
     return qc
 
