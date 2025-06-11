@@ -42,7 +42,7 @@ class TestAncilla(unittest.TestCase):
         CFG.ancilla_mode = "project"
         result = get_final_target_state_for_discriminator(state)
         self.assertIsNotNone(result)
-        self.assertEqual(result.shape[0], 2 ** (CFG.system_size * 2))  # size unchahalvednged
+        self.assertEqual(result.shape[0], 2 ** (CFG.system_size * 2))  # size halved
         self.assertEqual(result.shape[1], 1)
         assert (result == state[::2]).all() # Keep even indices (no need to renormalize)
 
