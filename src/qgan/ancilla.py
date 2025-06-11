@@ -111,6 +111,7 @@ def get_final_target_state_for_discriminator(total_output_state: np.ndarray) -> 
             return total_final_state
         if CFG.ancilla_mode in ["project", "trace"]:
             return total_final_state[::2]  # Return only the system part (project ancilla to zero)
-            # No need to renorm, as Ancilla is not used in Target, and total state should be T x |0>.
+            # No need to renorm or trace, as Ancilla is not used in Target, and total state should be T x |0>.
+            # TODO: Check that this is actually the case, maybe add a test for this.
         raise ValueError(f"Unknown ancilla_mode: {CFG.ancilla_mode}")
     return total_final_state
