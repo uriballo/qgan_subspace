@@ -44,6 +44,3 @@ class TestGeneratorAnsatzAncillaModes(unittest.TestCase):
             self.assertTrue(gen2.load_model_params(path))
             self.assertTrue(any(g.angle == 0.456 for g in gen2.qc.gates))
             os.remove(path)
-
-if __name__ == "__main__":
-    unittest.main()

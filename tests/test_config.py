@@ -18,6 +18,3 @@ class TestConfig(unittest.TestCase):
         self.assertIsInstance(cfg.log_path, str)
         self.assertIsInstance(cfg.fid_loss_path, str)
         self.assertIsInstance(cfg.gen_final_params_path, str)
-
-if __name__ == "__main__":
-    unittest.main()

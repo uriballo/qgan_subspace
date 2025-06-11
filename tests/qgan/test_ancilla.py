@@ -14,6 +14,3 @@ class TestAncilla(unittest.TestCase):
         result = get_final_real_state_for_discriminator(state)
         self.assertIsNotNone(result)
         self.assertEqual(result.shape[1], 1)
-
-if __name__ == "__main__":
-    unittest.main()

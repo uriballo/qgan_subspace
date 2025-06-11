@@ -23,6 +23,3 @@ class TestCostFunctions(unittest.TestCase):
         total_input_state = np.ones((2**CFG.system_size, 1))
         result = compute_cost(gen, dis, total_target_state, total_input_state)
         self.assertIsInstance(result, float)
-
-if __name__ == "__main__":
-    unittest.main()

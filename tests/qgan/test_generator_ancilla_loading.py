@@ -52,6 +52,3 @@ class TestGeneratorAncillaLoading(unittest.TestCase):
         result = self.gen_no_ancilla.load_model_params(path)
         self.assertFalse(result)
         os.remove(path)
-
-if __name__ == "__main__":
-    unittest.main()

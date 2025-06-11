@@ -5,17 +5,14 @@ from config import CFG
 
 class TestDiscriminator(unittest.TestCase):
     def setUp(self):
-        self.dis = Discriminator([np.eye(2)]*4, CFG.system_size)
+        self.dis = Discriminator()
 
     def test_init(self):
-        self.assertEqual(self.dis.size, CFG.system_size)
-        self.assertEqual(self.dis.alpha.shape[0], CFG.system_size)
-        self.assertEqual(self.dis.beta.shape[0], CFG.system_size)
+        dis_size=CFG.system_size * 2 + (1 if CFG.extra_ancilla and CFG.ancilla_mode == "pass" else 0)
+        self.assertEqual(self.dis.size, dis_size)
+        self.assertEqual(self.dis.alpha.shape[0], dis_size)
+        self.assertEqual(self.dis.beta.shape[0], dis_size)
 
     def test_getPsi_getPhi(self):
-        psi = self.dis.getPsi()
-        phi = self.dis.getPhi()
-        self.assertEqual(psi.shape, phi.shape)
-
-if __name__ == "__main__":
-    unittest.main()
+        psi, phi = self.dis.getPsiPhi()
+        assert psi.shape == phi.shape == self.dis.alpha.shape == self.dis.beta.shape

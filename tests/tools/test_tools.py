@@ -14,6 +14,3 @@ class TestTools(unittest.TestCase):
             loading_helpers.load_models_if_specified(Training())
         except Exception as e:
             self.fail(f"load_models_if_specified raised {e}")
-
-if __name__ == "__main__":
-    unittest.main()

@@ -20,6 +20,3 @@ class TestTarget(unittest.TestCase):
         state = initialize_target_state(unitary, input_state)
         self.assertIsNotNone(state)
         self.assertEqual(state.shape[0], unitary.shape[0])
-
-if __name__ == "__main__":
-    unittest.main()

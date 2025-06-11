@@ -32,6 +32,3 @@ class TestGenerator(unittest.TestCase):
             pickle.dump(self.gen, f)
         self.assertTrue(self.gen.load_model_params(path))
         os.remove(path)
-
-if __name__ == "__main__":
-    unittest.main()

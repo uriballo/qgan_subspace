@@ -31,6 +31,3 @@ class TestGeneratorPartialLoading(unittest.TestCase):
         # At least some angles should now be 0.123 (for gates not involving ancilla)
         self.assertTrue(any(g.angle == 0.123 for g in gen_with_ancilla.qc.gates))
         os.remove(path)
-
-if __name__ == "__main__":
-    unittest.main()

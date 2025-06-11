@@ -11,6 +11,3 @@ class TestMomentumOptimizer(unittest.TestCase):
         self.assertEqual(new_theta.shape, theta.shape)
         new_theta2 = optimizer.compute_grad(theta, grad, "max")
         self.assertEqual(new_theta2.shape, theta.shape)
-
-if __name__ == "__main__":
-    unittest.main()

@@ -16,6 +16,3 @@ class TestPlotHub(unittest.TestCase):
             plot_hub.plt_fidelity_vs_iter(fidelities, losses, CFG, 1)
         except Exception as e:
             self.fail(f"plt_fidelity_vs_iter raised {e}")
-
-if __name__ == "__main__":
-    unittest.main()

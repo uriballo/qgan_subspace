@@ -18,6 +18,3 @@ class TestTraining(unittest.TestCase):
             t.run()
         except Exception as e:
             self.fail(f"Training.run raised {e}")
-
-if __name__ == "__main__":
-    unittest.main()
