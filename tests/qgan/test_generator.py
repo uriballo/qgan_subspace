@@ -17,10 +17,10 @@ class TestGenerator(unittest.TestCase):
 
     def test_update_gen(self):
         dis = Discriminator()
-        total_real_state = np.ones((2**CFG.system_size, 1))
+        total_target_state = np.ones((2**CFG.system_size, 1))
         total_input_state = np.ones((2**CFG.system_size, 1))
         try:
-            self.gen.update_gen(dis, total_real_state, total_input_state)
+            self.gen.update_gen(dis, total_target_state, total_input_state)
         except Exception as e:
             self.fail(f"update_gen raised {e}")
 

@@ -108,7 +108,7 @@ class Config:
         # |-----|-----------------|-----------------|-----------------|-----------------------|------------------------|
         #
         #############################################################################################
-        self.system_size: int = 2
+        self.system_size: int = 3
         self.extra_ancilla: bool = True
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "trace"
         self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "total"

@@ -19,7 +19,7 @@ import pickle
 import numpy as np
 
 from config import CFG
-from qgan.ancilla import get_final_fake_state_for_discriminator
+from qgan.ancilla import get_final_gen_state_for_discriminator
 from qgan.cost_functions import get_final_comp_states_for_dis
 from qgan.discriminator import Discriminator
 from qgan.generator.ansatz import get_ansatz_func
@@ -62,12 +62,12 @@ class Generator:
         """
         return np.kron(Identity(CFG.system_size), self.qc.get_mat_rep())
 
-    def update_gen(self, dis: Discriminator, total_real_state: np.ndarray, total_input_state: np.ndarray):
+    def update_gen(self, dis: Discriminator, total_target_state: np.ndarray, total_input_state: np.ndarray):
         """Update the generator parameters (angles) using the optimizer.
 
         Args:
             dis (Discriminator): The discriminator to compute gradients.
-            total_real_state (np.ndarray): The real state vector.
+            total_target_state (np.ndarray): The target state vector.
             total_input_state (np.ndarray): The input state vector.
         """
         ###############################################################
@@ -78,7 +78,7 @@ class Generator:
         for gate in self.qc.gates:
             theta.append(gate.angle)
 
-        grad: np.ndarray = np.asarray(self._grad_theta(dis, total_real_state, total_input_state))
+        grad: np.ndarray = np.asarray(self._grad_theta(dis, total_target_state, total_input_state))
         new_angle = self.optimizer.move_in_grad(np.asarray(theta), grad, "min")
 
         ###############################################################
@@ -87,12 +87,12 @@ class Generator:
         for i in range(self.qc.depth):
             self.qc.gates[i].angle = new_angle[i]
 
-    def _grad_theta(self, dis: Discriminator, total_real_state: np.ndarray, total_input_state: np.ndarray):
+    def _grad_theta(self, dis: Discriminator, total_target_state: np.ndarray, total_input_state: np.ndarray):
         """Compute the gradient of the generator parameters (angles) with respect to the discriminator's output.
 
         Args:
             dis (Discriminator): The discriminator to compute gradients.
-            total_real_state (np.ndarray): The real state vector.
+            total_target_state (np.ndarray): The target state vector.
             total_input_state (np.ndarray): The input state vector.
 
         Returns:
@@ -101,7 +101,7 @@ class Generator:
         #######################################################################
         # Get the current Generator and Discriminator states:
         #######################################################################
-        final_fake_state, final_real_state = get_final_comp_states_for_dis(self, total_input_state, total_real_state)
+        final_gen_state, final_target_state = get_final_comp_states_for_dis(self, total_input_state, total_target_state)
         A, B, _, phi = dis.get_dis_matrices_rep()
 
         grad_g_psi, grad_g_phi, grad_g_reg = [], [], []
@@ -114,22 +114,22 @@ class Generator:
             grad_g_psi.append(0)
 
             # For phi term
-            fake_grad = np.matmul(grad_i, total_input_state)
-            final_fake_grad = np.matrix(get_final_fake_state_for_discriminator(fake_grad))
-            tmp_grad = np.matmul(final_fake_grad.getH(), np.matmul(phi, final_fake_state)) + np.matmul(final_fake_state.getH(), np.matmul(phi, final_fake_grad))
+            gen_grad = np.matmul(grad_i, total_input_state)
+            final_gen_grad = np.matrix(get_final_gen_state_for_discriminator(gen_grad))
+            tmp_grad = np.matmul(final_gen_grad.getH(), np.matmul(phi, final_gen_state)) + np.matmul(final_gen_state.getH(), np.matmul(phi, final_gen_grad))
 
             grad_g_phi.append(np.ndarray.item(tmp_grad))
             # grad_g_phi.append(np.asscalar(tmp_grad))
 
             # For reg term
-            term1 = np.matmul(final_fake_grad.getH(), np.matmul(A, final_fake_state)) * np.matmul(final_real_state.getH(), np.matmul(B, final_real_state))
-            term2 = np.matmul(final_fake_state.getH(), np.matmul(A, final_fake_grad)) * np.matmul(final_real_state.getH(), np.matmul(B, final_real_state))
-            term3 = np.matmul(final_fake_grad.getH(), np.matmul(B, final_real_state)) * np.matmul(final_real_state.getH(), np.matmul(A, final_fake_state))
-            term4 = np.matmul(final_fake_state.getH(), np.matmul(B, final_real_state)) * np.matmul(final_real_state.getH(), np.matmul(A, final_fake_grad))
-            term5 = np.matmul(final_fake_grad.getH(), np.matmul(A, final_real_state)) * np.matmul(final_real_state.getH(), np.matmul(B, final_fake_state))
-            term6 = np.matmul(final_fake_state.getH(), np.matmul(A, final_real_state)) * np.matmul(final_real_state.getH(), np.matmul(B, final_fake_grad))
-            term7 = np.matmul(final_fake_grad.getH(), np.matmul(B, final_fake_state)) * np.matmul(final_real_state.getH(), np.matmul(A, final_real_state))
-            term8 = np.matmul(final_fake_state.getH(), np.matmul(B, final_fake_grad)) * np.matmul(final_real_state.getH(), np.matmul(A, final_real_state))
+            term1 = np.matmul(final_gen_grad.getH(), np.matmul(A, final_gen_state)) * np.matmul(final_target_state.getH(), np.matmul(B, final_target_state))
+            term2 = np.matmul(final_gen_state.getH(), np.matmul(A, final_gen_grad)) * np.matmul(final_target_state.getH(), np.matmul(B, final_target_state))
+            term3 = np.matmul(final_gen_grad.getH(), np.matmul(B, final_target_state)) * np.matmul(final_target_state.getH(), np.matmul(A, final_gen_state))
+            term4 = np.matmul(final_gen_state.getH(), np.matmul(B, final_target_state)) * np.matmul(final_target_state.getH(), np.matmul(A, final_gen_grad))
+            term5 = np.matmul(final_gen_grad.getH(), np.matmul(A, final_target_state)) * np.matmul(final_target_state.getH(), np.matmul(B, final_gen_state))
+            term6 = np.matmul(final_gen_state.getH(), np.matmul(A, final_target_state)) * np.matmul(final_target_state.getH(), np.matmul(B, final_gen_grad))
+            term7 = np.matmul(final_gen_grad.getH(), np.matmul(B, final_gen_state)) * np.matmul(final_target_state.getH(), np.matmul(A, final_target_state))
+            term8 = np.matmul(final_gen_state.getH(), np.matmul(B, final_gen_grad)) * np.matmul(final_target_state.getH(), np.matmul(A, final_target_state))
             tmp_reg_grad = CFG.lamb / np.e * (CFG.cst1 * (term1 + term2) - CFG.cst2 * (term3 + term4) - CFG.cst2 * (term5 + term6) + CFG.cst3 * (term7 + term8))
 
             grad_g_reg.append(np.ndarray.item(tmp_reg_grad))

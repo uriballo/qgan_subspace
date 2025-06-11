@@ -27,7 +27,7 @@ def plt_fidelity_vs_iter(fidelities, losses, config, indx=0):
     axs1.plot(range(len(fidelities)), fidelities)
     axs1.set_xlabel("Iteration")
     axs1.set_ylabel("Fidelity")
-    axs1.set_title("Fidelity <real|fake> vs Iterations")
+    axs1.set_title("Fidelity <target|gen> vs Iterations")
     axs2.plot(range(len(losses)), losses)
     axs2.set_xlabel("Iteration")
     axs2.set_ylabel("Loss")

@@ -18,7 +18,7 @@ from datetime import datetime
 import numpy as np
 
 from config import CFG
-from qgan.cost_functions import compute_cost, compute_fidelity
+from qgan.cost_functions import compute_cost, compute_fidelity, compute_fidelity_and_cost, get_final_comp_states_for_dis
 from qgan.discriminator import Discriminator
 from qgan.generator import Generator
 from qgan.target import get_maximally_entangled_state, initialize_target_state
@@ -88,9 +88,10 @@ class Training:
                 ###########################################################
                 # Compute fidelity and loss
                 ###########################################################
-                fidelities[epoch_iter] = compute_fidelity(self.gen, self.total_target_state, self.total_input_state)
-                losses[epoch_iter] = compute_cost(self.gen, self.dis, self.total_target_state, self.total_input_state)
-
+                fid, cost = compute_fidelity_and_cost(
+                    self.gen, self.dis, self.total_target_state, self.total_input_state
+                )
+                # fidelities[epoch_iter], losses[epoch_iter] =
                 ###########################################################
                 # Every X iterations, log data
                 ###########################################################
