@@ -19,6 +19,7 @@ from config import CFG
 
 
 # TODO: Add a test to cover that this projects correct subspace (last qubit is |0>).
+# TODO: Maybe make the test a bit integral, so it checks the ancilla logic everywhere matches.
 def project_ancilla_zero(state: np.ndarray) -> tuple[np.ndarray, float]:
     """Project the last qubit onto |0> and renormalize. Assumes state is a column vector.
 
