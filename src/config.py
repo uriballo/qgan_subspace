@@ -28,6 +28,15 @@ class Config:
 
         ########################################################################
         # ---------------------
+        # TESTING CONFIGURATION
+        # ---------------------
+        #   - testing: bool: Enables testing mode for running several different quick configurations.
+        #
+        ########################################################################
+        self.testing: bool = False
+
+        ########################################################################
+        # ---------------------
         # RUNS CONFIGURATION
         # ---------------------
         #   - N_initial_exp: Number of initial experiments to run (without change), (default: 20).
@@ -46,15 +55,6 @@ class Config:
             },
         )
         # TODO: Also add so that automatically makes the analysis graphs of the improvements, and plots them in folder.
-
-        ########################################################################
-        # ---------------------
-        # TESTING CONFIGURATION
-        # ---------------------
-        #   - testing: bool: Enables testing mode for running several different quick configurations.
-        #
-        ########################################################################
-        self.testing: bool = False
 
         #######################################################################
         # ---------------------
@@ -127,7 +127,7 @@ class Config:
         #
         #######################################################################
         self.system_size: int = 2
-        self.extra_ancilla: bool = False
+        self.extra_ancilla: bool = True
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "project"
         self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "total"
 

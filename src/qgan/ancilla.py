@@ -18,6 +18,7 @@ import numpy as np
 from config import CFG
 
 
+# TODO: Add a test to cover that this projects correct subspace (last qubit is |0>).
 def project_ancilla_zero(state: np.ndarray) -> tuple[np.ndarray, float]:
     """Project the last qubit onto |0> and renormalize. Assumes state is a column vector.
 
@@ -43,6 +44,7 @@ def project_ancilla_zero(state: np.ndarray) -> tuple[np.ndarray, float]:
     return normalized_projected.reshape(-1, 1), norm**2
 
 
+# TODO: Think better what to do with this function... (how to use it)
 def trace_out_ancilla(state: np.ndarray) -> np.ndarray:
     """Trace out the last qubit and return a sampled pure state from the reduced density matrix.
 

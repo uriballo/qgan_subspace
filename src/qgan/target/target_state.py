@@ -35,6 +35,7 @@ def get_zero_state(size: int) -> np.ndarray:
     return zero_state
 
 
+# TODO: Add a test to cover that this generates the correct maximally entangled state + ancilla
 def get_maximally_entangled_state(size: int) -> np.ndarray:
     """Get the maximally entangled state for the system size (With Ancilla if needed).
 
@@ -50,12 +51,14 @@ def get_maximally_entangled_state(size: int) -> np.ndarray:
     for i in range(dim_register):
         state[i * dim_register + i] = 1.0
     state /= np.sqrt(dim_register)
+
     # Add ancilla qubit at the end, if needed
     if CFG.extra_ancilla:
         state = np.kron(state, np.array([1, 0], dtype=complex))  # Ancilla in |0>
     return np.asmatrix(state).T
 
 
+# TODO: Add a test that checks that the ancilla qubit is added into the correct subspace
 def initialize_target_state(total_input_state: np.ndarray) -> np.ndarray:
     """Initialize the target state. Applying the target unitary to the maximally entangled state.
 

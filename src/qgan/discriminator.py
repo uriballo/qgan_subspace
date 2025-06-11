@@ -40,8 +40,8 @@ class Discriminator:
         A: -1/lamb * phi
         B: 1/lamb * psi
 
-        alpha: Parameters for the real part of the discriminator.
-        beta: Parameters for the imaginary part of the discriminator.
+        alpha: Parameters for the real part of the discriminator (coeff for I, X, Y, Z).
+        beta: Parameters for the imaginary part of the discriminator (coeff for Ij, Xj, Yj, Zj).
 
     """
 
@@ -61,7 +61,7 @@ class Discriminator:
         self.target_size: str = CFG.system_size
 
     def _init_params(self):
-        # Random Discriminator Parameters
+        # Random Discriminator Parameters, each param is: (size x 4)
         for i in range(self.size):
             self.alpha[i] = -1 + 2 * np.random.random(len(self.herm))
             self.beta[i] = -1 + 2 * np.random.random(len(self.herm))
@@ -209,9 +209,6 @@ class Discriminator:
             print_and_train_log(f"Could not load discriminator model: {e}\n", CFG.log_path)
             return False
 
-        def valid_ancilla_comparison(dis1, dis2):
-            pass
-
         ##################################################################
         # Check for the cases you should't load -> Stop
         ##################################################################
@@ -230,7 +227,6 @@ class Discriminator:
             print_and_train_log("Discriminator parameters loaded\n", CFG.log_path)
             return True
 
-        # TODO: Check that the -1 dim, load works properly
         ##################################################################
         # When one qubit difference (adding or removing an ancilla with pass)
         ###################################################################
