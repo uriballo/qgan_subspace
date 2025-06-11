@@ -313,7 +313,7 @@ class QuantumGate:
                     param = float(self.angle)
                 else:
                     param = float(self.angle)
-                    if is_grad == True:
+                    if is_grad:
                         if signal == "+":
                             param = param + self.s
                         else:

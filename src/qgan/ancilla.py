@@ -69,8 +69,8 @@ def trace_out_ancilla(state: np.ndarray) -> np.ndarray:
     return sampled_state.reshape(-1, 1)
 
 
-def get_final_fake_state_for_discriminator(total_output_state: np.ndarray) -> np.ndarray:
-    """Return the fake state to be passed to the discriminator, according to ancilla_mode.
+def get_final_gen_state_for_discriminator(total_output_state: np.ndarray) -> np.ndarray:
+    """Modifies the gen state to be passed to the discriminator, according to ancilla_mode.
 
     Args:
         total_output_state (np.ndarray): The output state from the generator.
@@ -93,8 +93,8 @@ def get_final_fake_state_for_discriminator(total_output_state: np.ndarray) -> np
     return total_final_state
 
 
-def get_final_real_state_for_discriminator(total_output_state: np.ndarray) -> np.ndarray:
-    """Return the real state to be passed to the discriminator, according to ancilla_mode.
+def get_final_target_state_for_discriminator(total_output_state: np.ndarray) -> np.ndarray:
+    """Modifies the target state to be passed to the discriminator, according to ancilla_mode.
 
     Args:
         total_output_state (np.ndarray): The output state from the target.
@@ -104,11 +104,11 @@ def get_final_real_state_for_discriminator(total_output_state: np.ndarray) -> np
     """
     total_final_state = total_output_state
     if CFG.extra_ancilla:
-        n = CFG.system_size * 2 + 1  # total qubits (system + ancilla)
         if CFG.ancilla_mode == "pass":
             # Pass ancilla to discriminator (current behavior)
             return total_final_state
         if CFG.ancilla_mode in ["project", "trace"]:
-            return total_final_state[: 2 ** (n - 1)]  # Return only the system part
+            return total_final_state[::2]  # Return only the system part (project ancilla to zero)
+            # No need to renorm, as Ancilla is not used in Target, and total state should be T x |0>.
         raise ValueError(f"Unknown ancilla_mode: {CFG.ancilla_mode}")
     return total_final_state

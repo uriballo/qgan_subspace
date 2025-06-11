@@ -15,15 +15,20 @@
 
 from config import CFG
 from tools.data.data_managers import print_and_train_log
-from tools.training_init import run_single_training
+from tools.training_init import run_test_configurations
 
 
 ##############################################################
-# SINGLE RUN mode
+# TESTING mode
 ##############################################################
 def main():
-    print_and_train_log("Running in SINGLE RUN mode.\n", CFG.log_path)
-    run_single_training()
+    # Change results directory to TESTING:
+    CFG.base_data_path = f"./generated_data/TESTING/{CFG.run_timestamp}"
+    CFG.set_results_paths()
+
+    # Run the test configurations:
+    print_and_train_log("Running in TESTING mode.\n", CFG.log_path)
+    run_test_configurations()
 
 
 if __name__ == "__main__":
