@@ -55,6 +55,6 @@ def save_fidelity_loss(fidelities_history, losses_history, file_path):
 def save_gen_final_params(gen, file_path):
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     array_angle = np.zeros(len(gen.qc.gates))
-    for i in range(len(gen.qc.gates)):
-        array_angle[i] = gen.qc.gates[i].angle
+    for i, gate_i in enumerate(gen.qc.gates):
+        array_angle[i] = gate_i.angle
     np.savetxt(file_path, array_angle)

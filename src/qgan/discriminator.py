@@ -78,9 +78,9 @@ class Discriminator:
         psi, phi = 1, 1
         for i in range(self.size):
             psi_i, phi_i = np.zeros_like(self.herm[0], dtype=complex), np.zeros_like(self.herm[0], dtype=complex)
-            for j in range(len(self.herm)):
-                psi_i += self.alpha[i][j] * self.herm[j]
-                phi_i += self.beta[i][j] * self.herm[j]
+            for j, herm_j in enumerate(self.herm):
+                psi_i += self.alpha[i][j] * herm_j
+                phi_i += self.beta[i][j] * herm_j
             psi, phi = np.kron(psi, psi_i), np.kron(phi, phi_i)
         return psi, phi
 
@@ -385,8 +385,8 @@ class DiscriminatorGradientStep:
                     grad_psi_phi_i = self.dis.herm[type]
                 else:
                     grad_psi_phi_i = np.zeros_like(self.dis.herm[0], dtype=complex)
-                    for k in range(len(self.dis.herm)):
-                        grad_psi_phi_i += alpha_or_beta[j][k] * self.dis.herm[k]
+                    for k, herm_k in enumerate(self.dis.herm):
+                        grad_psi_phi_i += alpha_or_beta[j][k] * herm_k
                 grad_psi_phi_I = np.kron(grad_psi_phi_I, grad_psi_phi_i)
             grad_psi_phi.append(grad_psi_phi_I)
         return grad_psi_phi
