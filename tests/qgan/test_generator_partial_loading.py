@@ -1,13 +1,10 @@
-import unittest
 import os
 import pickle
-import numpy as np
-from qgan.generator.generator import Generator
-from qgan.generator.ansatz import get_ansatz_func
+from qgan.generator import Generator
 from config import CFG
 
-class TestGeneratorPartialLoading(unittest.TestCase):
-    def setUp(self):
+class TestGeneratorPartialLoading():
+    def __init__(self):
         CFG.system_size = 2
         CFG.gen_layers = 1
         CFG.extra_ancilla = False
@@ -24,9 +21,9 @@ class TestGeneratorPartialLoading(unittest.TestCase):
         CFG.extra_ancilla = True
         gen_with_ancilla = Generator()
         # All angles should be different before loading
-        self.assertFalse(all(g.angle == 0.123 for g in gen_with_ancilla.qc.gates))
+        assert not all(g.angle == 0.123 for g in gen_with_ancilla.qc.gates)
         # Load
         gen_with_ancilla.load_model_params(path)
         # At least some angles should now be 0.123 (for gates not involving ancilla)
-        self.assertTrue(any(g.angle == 0.123 for g in gen_with_ancilla.qc.gates))
+        assert any(g.angle == 0.123 for g in gen_with_ancilla.qc.gates)
         os.remove(path)

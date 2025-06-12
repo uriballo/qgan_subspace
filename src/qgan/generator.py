@@ -22,10 +22,9 @@ from config import CFG
 from qgan.ancilla import get_final_gen_state_for_discriminator
 from qgan.cost_functions import get_final_comp_states_for_dis
 from qgan.discriminator import Discriminator
-from qgan.generator.ansatz import get_ansatz_func
 from tools.data.data_managers import print_and_train_log
 from tools.optimizer import MomentumOptimizer
-from tools.qobjects.qcircuit import Identity, QuantumCircuit
+from tools.qobjects import Identity, QuantumCircuit, QuantumGate
 
 
 class Generator:
@@ -34,7 +33,7 @@ class Generator:
     def __init__(self):
         # Set general used params:
         self.size: int = CFG.system_size + (1 if CFG.extra_ancilla else 0)
-        self.qc: QuantumCircuit = self.init_qcircuit()
+        self.qc: QuantumCircuit = QuantumCircuit(self.size, "generator")
         self.optimizer: MomentumOptimizer = MomentumOptimizer()
 
         # Set the params, for comparison while loading:
@@ -44,17 +43,9 @@ class Generator:
         self.layers: int = CFG.gen_layers
 
         # Set the ansatz circuit:
-        self.set_qcircuit(get_ansatz_func(self.ansatz)(self.qc, self.size, self.layers))
+        self.qc = Ansatz.get_ansatz_type_circuit(self.ansatz)(self.qc, self.size, self.layers)
 
-    def set_qcircuit(self, qc: QuantumCircuit):
-        self.qc = qc
-
-    def init_qcircuit(self):
-        """Initialize the quantum circuit for the generator."""
-        qcircuit = QuantumCircuit(self.size, "generator")
-        return qcircuit
-
-    def get_Untouched_qubits_and_Gen(self) -> np.ndarray:
+    def get_Untouched_qubits_x_Gen_matrix(self) -> np.ndarray:
         """Get the matrix representation of the circuit at the Generator step, including the untouched qubits in front (choi).
 
         Returns:
@@ -228,3 +219,121 @@ class Generator:
         ###################################################################
         print_and_train_log("ERROR: Saved generator model is incompatible (size or depth mismatch).\n", CFG.log_path)
         return False
+
+
+##################################################################
+# GENERATOR ANSATZ DEFINITIONS
+##################################################################
+class Ansatz:
+    """Ansatz class for constructing quantum circuits with specific gates"""
+
+    @staticmethod
+    def get_ansatz_type_circuit(type_of_ansatz: str) -> callable:
+        """Construct the ansatz based on the type specified.
+
+        Args:
+            type_of_ansatz (str): Type of ansatz to construct, either 'XX_YY_ZZ_Z' or 'ZZ_X_Z'.
+
+        Returns:
+            callable: Function to construct the quantum circuit with the specified ansatz.
+        """
+        if type_of_ansatz == "XX_YY_ZZ_Z":
+            return Ansatz.construct_qcircuit_XX_YY_ZZ_Z
+        if type_of_ansatz == "ZZ_X_Z":
+            return Ansatz.construct_qcircuit_ZZ_X_Z
+        raise ValueError("Invalid type of ansatz specified.")
+
+    @staticmethod
+    def construct_qcircuit_XX_YY_ZZ_Z(qc: QuantumCircuit, size: int, layer: int) -> QuantumCircuit:
+        """Construct a quantum circuit with the ansatz of XX YY ZZ and FieldZ
+
+        Args:
+            qc (QuantumCircuit): Quantum Circuit
+            size (int): Size of the Quantum Circuit
+            layer (int): Number of layers
+
+        Returns:
+            QuantumCircuit: Quantum Circuit with the ansatz of XYZ and FieldZ
+        """
+        # If extra ancilla is used, different than ansatz, we reduce the size by 1,
+        # to implement the ancilla logic separately.
+        if CFG.extra_ancilla and CFG.ancilla_topology != "ansatz":
+            size -= 1
+
+        entg_list = ["XX", "YY", "ZZ"]
+        for j in range(layer):
+            # First 1 qubit gates
+            for i in range(size):
+                qc.add_gate(QuantumGate("Z", i, angle=0))
+            # Ancilla 1q gates for: total, bridge and disconnected:
+            if CFG.extra_ancilla and CFG.ancilla_topology not in ["ansatz", "trivial"]:
+                qc.add_gate(QuantumGate("Z", size, angle=0))
+
+            # Then 2 qubit gates:
+            for i in range(size):
+                for gate in entg_list:
+                    qc.add_gate(QuantumGate(gate, i, i + 1, angle=0))
+            # Ancilla ancilla coupling (2q) logic for: total and bridge
+            if CFG.extra_ancilla:
+                if CFG.ancilla_topology == "total":
+                    for gate in entg_list:
+                        for i in range(size):
+                            qc.add_gate(QuantumGate(gate, i, size, angle=0))
+                if CFG.ancilla_topology == "bridge":
+                    for gate in entg_list:
+                        qc.add_gate(QuantumGate(gate, 0, size, angle=0))
+                        qc.add_gate(QuantumGate(gate, size - 1, size, angle=0))
+                        # TODO: Check that adding a gate in last qubit ("size") works correctly
+                        # with how we define the ancilla qubit in our arrays and matrices.
+
+        # Make uniform random angles for the gates (0 to 2*pi)
+        theta = np.random.uniform(0, 2 * np.pi, len(qc.gates))
+        for i, gate_i in enumerate(qc.gates):
+            gate_i.angle = theta[i]
+
+        return qc
+
+    @staticmethod
+    def construct_qcircuit_ZZ_X_Z(qc: QuantumCircuit, size: int, layer: int) -> QuantumCircuit:
+        """Construct a quantum circuit with the ansatz of ZZ and XZ
+
+        Args:
+            qc (QuantumCircuit): Quantum Circuit
+            size (int): Size of the Quantum Circuit
+            layer (int): Number of layers
+
+        Returns:
+            QuantumCircuit: Quantum Circuit with the ansatz of ZZ and XZ
+        """
+        # If extra ancilla is used, different than ansatz, we reduce the size by 1,
+        # to implement the ancilla logic separately.
+        if CFG.extra_ancilla and CFG.ancilla_topology not in ["ansatz", "trivial"]:
+            size -= 1
+
+        for j in range(layer):
+            # First 1 qubit gates
+            for i in range(size):
+                qc.add_gate(QuantumGate("X", i, angle=0))
+                qc.add_gate(QuantumGate("Z", i, angle=0))
+            # Ancilla 1q gates for: total, bridge and disconnected:
+            if CFG.extra_ancilla and CFG.ancilla_topology != "ansatz":
+                qc.add_gate(QuantumGate("X", size, angle=0))
+                qc.add_gate(QuantumGate("Z", size, angle=0))
+            # Then 2 qubit gates
+            for i in range(size - 1):
+                qc.add_gate(QuantumGate("ZZ", i, i + 1, angle=0))
+            # Ancilla ancilla coupling (2q) logic for: total and bridge
+            if CFG.extra_ancilla:
+                if CFG.ancilla_topology == "total":
+                    for i in range(size):
+                        qc.add_gate(QuantumGate("ZZ", i, size, angle=0))
+                if CFG.ancilla_topology == "bridge":
+                    qc.add_gate(QuantumGate("ZZ", 0, size, angle=0))
+                    qc.add_gate(QuantumGate("ZZ", size - 1, size, angle=0))
+
+        # Make uniform random angles for the gates (0 to 2*pi)
+        theta = np.random.uniform(0, 2 * np.pi, len(qc.gates))
+        for i, gate_i in enumerate(qc.gates):
+            gate_i.angle = theta[i]
+
+        return qc

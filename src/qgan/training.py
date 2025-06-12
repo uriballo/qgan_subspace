@@ -18,10 +18,11 @@ from datetime import datetime
 import numpy as np
 
 from config import CFG
+from qgan.ancilla import get_max_entangled_state_with_ancilla_if_needed
 from qgan.cost_functions import compute_fidelity_and_cost
 from qgan.discriminator import Discriminator
 from qgan.generator import Generator
-from qgan.target import get_maximally_entangled_state, initialize_target_state
+from qgan.target import initialize_target_state
 from tools.data.data_managers import (
     print_and_train_log,
     save_fidelity_loss,
@@ -38,7 +39,7 @@ class Training:
     def __init__(self):
         """Builds the configuration for the Training. You might wanna comment/discomment lines, for changing the model."""
 
-        self.total_input_state: np.matrix = get_maximally_entangled_state(CFG.system_size)
+        self.total_input_state: np.matrix = get_max_entangled_state_with_ancilla_if_needed(CFG.system_size)
         """Preparation of max. entgl. state with ancilla qubit if needed."""
 
         self.total_target_state: np.matrix = initialize_target_state(self.total_input_state)

@@ -1,18 +1,16 @@
-import unittest
 import numpy as np
 import os
 from qgan.discriminator import Discriminator
-from qgan.generator.generator import Generator
-from qgan.generator.ansatz import get_ansatz_func
+from qgan.generator import Generator
 from config import CFG
 
-class TestGenerator(unittest.TestCase):
-    def setUp(self):
+class TestGenerator():
+    def __init__(self):
         self.gen = Generator()
 
     def test_init(self):
-        self.assertEqual(self.gen.size, CFG.system_size + (1 if CFG.extra_ancilla else 0))
-        self.assertIsNotNone(self.gen.qc)
+        assert self.gen.size == CFG.system_size + (1 if CFG.extra_ancilla else 0)
+        assert self.gen.qc is not None
 
     def test_update_gen(self):
         dis = Discriminator()

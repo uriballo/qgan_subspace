@@ -33,7 +33,7 @@ def get_final_comp_states_for_dis(gen, total_target_state: np.ndarray, total_inp
     Returns:
         tuple[np.ndarray]: the final gen state and target state for the discriminator.
     """
-    Untouched_x_G: np.ndarray = gen.get_Untouched_qubits_and_Gen()
+    Untouched_x_G: np.ndarray = gen.get_Untouched_qubits_x_Gen_matrix()
 
     total_output_state: np.ndarray = np.matmul(Untouched_x_G, total_input_state)
 

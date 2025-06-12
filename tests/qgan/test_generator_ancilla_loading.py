@@ -1,14 +1,11 @@
-import unittest
 import os
 import pickle
-import numpy as np
-from qgan.generator.generator import Generator
-from qgan.generator.ansatz import get_ansatz_func
+from qgan.generator import Generator
 from config import CFG
 from tools.data.data_managers import save_model
 
-class TestGeneratorAncillaLoading(unittest.TestCase):
-    def setUp(self):
+class TestGeneratorAncillaLoading():
+    def __init__(self):
         # Create a generator with and without ancilla
         CFG.extra_ancilla = False
         CFG.system_size = 2
@@ -27,7 +24,7 @@ class TestGeneratorAncillaLoading(unittest.TestCase):
             pickle.dump(self.gen_no_ancilla, f)
         # Load into with-ancilla model
         result = self.gen_with_ancilla.load_model_params(path)
-        self.assertTrue(result)
+        assert result
         os.remove(path)
 
     def test_load_from_with_ancilla_to_no_ancilla(self):
@@ -37,7 +34,7 @@ class TestGeneratorAncillaLoading(unittest.TestCase):
             pickle.dump(self.gen_with_ancilla, f)
         # Load into no-ancilla model
         result = self.gen_no_ancilla.load_model_params(path)
-        self.assertTrue(result)
+        assert result
         os.remove(path)
 
     def test_load_incompatible(self):
@@ -48,5 +45,5 @@ class TestGeneratorAncillaLoading(unittest.TestCase):
         with open(path, "wb") as f:
             pickle.dump(gen_other, f)
         result = self.gen_no_ancilla.load_model_params(path)
-        self.assertFalse(result)
+        assert not result
         os.remove(path)

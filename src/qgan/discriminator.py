@@ -52,9 +52,7 @@ class Discriminator:
         # Set the general used parameters:
         self.size: int = CFG.system_size * 2 + (1 if CFG.extra_ancilla and CFG.ancilla_mode == "pass" else 0)
         self.herm: list = [I, X, Y, Z]
-        self.alpha: np.ndarray = np.zeros((self.size, len(self.herm)))
-        self.beta: np.ndarray = np.zeros((self.size, len(self.herm)))
-        self._init_params()
+        self._init_params_alpha_beta()
         self.optimizer_psi: MomentumOptimizer = MomentumOptimizer()
         self.optimizer_phi: MomentumOptimizer = MomentumOptimizer()
 
@@ -63,8 +61,12 @@ class Discriminator:
         self.ancilla_mode: str = CFG.ancilla_mode  # Topology doesn't matter, its not a circuit = fully connect matrix.
         self.target_size: str = CFG.system_size
 
-    def _init_params(self):
-        # Random Discriminator Parameters, each param is: (size x 4)
+    def _init_params_alpha_beta(self):
+        # Each param is: (size x 4)
+        self.alpha: np.ndarray = np.zeros((self.size, len(self.herm)))
+        self.beta: np.ndarray = np.zeros((self.size, len(self.herm)))
+
+        # Random Discriminator Parameters
         for i in range(self.size):
             self.alpha[i] = -1 + 2 * np.random.random(len(self.herm))
             self.beta[i] = -1 + 2 * np.random.random(len(self.herm))

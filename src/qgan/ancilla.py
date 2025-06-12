@@ -18,8 +18,28 @@ import numpy as np
 from config import CFG
 
 
-# TODO: Add a test to cover that this projects correct subspace (last qubit is |0>).
-# TODO: Maybe make the test a bit integral, so it checks the ancilla logic everywhere matches.
+def get_max_entangled_state_with_ancilla_if_needed(size: int) -> np.ndarray:
+    """Get the maximally entangled state for the system size (With Ancilla if needed).
+
+    Args:
+        size (int): the size of the system.
+
+    Returns:
+        np.ndarray: the maximally entangled state.
+    """
+    # Generate the maximally entangled state for the system size
+    state = np.zeros(2 ** (2 * size), dtype=complex)
+    dim_register = 2**size
+    for i in range(dim_register):
+        state[i * dim_register + i] = 1.0
+    state /= np.sqrt(dim_register)
+
+    # Add ancilla qubit at the end, if needed
+    if CFG.extra_ancilla:
+        state = np.kron(state, np.array([1, 0], dtype=complex))  # Ancilla in |0>
+    return np.asmatrix(state).T
+
+
 def project_ancilla_zero(state: np.ndarray) -> tuple[np.ndarray, float]:
     """Project the last qubit onto |0> and renormalize. Assumes state is a column vector.
 
@@ -113,6 +133,5 @@ def get_final_target_state_for_discriminator(total_output_state: np.ndarray) -> 
         if CFG.ancilla_mode in ["project", "trace"]:
             return total_final_state[::2]  # Return only the system part (project ancilla to zero)
             # No need to renorm or trace, as Ancilla is not used in Target, and total state should be T x |0>.
-            # TODO: Check that this is actually the case, maybe add a test for this.
         raise ValueError(f"Unknown ancilla_mode: {CFG.ancilla_mode}")
     return total_final_state

@@ -1,24 +1,23 @@
-import unittest
-from qgan.target.target_hamiltonian import get_target_unitary
-from qgan.target.target_state import get_maximally_entangled_state, initialize_target_state
+from qgan.target import get_target_unitary, initialize_target_state
+from qgan.ancilla import get_max_entangled_state_with_ancilla_if_needed
 from config import CFG
 
-class TestTarget(unittest.TestCase):
+class TestTarget():
     def test_get_target_unitary(self):
         unitary = get_target_unitary(CFG.target_hamiltonian, CFG.system_size)
-        self.assertIsNotNone(unitary)
-        self.assertEqual(unitary.shape[0], unitary.shape[1])
+        assert unitary is not None
+        assert unitary.shape[0] == unitary.shape[1]
 
     def test_get_maximally_entangled_state(self):
-        state = get_maximally_entangled_state(CFG.system_size)
-        self.assertIsNotNone(state)
-        self.assertEqual(len(state.shape), 2)
+        state = get_max_entangled_state_with_ancilla_if_needed(CFG.system_size)
+        assert state is not None
+        assert len(state.shape) == 2
 
     def test_initialize_target_state(self):
         for ancilla in [False, True]:
             CFG.extra_ancilla = ancilla
             unitary = get_target_unitary(CFG.target_hamiltonian, CFG.system_size)
-            input_state = get_maximally_entangled_state(CFG.system_size)
+            input_state = get_max_entangled_state_with_ancilla_if_needed(CFG.system_size)
             state = initialize_target_state(input_state)
-            self.assertIsNotNone(state)
-            self.assertEqual(state.shape[0], 2**(unitary.shape[0]+(1 if CFG.extra_ancilla else 0)))
+            assert state is not None
+            assert state.shape[0] == 2**(unitary.shape[0]+(1 if CFG.extra_ancilla else 0))
