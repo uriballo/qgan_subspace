@@ -1,5 +1,8 @@
-import numpy as np
+import sys
 import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
+
+import numpy as np
 from qgan.discriminator import Discriminator
 from qgan.generator import Generator
 from config import CFG

@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
+
 from qgan.target import get_target_unitary, initialize_target_state
 from qgan.ancilla import get_max_entangled_state_with_ancilla_if_needed
 from config import CFG

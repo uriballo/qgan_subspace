@@ -1,9 +1,9 @@
 import sys
 import os
-
-from qgan.training import Training
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
 
+
+from qgan.training import Training
 
 from tools.data import loading_helpers
 from config import CFG

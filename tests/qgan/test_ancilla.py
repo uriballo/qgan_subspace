@@ -1,3 +1,8 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
+
+
 from config import CFG
 from qgan.ancilla import get_final_gen_state_for_discriminator, get_final_target_state_for_discriminator, project_ancilla_zero, trace_out_ancilla
 import numpy as np
