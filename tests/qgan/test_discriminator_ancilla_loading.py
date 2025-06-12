@@ -19,17 +19,17 @@ def save_test_model(path):
 
 # Save no ancilla
 CFG.extra_ancilla = False
-save_test_model("tests/qgan/test_dis_no_ancilla.pkl")
+save_test_model("tests/qgan/data/test_dis_no_ancilla.pkl")
 
 # Save with ancilla pass
 CFG.extra_ancilla = True
 CFG.ancilla_mode = "pass"
-save_test_model("tests/qgan/test_dis_ancilla_pass.pkl")
+save_test_model("tests/qgan/data/test_dis_ancilla_pass.pkl")
 
 # Save with ancilla pass
 CFG.extra_ancilla = True
 CFG.ancilla_mode = "project"
-save_test_model("tests/qgan/test_dis_ancilla_project.pkl")
+save_test_model("tests/qgan/data/test_dis_ancilla_project.pkl")
 
 
 
@@ -37,9 +37,9 @@ class TestDiscriminatorAncillaLoading():
         
     # Test that you can load models with different ancillas:
     def test_load_from_any_to_any_combination_of_ancilla(self):
-        paths = ["tests/qgan/test_dis_no_ancilla.pkl", 
-                 "tests/qgan/test_dis_ancilla_pass.pkl", 
-                 "tests/qgan/test_dis_ancilla_project.pkl"]
+        paths = ["tests/qgan/data/test_dis_no_ancilla.pkl", 
+                 "tests/qgan/data/test_dis_ancilla_pass.pkl", 
+                 "tests/qgan/data/test_dis_ancilla_project.pkl"]
         for path in paths:
             for extra_ancilla in ["none", "pass", "project"]:
                 if extra_ancilla == "none":
@@ -63,9 +63,9 @@ class TestDiscriminatorAncillaLoading():
             
             CFG.system_size = 3
             dis_other = Discriminator()
-            paths = ["tests/qgan/test_dis_no_ancilla.pkl", 
-                    "tests/qgan/test_dis_ancilla_pass.pkl", 
-                    "tests/qgan/test_dis_ancilla_project.pkl"]
+            paths = ["tests/qgan/data/test_dis_no_ancilla.pkl", 
+                    "tests/qgan/data/test_dis_ancilla_pass.pkl", 
+                    "tests/qgan/data/test_dis_ancilla_project.pkl"]
             for path in paths:
                 result = dis_other.load_model_params(path)
                 assert result is False # Failed to load model due to size mismatch

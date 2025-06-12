@@ -21,19 +21,19 @@ def save_test_model(path):
 
 # Save no ancilla
 CFG.extra_ancilla = False
-save_test_model("tests/qgan/test_gen_no_ancilla.pkl")
+save_test_model("tests/qgan/data/test_gen_no_ancilla.pkl")
 
 # Save with ancilla
 CFG.extra_ancilla = True
-save_test_model("tests/qgan/test_gen_with_ancilla.pkl")
+save_test_model("tests/qgan/data/test_gen_with_ancilla.pkl")
         
 class TestGeneratorAncillaLoading():
     ################################################
     # If we only change adding or removing ancilla, we can load models with different ancilla settings.
     ################################################
     def test_load_from_any_to_any_combination_ancilla(self):
-        paths = ["tests/qgan/test_gen_no_ancilla.pkl", 
-                 "tests/qgan/test_gen_with_ancilla_pass.pkl"]
+        paths = ["tests/qgan/data/test_gen_no_ancilla.pkl", 
+                 "tests/qgan/data/test_gen_with_ancilla_pass.pkl"]
        
         for path in paths:
             for extra_ancilla in [True, False]:
@@ -49,8 +49,8 @@ class TestGeneratorAncillaLoading():
         CFG.gen_layers = 2
         gen_other = Generator()
         
-        paths = ["tests/qgan/test_gen_no_ancilla.pkl", 
-                 "tests/qgan/test_gen_with_ancilla_pass.pkl"]
+        paths = ["tests/qgan/data/test_gen_no_ancilla.pkl", 
+                 "tests/qgan/data/test_gen_with_ancilla_pass.pkl"]
        
         for path in paths:
             result = gen_other.load_model_params(path)
@@ -65,8 +65,8 @@ class TestGeneratorAncillaLoading():
         CFG.gen_ansatz = "XX_YY_ZZ_Z"
         gen_other = Generator()
         
-        paths = ["tests/qgan/test_gen_no_ancilla.pkl", 
-                 "tests/qgan/test_gen_with_ancilla_pass.pkl"]
+        paths = ["tests/qgan/data/test_gen_no_ancilla.pkl", 
+                 "tests/qgan/data/test_gen_with_ancilla_pass.pkl"]
        
         for path in paths:
             result = gen_other.load_model_params(path)
@@ -83,16 +83,16 @@ class TestGeneratorAncillaLoading():
         CFG.extra_ancilla = True  # Set to True to test with ancilla
         gen_other = Generator()
         
-        paths = ["tests/qgan/test_gen_no_ancilla.pkl", 
-                 "tests/qgan/test_gen_with_ancilla_pass.pkl"]
+        paths = ["tests/qgan/data/test_gen_no_ancilla.pkl", 
+                 "tests/qgan/data/test_gen_with_ancilla_pass.pkl"]
        
         for path in paths:
             result = gen_other.load_model_params(path)
             
-            if path == "tests/qgan/test_gen_no_ancilla.pkl":
+            if path == "tests/qgan/data/test_gen_no_ancilla.pkl":
                 # This should succeed because the model has no ancilla, so the topology of the other does not matter.
                 assert result is True
-            if path == "tests/qgan/test_gen_with_ancilla_pass.pkl":
+            if path == "tests/qgan/data/test_gen_with_ancilla_pass.pkl":
                 # This should fail because the topology is incompatible with the one used in the saved model.
                 # The saved model has "ansatz" topology, while we are trying to load it with "total".
                 assert result is False
@@ -108,8 +108,8 @@ class TestGeneratorAncillaLoading():
         CFG.system_size = 3  # Change system size to make models incompatible
         gen_other = Generator()
         
-        paths = ["tests/qgan/test_gen_no_ancilla.pkl", 
-                 "tests/qgan/test_gen_with_ancilla_pass.pkl"]
+        paths = ["tests/qgan/data/test_gen_no_ancilla.pkl", 
+                 "tests/qgan/data/test_gen_with_ancilla_pass.pkl"]
         
         # For any ancilla setting should fail, if target size is incompatible
         for path in paths: # Coming fro
@@ -118,10 +118,10 @@ class TestGeneratorAncillaLoading():
             
                 result = gen_other.load_model_params(path)
                 
-                if path == "tests/qgan/test_gen_no_ancilla.pkl":
+                if path == "tests/qgan/data/test_gen_no_ancilla.pkl":
                     # This should succeed because the model has no ancilla, so the topology of the other does not matter.
                     assert result is True
-                if path == "tests/qgan/test_gen_with_ancilla_pass.pkl":
+                if path == "tests/qgan/data/test_gen_with_ancilla_pass.pkl":
                     # This should fail because the topology is incompatible with the one used in the saved model.
                     # The saved model has "ansatz" topology, while we are trying to load it with "total".
                     assert result is False
