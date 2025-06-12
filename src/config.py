@@ -26,15 +26,6 @@ class Config:
     def __init__(self):
         """Configuration for the QGAN experiment, which sets up all parameters required for training it."""
 
-        #############################################################################################
-        # ---------------------
-        # TESTING CONFIGURATION
-        # ---------------------
-        #   - testing: bool: Enables testing mode for running several different quick configurations.
-        #
-        ############################################################################################
-        self.testing: bool = False
-
         ############################################################################################
         # ---------------------
         # RUNS CONFIGURATION
