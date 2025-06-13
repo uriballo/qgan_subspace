@@ -44,3 +44,11 @@ Now you can run all necessary commands (run, tests, etc.) within this environmen
     ```
     PYTHONPATH=src .venv/bin/pytest
     ```
+
+    Also if you want VSCode to detect the imports from the testing module, add:
+    ```
+    "python.analysis.extraPaths": [
+        "./src"
+    ],
+    ```
+    to your `Preferences: Open User Settings (JSON)`.
