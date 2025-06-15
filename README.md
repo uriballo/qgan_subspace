@@ -18,6 +18,7 @@ This section covers how to set up a local development environment for qgan_subsp
    ```
 
 2. **Sync dependencies**:
+
    - We maintain a list with all the needed dependencies in `requirements.txt`.
    - To create a local environment using `venv`, and install the necessary dependencies, run:
 
@@ -32,6 +33,7 @@ This section covers how to set up a local development environment for qgan_subsp
     Now you can run all necessary commands (run, tests, etc.) within this environment.
 
 3. **Running**:
+
     - The file to execute is `main.py`, and the only file you need to edit, for changing experiments is `config.py`.
     - For an execution, after the `config.py` has been set, run:
 
@@ -40,6 +42,7 @@ This section covers how to set up a local development environment for qgan_subsp
     ```
 
 4. **Testing**:
+
     If you need to test anything (for development), we use pytest:
     - There are unit test for diverse parts of the code,
     - And also several short integration tests, whose configuration you can set at the end of `config.py`, and which output their logs/etc.. at the `generated_data/TESTING` directory (some graphs overwrite eachother).
