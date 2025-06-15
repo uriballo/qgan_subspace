@@ -241,7 +241,7 @@ CFG = Config()
 # TEST CONFIGURATIONS
 # -----------------------------------
 #   Contains a list of dictionaries with different configurations
-#   to run in a row, executing `main_testing.py`.
+#   to run in a row, executing while executing the tests with pytest.
 #
 #############################################################################################
 test_configurations = [
