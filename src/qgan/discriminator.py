@@ -217,7 +217,7 @@ class Discriminator:
             with open(file_path, "rb") as f:
                 saved_dis: Discriminator = pickle.load(f)
         except (OSError, pickle.UnpicklingError) as e:
-            print_and_train_log(f"Could not load discriminator model: {e}\n", CFG.log_path)
+            print_and_train_log(f"ERROR: Could not load discriminator model: {e}\n", CFG.log_path)
             return False
 
         ##################################################################
@@ -226,13 +226,15 @@ class Discriminator:
         # For this corner case, in reality the load will still work, since we always have matrices NxN or (N+1)x(N+1)
         # but you would load a Discriminator for distinguishing a T(3) to a T(4), or vice-versa, which shouldn't happen..
         if saved_dis.target_size != self.target_size:
-            print_and_train_log("Saved discriminator model is incompatible (target size mismatch).\n", CFG.log_path)
+            print_and_train_log(
+                "ERROR: Saved discriminator model is incompatible (target size mismatch).\n", CFG.log_path
+            )
             return False
 
         ########################################################################
         # Check for exact match (same size)
         ########################################################################
-        if saved_dis.size == self.size:
+        if saved_dis.size == self.size:  # This size check, already takes care into ancilla match!
             self.alpha = saved_dis.alpha.copy()
             self.beta = saved_dis.beta.copy()
             print_and_train_log("Discriminator parameters loaded\n", CFG.log_path)
@@ -241,7 +243,7 @@ class Discriminator:
         ##################################################################
         # When one qubit difference (adding or removing an ancilla with pass)
         ###################################################################
-        if abs(saved_dis.size - self.size) == 1:
+        if abs(saved_dis.size - self.size) == 1:  # This size check, already takes care into ancilla match!
             # Determine the minimum number of qubits (the overlap)
             min_size = min(saved_dis.size, self.size)
             # Load only the matching parameters

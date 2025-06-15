@@ -41,6 +41,7 @@ class Generator:
         self.ancilla_topology: str = CFG.ancilla_topology  # Type doesn't matter, ancilla always passes through gen
         self.ansatz: str = CFG.gen_ansatz
         self.layers: int = CFG.gen_layers
+        self.target_size: str = CFG.system_size
 
         # Set the ansatz circuit:
         self.qc = Ansatz.get_ansatz_type_circuit(self.ansatz)(self.qc, self.size, self.layers)
@@ -153,56 +154,78 @@ class Generator:
         # Check if the file exists and is a valid pickle file
         ##################################################################
         if not os.path.exists(file_path):
-            print_and_train_log("Generator model file not found\n", CFG.log_path)
+            print_and_train_log("ERROR: Generator model file not found\n", CFG.log_path)
             return False
         try:
             with open(file_path, "rb") as f:
                 saved_gen: Generator = pickle.load(f)
         except (OSError, pickle.UnpicklingError) as e:
-            print_and_train_log(f"Could not load generator model: {e}\n", CFG.log_path)
+            print_and_train_log(f"ERROR: Could not load generator model: {e}\n", CFG.log_path)
             return False
 
         ##################################################################
         # Check for the cases you can't load -> Stop
         ##################################################################
-        if saved_gen.ansatz != self.ansatz or saved_gen.layers != self.layers:
-            print_and_train_log("ERROR: Can't load due to different ansatz or num layers.\n", CFG.log_path)
-            return False
+        cant_load = False
+
+        if saved_gen.target_size != self.target_size:
+            print_and_train_log("ERROR: Saved generator model is incompatible (target size mismatch).\n", CFG.log_path)
+            cant_load = True
+
+        if saved_gen.ansatz != self.ansatz:
+            print_and_train_log("ERROR: Can't load due to different ansatz in gen.\n", CFG.log_path)
+            cant_load = True
+
+        if saved_gen.layers != self.layers:
+            print_and_train_log("ERROR: Can't load due to different number of layers in gen.\n", CFG.log_path)
+            cant_load = True
 
         if saved_gen.ancilla and self.ancilla and saved_gen.ancilla_topology != self.ancilla_topology:
             print_and_train_log(
-                "NOT_IMPLEMENTED_ERROR: Can't load model with ancilla, into another one with ancilla in a different topology (number of gates, wouldn't match, and a gate reduction isn't trivial).\n",
+                "ERROR: Can't load gen with ancilla into another one with ancilla too, but in a different topology.\n",
                 CFG.log_path,
             )
+            cant_load = True
+
+        # Stop loading, logging all the errors at the same time in one execution:
+        if cant_load:
             return False
 
         ##################################################################
-        # Check for exact match
+        # Case of exact match
         ##################################################################
-        if saved_gen.size == self.size and saved_gen.ancilla == self.ancilla:  # If both true, they have same topology
-            print_and_train_log("Match in size and ancilla.\n", CFG.log_path)
+        if saved_gen.size == self.size and saved_gen.ancilla == self.ancilla:  # Redundant size check, kept for clarity
+            print_and_train_log("Gen match in size and ancilla.\n", CFG.log_path)
+
             # Corner case, when ancilla number of gates has changed:
             if len(saved_gen.qc.gates) != len(self.qc.gates):
-                print_and_train_log("Number of gates don't match, check if older code implementations.\n", CFG.log_path)
+                print_and_train_log("Gen number of gates don't match (change in code implementation?).\n", CFG.log_path)
                 return False
+
+            # Normal case, when all gates match:
             for i, gate in enumerate(self.qc.gates):
                 gate.angle = saved_gen.qc.gates[i].angle
+
             print_and_train_log("Generator parameters loaded\n", CFG.log_path)
             return True
 
         # TODO: Check that the -1 dim, load works properly
         ##################################################################
-        # When adding or removing an ancilla (one qubit difference)
+        # Case of adding or removing an ancilla (one qubit difference)
         ###################################################################
-        if saved_gen.ancilla != self.ancilla and abs(saved_gen.size - self.size) == 1:
-            # Determine the minimum number of qubits (the overlap)
+        if saved_gen.ancilla != self.ancilla and abs(saved_gen.size - self.size) == 1:  # Rdundt size check, but clarity
+            print_and_train_log("Gen match in size, but with diff in ancilla.\n", CFG.log_path)
+
+            # Determine the minimum number of qubits (the overlap):
             min_size = min(saved_gen.size, self.qc.size)
+            # Iterate through the gates and update angles, of those not involving the ancilla qubit:
             for gate in self.qc.gates:
                 q1 = getattr(gate, "qubit1", None)
                 q2 = getattr(gate, "qubit2", None)
-                # Only consider gates that act on the overlapping qubits
+                # Only consider gates that act on the overlapping qubits (no ancilla)
                 if (q1 is not None and q1 >= min_size) or (q2 is not None and q2 >= min_size):
                     continue
+                # Find the corresponding gate in the saved generator and copy the angle
                 for saved_gate in saved_gen.qc.gates:
                     if (
                         isinstance(gate, type(saved_gate))
@@ -211,6 +234,7 @@ class Generator:
                     ):
                         gate.angle = saved_gate.angle
                         break
+
             print_and_train_log("Generator parameters partially loaded (excluding ancilla difference)\n", CFG.log_path)
             return True
 
@@ -239,8 +263,10 @@ class Ansatz:
         """
         if type_of_ansatz == "XX_YY_ZZ_Z":
             return Ansatz.construct_qcircuit_XX_YY_ZZ_Z
+
         if type_of_ansatz == "ZZ_X_Z":
             return Ansatz.construct_qcircuit_ZZ_X_Z
+
         raise ValueError("Invalid type of ansatz specified.")
 
     @staticmethod

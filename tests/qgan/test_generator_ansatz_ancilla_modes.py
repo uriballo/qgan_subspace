@@ -45,3 +45,5 @@ class TestGeneratorAnsatzAncillaModes():
             assert gen2.load_model_params(path)
             assert any(g.angle == 0.456 for g in gen2.qc.gates)
             os.remove(path)
+
+# TODO: Test that the generator last qubit correctly matches the ancilla qubit when ancilla is used
