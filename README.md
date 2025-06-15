@@ -45,7 +45,7 @@ This section covers how to set up a local development environment for qgan_subsp
 
     If you need to test anything (for development), we use pytest:
     - There are unit test for diverse parts of the code,
-    - And also several short integration tests, whose configuration you can set at the end of `config.py`, and which output their logs/etc.. at the `generated_data/TESTING` directory (some graphs overwrite eachother).
+    - And also several short integration tests, whose configuration you can set at the end of `config.py` in the `test_configurations` dictionary. These integration test will output their logs, figures, etc at the `generated_data/TESTING` directory (some graphs overwrite each other).
 
     To execute them, run:
 
