@@ -31,6 +31,7 @@ class TestGeneratorAnsatzAncillaModes():
     
     def test_number_of_gates_duplicates_with_layers(self):
         for ansatz in ["XX_YY_ZZ_Z", "ZZ_X_Z"]:
+            CFG.gen_ansatz = ansatz
             
             CFG.gen_layers = 1
             gen = Generator(total_input_state)
