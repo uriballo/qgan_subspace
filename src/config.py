@@ -81,11 +81,11 @@ class Config:
         #   - ratio_step_dis_to_gen: Discriminator to generator training steps ratio (dis > gen), (default: 1-5).
         #
         #############################################################################################
-        self.epochs: int = 10
-        self.iterations_epoch: int = 50
+        self.epochs: int = 5
+        self.iterations_epoch: int = 100
         self.log_every_x_iter: int = 10
         self.max_fidelity: float = 0.99
-        self.ratio_step_dis_to_gen: int = 5
+        self.ratio_step_dis_to_gen: int = 2
 
         #############################################################################################
         # ---------------------
@@ -118,12 +118,12 @@ class Config:
         # |-----|-----------------|-----------------|-----------------|-----------------------|------------------------|
         #
         ###############################################################################################
-        self.system_size: int = 2
+        self.system_size: int = 4
         self.extra_ancilla: bool = True
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "project"
         # TODO: [FUTURE] Implement "project" with norm somewhere, passing unnormalized states, or add penalizer to cost?
         # TODO: [FUTURE] Decide what to do with trace, make all code work with density matrices, instead than sampling?
-        self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "ansatz"
+        self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "bridge"
 
         #############################################################################################
         # -----------------------
