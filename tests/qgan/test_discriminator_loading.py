@@ -36,8 +36,7 @@ save_test_model("tests/qgan/data/test_dis_ancilla_project.pkl")
 
 
 class TestDiscriminatorAncillaLoading():
-        
-    # TODO: Solve test fails only in one TESTING, mot likely due to global CFG variable changing
+    
     # Test that you can load models with different ancillas:
     def test_load_from_any_to_any_combination_of_ancilla(self):
         # Load for compatibility with test paralelism
