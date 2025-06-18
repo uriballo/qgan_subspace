@@ -59,7 +59,7 @@ class Discriminator:
         # Set params, for comparison when loading:
         self.ancilla: bool = CFG.extra_ancilla
         self.ancilla_mode: str = CFG.ancilla_mode  # Topology doesn't matter, its not a circuit = fully connect matrix.
-        self.target_size: str = CFG.system_size
+        self.target_size: int = CFG.system_size
         self.target_hamiltonian: str = CFG.target_hamiltonian
 
     def _init_params_alpha_beta(self):
