@@ -53,6 +53,7 @@ class Config:
         # ---------------------
         #   - load_timestamp: Timestamp to load a previous run (ex. None, 2025-06-06__02-05-10").
         #
+        #   - type_of_warm_start: Warm start type for loading models (only if load_timestamp != None).
         #       + "none": No warm start.
         #       + "all": Warm start all parameters, by a bit (strength).
         #       + "some": Warm start some parameters (strength), to completely random.
