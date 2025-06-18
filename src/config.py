@@ -84,7 +84,7 @@ class Config:
         self.iterations_epoch: int = 50
         self.log_every_x_iter: int = 10
         self.max_fidelity: float = 0.99
-        self.ratio_step_dis_to_gen: int = 1
+        self.ratio_step_dis_to_gen: int = 5
 
         #############################################################################################
         # ---------------------
@@ -136,7 +136,7 @@ class Config:
         #       + "ZZ_X_Z": 2 body Z, 1 body X and 1 body Z terms.
         #
         #############################################################################################
-        self.gen_layers: int = 1  # 20 #15 #10 #4 #3 #2 ...
+        self.gen_layers: int = 3  # 20 #15 #10 #4 #3 #2 ...
         self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "XX_YY_ZZ_Z"
 
         #############################################################################################

@@ -31,10 +31,10 @@ class QuantumCircuit:
         for j, gate_j in enumerate(self.gates):
             if gate_j.qubit1 is not None and gate_j.qubit2 is not None:
                 if gate_j.qubit1 > self.size - 1:
-                    print("Error: #{} gate:{} 1qubit is out of range".format(j, gate_j.name))
+                    print(f"Error: #{j} gate:{gate_j.name} 1qubit is out of range")
                     os._exit(0)
                 elif gate_j.qubit2 > self.size - 1:
-                    print("Error: #{} gate:{} 2qubit is out of range".format(j, gate_j.name))
+                    print(f"Error: #{j} gate:{gate_j.name} 2qubit is out of range")
                     os._exit(0)
 
     def get_mat_rep(self):
@@ -55,10 +55,9 @@ class QuantumCircuit:
             for j, gate_j in enumerate(self.gates):
                 if index == j:
                     g = gate_j.matrix_representation_shift_phase(self.size, True, signal)
-                    matrix = np.matmul(g, matrix)
                 else:
                     g = gate_j.matrix_representation_shift_phase(self.size, False, signal)
-                    matrix = np.matmul(g, matrix)
+                matrix = np.matmul(g, matrix)
             return np.asmatrix(matrix)
 
         if type == "matrix_multiplication":
@@ -66,10 +65,9 @@ class QuantumCircuit:
             for j, gate_j in enumerate(self.gates):
                 if index == j:
                     g = gate_j.matrix_representation(self.size, True)
-                    matrix = np.matmul(g, matrix)
                 else:
                     g = gate_j.matrix_representation(self.size, False)
-                    matrix = np.matmul(g, matrix)
+                matrix = np.matmul(g, matrix)
             return np.asmatrix(matrix)
 
         return None

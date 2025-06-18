@@ -120,18 +120,15 @@ def expan_2qubit_gate(gate, size, control, target):
 
 
 def XX_Rotation1(size, qubit1, qubit2, param, is_grad):
-    U = expan_2qubit_gate(linalg.expm(-1j * param * np.kron(X, X)), size, qubit1, qubit2)
-    return U
+    return expan_2qubit_gate(linalg.expm(-1j * param * np.kron(X, X)), size, qubit1, qubit2)
 
 
 def YY_Rotation1(size, qubit1, qubit2, param, is_grad):
-    U = expan_2qubit_gate(linalg.expm(-1j * param * np.kron(Y, Y)), size, qubit1, qubit2)
-    return U
+    return expan_2qubit_gate(linalg.expm(-1j * param * np.kron(Y, Y)), size, qubit1, qubit2)
 
 
 def ZZ_Rotation1(size, qubit1, qubit2, param, is_grad):
-    U = expan_2qubit_gate(linalg.expm(1j / 2 * param * np.kron(Z, Z)), size, qubit1, qubit2)
-    return U
+    return expan_2qubit_gate(linalg.expm(1j / 2 * param * np.kron(Z, Z)), size, qubit1, qubit2)
 
 
 def XX_Rotation(size, qubit1, qubit2, param, is_grad):
@@ -142,14 +139,13 @@ def XX_Rotation(size, qubit1, qubit2, param, is_grad):
         else:
             matrix = np.kron(matrix, I)
 
-    if is_grad is False:
-        try:
-            return linalg.expm(-1j * param * matrix)
-            # return matrix
-        except Exception:
-            print("param:\n:", param)
-    else:
+    if is_grad is not False:
         return -1j * np.matmul(matrix, linalg.expm(-1j * param * matrix))
+    try:
+        return linalg.expm(-1j * param * matrix)
+        # return matrix
+    except Exception:
+        print("param:\n:", param)
 
 
 def YY_Rotation(size, qubit1, qubit2, param, is_grad):
@@ -160,14 +156,13 @@ def YY_Rotation(size, qubit1, qubit2, param, is_grad):
         else:
             matrix = np.kron(matrix, I)
 
-    if is_grad is False:
-        try:
-            return linalg.expm(-1j * param * matrix)
-            # return matrix
-        except Exception:
-            print("param:\n:", param)
-    else:
+    if is_grad is not False:
         return -1j * np.matmul(matrix, linalg.expm(-1j * param * matrix))
+    try:
+        return linalg.expm(-1j * param * matrix)
+        # return matrix
+    except Exception:
+        print("param:\n:", param)
 
 
 def ZZ_Rotation(size, qubit1, qubit2, param, is_grad):
@@ -178,14 +173,13 @@ def ZZ_Rotation(size, qubit1, qubit2, param, is_grad):
         else:
             matrix = np.kron(matrix, I)
 
-    if is_grad is False:
-        try:
-            return linalg.expm(1j / 2 * param * matrix)
-            # return -1/2 * matrix
-        except Exception:
-            print("param:\n:", param)
-    else:
+    if is_grad is not False:
         return 1j / 2 * np.matmul(matrix, linalg.expm(1j / 2 * param * matrix))
+    try:
+        return linalg.expm(1j / 2 * param * matrix)
+        # return -1/2 * matrix
+    except Exception:
+        print("param:\n:", param)
 
 
 def X_Rotation(size, qubit, param, is_grad):
@@ -242,10 +236,7 @@ def Z_Rotation(size, qubit, param, is_grad):
 def Global_phase(size, param, is_grad):
     matrix = np.eye(2**size)
     eA = np.exp(-1j * param**2) * matrix
-    if is_grad is False:
-        return eA
-
-    return -1j * 2 * param * np.matmul(matrix, eA)
+    return eA if is_grad is False else -1j * 2 * param * np.matmul(matrix, eA)
 
 
 class QuantumGate:
@@ -256,22 +247,15 @@ class QuantumGate:
         self.r = self.get_r()
         self.s = self.get_s()
 
-        if "angle" in kwarg:
-            self.angle = kwarg["angle"]
-        else:
-            self.angle = None
+        self.angle = kwarg.get("angle", None)
 
     def get_r(self):
-        if self.name == "X" or self.name == "Y" or self.name == "Z" or self.name == "ZZ":
+        if self.name in ["X", "Y", "Z", "ZZ"]:
             return 1 / 2
-        if self.name == "XX" or self.name == "YY":
-            return 1
-        return None
+        return 1 if self.name in ["XX", "YY"] else None
 
     def get_s(self):
-        if self.r is not None:
-            return np.pi / (4 * self.r)
-        return None
+        return np.pi / (4 * self.r) if self.r is not None else None
 
     def matrix_representation(self, size, is_grad):
         if self.angle is not None:
@@ -309,16 +293,13 @@ class QuantumGate:
     def matrix_representation_shift_phase(self, size, is_grad, signal):
         if self.angle is not None:
             try:
-                if self.name == "G":
-                    param = float(self.angle)
-                else:
-                    param = float(self.angle)
-                    if is_grad:
-                        if signal == "+":
-                            param = param + self.s
-                        else:
-                            param = param - self.s
-                        is_grad = False
+                param = float(self.angle)
+                if is_grad and self.name != "G":
+                    if signal == "+":
+                        param += self.s
+                    else:
+                        param -= -self.s
+                    is_grad = False
             except:
                 param = param_table[self.angle]
 
