@@ -42,11 +42,25 @@ class Generator:
         self.ansatz: str = CFG.gen_ansatz
         self.layers: int = CFG.gen_layers
         self.target_size: str = CFG.system_size
+        self.target_hamiltonian: str = CFG.target_hamiltonian
 
         # Set the ansatz circuit:
         self.qc = Ansatz.get_ansatz_type_circuit(self.ansatz)(self.qc, self.size, self.layers)
 
-    def get_Untouched_qubits_x_Gen_matrix(self) -> np.ndarray:
+    def get_total_gen_state(self, total_input_state: np.ndarray) -> np.ndarray:
+        """Get the total generator state, including the untouched qubits in front (choi).
+
+        Args:
+            total_input_state (np.ndarray): The input state vector.
+
+        Returns:
+            np.ndarray: The total generator state vector.
+        """
+        Untouched_x_G: np.ndarray = self._get_Untouched_qubits_x_Gen_matrix()
+
+        return np.matmul(Untouched_x_G, total_input_state)
+
+    def _get_Untouched_qubits_x_Gen_matrix(self) -> np.ndarray:
         """Get the matrix representation of the circuit at the Generator step, including the untouched qubits in front (choi).
 
         Returns:
@@ -54,12 +68,19 @@ class Generator:
         """
         return np.kron(Identity(CFG.system_size), self.qc.get_mat_rep())
 
-    def update_gen(self, dis: Discriminator, total_target_state: np.ndarray, total_input_state: np.ndarray):
+    def update_gen(
+        self,
+        dis: Discriminator,
+        total_target_state: np.ndarray,
+        total_gen_state: np.ndarray,
+        total_input_state: np.ndarray,
+    ):
         """Update the generator parameters (angles) using the optimizer.
 
         Args:
             dis (Discriminator): The discriminator to compute gradients.
             total_target_state (np.ndarray): The target state vector.
+            total_gen_state (np.ndarray): The current generator state vector.
             total_input_state (np.ndarray): The input state vector.
         """
         ###############################################################
@@ -70,7 +91,7 @@ class Generator:
         for gate in self.qc.gates:
             theta.append(gate.angle)
 
-        grad: np.ndarray = np.asarray(self._grad_theta(dis, total_target_state, total_input_state))
+        grad: np.ndarray = np.asarray(self._grad_theta(dis, total_target_state, total_gen_state, total_input_state))
         new_angle = self.optimizer.move_in_grad(np.asarray(theta), grad, "min")
 
         ###############################################################
@@ -79,12 +100,19 @@ class Generator:
         for i in range(self.qc.depth):
             self.qc.gates[i].angle = new_angle[i]
 
-    def _grad_theta(self, dis: Discriminator, total_target_state: np.ndarray, total_input_state: np.ndarray):
+    def _grad_theta(
+        self,
+        dis: Discriminator,
+        total_target_state: np.ndarray,
+        total_gen_state: np.ndarray,
+        total_input_state: np.ndarray,
+    ) -> np.ndarray:
         """Compute the gradient of the generator parameters (angles) with respect to the discriminator's output.
 
         Args:
             dis (Discriminator): The discriminator to compute gradients.
             total_target_state (np.ndarray): The target state vector.
+            total_gen_state (np.ndarray): The current generator state vector.
             total_input_state (np.ndarray): The input state vector.
 
         Returns:
@@ -93,7 +121,7 @@ class Generator:
         #######################################################################
         # Get the current Generator and Discriminator states:
         #######################################################################
-        final_target_state, final_gen_state = get_final_comp_states_for_dis(self, total_target_state, total_input_state)
+        final_target_state, final_gen_state = get_final_comp_states_for_dis(total_target_state, total_gen_state)
         A, B, _, phi = dis.get_dis_matrices_rep()
 
         grad_g_psi, grad_g_phi, grad_g_reg = [], [], []
@@ -172,6 +200,13 @@ class Generator:
             print_and_train_log("ERROR: Saved generator model is incompatible (target size mismatch).\n", CFG.log_path)
             cant_load = True
 
+        # This one could work, but it wouldn't make sense, since the generator would be useless, better to stop:
+        if saved_gen.target_hamiltonian != self.target_hamiltonian:
+            print_and_train_log(
+                "ERROR: Saved generator model is incompatible (target hamiltonian mismatch).\n", CFG.log_path
+            )
+            cant_load = True
+
         if saved_gen.ansatz != self.ansatz:
             print_and_train_log("ERROR: Can't load due to different ansatz in gen.\n", CFG.log_path)
             cant_load = True
@@ -209,7 +244,6 @@ class Generator:
             print_and_train_log("Generator parameters loaded\n", CFG.log_path)
             return True
 
-        # TODO: Check that the -1 dim, load works properly
         ##################################################################
         # Case of adding or removing an ancilla (one qubit difference)
         ###################################################################
@@ -220,18 +254,13 @@ class Generator:
             min_size = min(saved_gen.size, self.qc.size)
             # Iterate through the gates and update angles, of those not involving the ancilla qubit:
             for gate in self.qc.gates:
-                q1 = getattr(gate, "qubit1", None)
-                q2 = getattr(gate, "qubit2", None)
+                q1, q2 = gate.qubit1, gate.qubit2
                 # Only consider gates that act on the overlapping qubits (no ancilla)
                 if (q1 is not None and q1 >= min_size) or (q2 is not None and q2 >= min_size):
                     continue
                 # Find the corresponding gate in the saved generator and copy the angle
                 for saved_gate in saved_gen.qc.gates:
-                    if (
-                        isinstance(gate, type(saved_gate))
-                        and getattr(saved_gate, "qubit1", None) == q1
-                        and getattr(saved_gate, "qubit2", None) == q2
-                    ):
+                    if isinstance(gate, type(saved_gate)) and saved_gate.qubit1 == q1 and saved_gate.qubit2 == q2:
                         gate.angle = saved_gate.angle
                         break
 
@@ -287,7 +316,7 @@ class Ansatz:
             size -= 1
 
         entg_list = ["XX", "YY", "ZZ"]
-        for j in range(layer):
+        for _ in range(layer):
             # First 1 qubit gates
             for i in range(size):
                 qc.add_gate(QuantumGate("Z", i, angle=0))
@@ -296,7 +325,7 @@ class Ansatz:
                 qc.add_gate(QuantumGate("Z", size, angle=0))
 
             # Then 2 qubit gates:
-            for i in range(size):
+            for i in range(size - 1):
                 for gate in entg_list:
                     qc.add_gate(QuantumGate(gate, i, i + 1, angle=0))
             # Ancilla ancilla coupling (2q) logic for: total and bridge
@@ -309,8 +338,6 @@ class Ansatz:
                     for gate in entg_list:
                         qc.add_gate(QuantumGate(gate, 0, size, angle=0))
                         qc.add_gate(QuantumGate(gate, size - 1, size, angle=0))
-                        # TODO: Check that adding a gate in last qubit ("size") works correctly
-                        # with how we define the ancilla qubit in our arrays and matrices.
 
         # Make uniform random angles for the gates (0 to 2*pi)
         theta = np.random.uniform(0, 2 * np.pi, len(qc.gates))
@@ -333,16 +360,16 @@ class Ansatz:
         """
         # If extra ancilla is used, different than ansatz, we reduce the size by 1,
         # to implement the ancilla logic separately.
-        if CFG.extra_ancilla and CFG.ancilla_topology not in ["ansatz", "trivial"]:
+        if CFG.extra_ancilla and CFG.ancilla_topology != "ansatz":
             size -= 1
 
-        for j in range(layer):
+        for _ in range(layer):
             # First 1 qubit gates
             for i in range(size):
                 qc.add_gate(QuantumGate("X", i, angle=0))
                 qc.add_gate(QuantumGate("Z", i, angle=0))
             # Ancilla 1q gates for: total, bridge and disconnected:
-            if CFG.extra_ancilla and CFG.ancilla_topology != "ansatz":
+            if CFG.extra_ancilla and CFG.ancilla_topology not in ["ansatz", "trivial"]:
                 qc.add_gate(QuantumGate("X", size, angle=0))
                 qc.add_gate(QuantumGate("Z", size, angle=0))
             # Then 2 qubit gates

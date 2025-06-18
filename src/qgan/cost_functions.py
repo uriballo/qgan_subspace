@@ -21,23 +21,18 @@ from qgan.ancilla import get_final_gen_state_for_discriminator, get_final_target
 np.random.seed()
 
 
-def get_final_comp_states_for_dis(gen, total_target_state: np.ndarray, total_input_state: np.ndarray) -> tuple:
+def get_final_comp_states_for_dis(total_target_state: np.ndarray, total_gen_state: np.ndarray) -> tuple:
     """Get the final target and gen states for comparison in the discriminator.
 
     Args:
-        gen (Generator): the generator.
         total_target_state (np.ndarray): the target state, which is the target state.
-        total_input_state (np.ndarray): the input state, which is the maximally entangled state.
+        total_gen_state (np.ndarray): the gen state, which is the total gen state.
 
 
     Returns:
         tuple[np.ndarray]: the final gen state and target state for the discriminator.
     """
-    Untouched_x_G: np.ndarray = gen.get_Untouched_qubits_x_Gen_matrix()
-
-    total_output_state: np.ndarray = np.matmul(Untouched_x_G, total_input_state)
-
-    final_gen_state: np.ndarray = get_final_gen_state_for_discriminator(total_output_state)
+    final_gen_state: np.ndarray = get_final_gen_state_for_discriminator(total_gen_state)
     final_target_state: np.ndarray = get_final_target_state_for_discriminator(total_target_state)
     return final_target_state, final_gen_state
 
@@ -46,10 +41,9 @@ def compute_cost(dis, final_target_state: np.ndarray, final_gen_state: np.ndarra
     """Calculate the cost function
 
     Args:
-        gen (Generator): the generator.
         dis (Discriminator): the discriminator.
         total_target_state (np.ndarray): the target state.
-        total_input_state (np.ndarray): the input state.
+        total_gen_state (np.ndarray): the gen state.
 
     Returns:
         float: the cost function.
@@ -96,21 +90,18 @@ def compute_fidelity(final_target_state: np.ndarray, final_gen_state: np.ndarray
     # return np.abs(np.asscalar(np.matmul(target_state.getH(), total_final_state))) ** 2
 
 
-def compute_fidelity_and_cost(
-    gen, dis, total_target_state: np.ndarray, total_input_state: np.ndarray
-) -> tuple[float, float]:
+def compute_fidelity_and_cost(dis, total_target_state: np.ndarray, total_gen_state: np.ndarray) -> tuple[float, float]:
     """Calculate the fidelity and cost function
 
     Args:
-        gen (Generator): the generator.
         dis (Discriminator): the discriminator.
         total_target_state (np.ndarray): the target state.
-        total_input_state (np.ndarray): the input state.
+        total_gen_state (np.ndarray): the gen state.
 
     Returns:
         tuple[float, float]: the fidelity and cost function.
     """
-    final_target_state, final_gen_state = get_final_comp_states_for_dis(gen, total_target_state, total_input_state)
+    final_target_state, final_gen_state = get_final_comp_states_for_dis(total_target_state, total_gen_state)
 
     fidelity = compute_fidelity(final_target_state, final_gen_state)
     cost = compute_cost(dis, final_target_state, final_gen_state)

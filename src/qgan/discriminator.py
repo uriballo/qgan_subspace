@@ -60,6 +60,7 @@ class Discriminator:
         self.ancilla: bool = CFG.extra_ancilla
         self.ancilla_mode: str = CFG.ancilla_mode  # Topology doesn't matter, its not a circuit = fully connect matrix.
         self.target_size: str = CFG.system_size
+        self.target_hamiltonian: str = CFG.target_hamiltonian
 
     def _init_params_alpha_beta(self):
         # Each param is: (size x 4)
@@ -94,18 +95,17 @@ class Discriminator:
             psi, phi = np.kron(psi, psi_i), np.kron(phi, phi_i)
         return psi, phi
 
-    def update_dis(self, gen, total_target_state: np.ndarray, total_input_state: np.ndarray):
+    def update_dis(self, total_target_state: np.ndarray, total_gen_state: np.ndarray):
         """Update the discriminator parameters (alpha, beta) using the gradients.
 
         Args:
-            gen (Generator): The generator object.
             total_target_state (np.ndarray): The total target state of the system.
-            total_input_state (np.ndarray): The total input state of the system.
+            total_gen_state (np.ndarray): The total gen state of the system.
         """
         ################################################################
         # Get the current Generator and Discriminator states:
         ################################################################
-        final_target_state, final_gen_state = get_final_comp_states_for_dis(gen, total_target_state, total_input_state)
+        final_target_state, final_gen_state = get_final_comp_states_for_dis(total_target_state, total_gen_state)
         A, B, _, _ = self.get_dis_matrices_rep()
 
         ####################################################
@@ -222,13 +222,25 @@ class Discriminator:
 
         ##################################################################
         # Check for the cases you should't load -> Stop
-        ##################################################################
+        ##################################################################s
+        cant_load = False
+
         # For this corner case, in reality the load will still work, since we always have matrices NxN or (N+1)x(N+1)
         # but you would load a Discriminator for distinguishing a T(3) to a T(4), or vice-versa, which shouldn't happen..
         if saved_dis.target_size != self.target_size:
             print_and_train_log(
                 "ERROR: Saved discriminator model is incompatible (target size mismatch).\n", CFG.log_path
             )
+            cant_load = True
+
+        # This one could work, but it wouldn't make sense, since the discriminator would be useless, better to stop:
+        if saved_dis.target_hamiltonian != self.target_hamiltonian:
+            print_and_train_log(
+                "ERROR: Saved generator model is incompatible (target hamiltonian mismatch).\n", CFG.log_path
+            )
+            cant_load = True
+
+        if cant_load:
             return False
 
         ########################################################################

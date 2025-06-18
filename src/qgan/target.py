@@ -50,7 +50,7 @@ def get_target_unitary(target_type: str, size: int) -> np.ndarray:
     raise ValueError(f"Unknown target type: {target_type}. Expected 'cluster_h', 'rotated_surface_h', or 'custom_h'.")
 
 
-def initialize_target_state(total_input_state: np.ndarray) -> np.ndarray:
+def get_total_target_state(total_input_state: np.ndarray) -> np.ndarray:
     """Initialize the target state. Applying the target unitary to the maximally entangled state.
 
     Args:
@@ -91,7 +91,7 @@ def construct_target(size: int, Z: bool = False, ZZ: bool = False, ZZZ: bool = F
     if ZZZ:
         H += sum(term_ZZZ(size, i, i + 1, i + 2) for i in range(size - 2))
     if I:
-        H = np.identity(2**size)
+        H += np.identity(2**size)
     return linalg.expm(-1j * H)
 
 

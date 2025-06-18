@@ -40,11 +40,12 @@ def get_max_entangled_state_with_ancilla_if_needed(size: int) -> np.ndarray:
     return np.asmatrix(state).T
 
 
-def project_ancilla_zero(state: np.ndarray) -> tuple[np.ndarray, float]:
+def project_ancilla_zero(state: np.ndarray, renormalize: bool = True) -> tuple[np.ndarray, float]:
     """Project the last qubit onto |0> and renormalize. Assumes state is a column vector.
 
     Args:
         state (np.ndarray): The quantum state vector to project.
+        renormalize (bool): Whether to renormalize the projected state.
 
     Returns:
         np.ndarray: The projected state vector, normalized, with the ancilla qubit removed.
@@ -61,8 +62,10 @@ def project_ancilla_zero(state: np.ndarray) -> tuple[np.ndarray, float]:
         return np.zeros((2 ** (CFG.system_size * 2), 1)), 0.0
 
     # Renormalize
-    normalized_projected = projected / norm
-    return normalized_projected.reshape(-1, 1), norm**2
+    if renormalize:
+        projected = projected / norm
+
+    return np.asmatrix(projected.reshape(-1, 1)), norm**2
 
 
 # TODO: Think better what to do with this function... (how to use it)
@@ -89,7 +92,7 @@ def trace_out_ancilla(state: np.ndarray) -> np.ndarray:
     eigvals = eigvals / np.sum(eigvals)
     idx = np.random.choice(len(eigvals), p=eigvals)
     sampled_state = eigvecs[:, idx]
-    return sampled_state.reshape(-1, 1)
+    return np.asmatrix(sampled_state.reshape(-1, 1))
 
 
 def get_final_gen_state_for_discriminator(total_output_state: np.ndarray) -> np.ndarray:
@@ -108,10 +111,9 @@ def get_final_gen_state_for_discriminator(total_output_state: np.ndarray) -> np.
             return total_final_state
         if CFG.ancilla_mode == "project":
             projected, prob = project_ancilla_zero(total_final_state)
-            return np.matrix(projected)
+            return projected
         if CFG.ancilla_mode == "trace":
-            traced = np.matrix(trace_out_ancilla(total_final_state))
-            return traced
+            return trace_out_ancilla(total_final_state)
         raise ValueError(f"Unknown ancilla_mode: {CFG.ancilla_mode}")
     return total_final_state
 
@@ -131,7 +133,9 @@ def get_final_target_state_for_discriminator(total_output_state: np.ndarray) -> 
             # Pass ancilla to discriminator (current behavior)
             return total_final_state
         if CFG.ancilla_mode in ["project", "trace"]:
-            return total_final_state[::2]  # Return only the system part (project ancilla to zero)
+            state, prob = project_ancilla_zero(total_final_state, renormalize=False)
+            return state
+            # Return only the system part (project ancilla to zero)
             # No need to renorm or trace, as Ancilla is not used in Target, and total state should be T x |0>.
         raise ValueError(f"Unknown ancilla_mode: {CFG.ancilla_mode}")
     return total_final_state

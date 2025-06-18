@@ -1,34 +1,84 @@
 import sys
 import os
+# This needs to be before any imports from src to ensure the correct path is set
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
 
+import pickle
 import numpy as np
 from qgan.discriminator import Discriminator
 from qgan.generator import Generator
 from config import CFG
 
 class TestGenerator():
-    def __init__(self):
-        self.gen = Generator()
 
     def test_init(self):
-        assert self.gen.size == CFG.system_size + (1 if CFG.extra_ancilla else 0)
-        assert self.gen.qc is not None
+        gen = Generator()
+        assert gen.size == CFG.system_size + (1 if CFG.extra_ancilla else 0)
+        assert gen.qc is not None
+        
+    def test_get_Untouched_qubits_x_Gen_matrix(self):
+        gen = Generator()
+        gen_matrix = gen._get_Untouched_qubits_x_Gen_matrix()
+        assert gen_matrix is not None
+        
+        total_size = gen.size+gen.target_size
+        assert gen_matrix.shape == (2**total_size, 2**total_size)
+        
+        # Check that the partial trace of size CFG.system_size is gen.qc.get_mat_rep() 
+        partial_trace = gen_matrix[:2**gen.size, :2**gen.size]
+        gen_mat_rep = gen.qc.get_mat_rep()
+        assert np.allclose(partial_trace, gen_mat_rep)
 
     def test_update_gen(self):
+        gen = Generator()
         dis = Discriminator()
         total_target_state = np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1)))
         total_input_state = np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1)))
-        try:
-            self.gen.update_gen(dis, total_target_state, total_input_state)
-        except Exception as e:
-            self.fail(f"update_gen raised {e}")
+        total_gen_state = np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1)))
+        
+        old_angles = [g.angle for g in gen.qc.gates].copy()
+        gen.update_gen(dis, total_target_state, total_gen_state, total_input_state)
+        
+        # Check that it updates the theta parameters
+        new_angles = [g.angle for g in gen.qc.gates].copy()
+        assert np.any(old_angles != new_angles)
 
-    def test_load_model_params_self(self):
-        # Save and load self
-        import pickle
-        path = "test_gen.pkl"
-        with open(path, "wb") as f:
-            pickle.dump(self.gen, f)
-        self.assertTrue(self.gen.load_model_params(path))
-        os.remove(path)
+    def test_all_ansatz_types(self):
+        for ansatz in ["XX_YY_ZZ_Z", "ZZ_X_Z"]:
+            CFG.gen_ansatz = ansatz
+            CFG.gen_layers = 1 
+            CFG.extra_ancilla = False
+            gen = Generator()
+            assert gen.qc is not None
+            assert len(gen.qc.gates) >= 1
+
+    def test_ancilla_modes_and_topologies(self):
+        # Try all combinations of ancilla_mode and ancilla_topology
+        modes = ["pass", "project", "trace"]
+        topologies = ["trivial", "disconnected", "ansatz", "bridge", "total"]
+        for mode in modes:
+            for topo in topologies:
+                CFG.extra_ancilla = True
+                CFG.ancilla_mode = mode
+                CFG.ancilla_topology = topo
+                CFG.system_size = 2
+                CFG.gen_layers = 1
+                gen = Generator()
+                assert gen.qc is not None
+                assert len(gen.qc.gates) >= 1
+
+    def test_save_and_load_with_various_ansatz(self):
+        for ansatz in ["XX_YY_ZZ_Z", "ZZ_X_Z"]:
+            CFG.gen_ansatz = ansatz
+            CFG.gen_layers = 1 
+            CFG.extra_ancilla = False
+            gen = Generator()
+            for gate in gen.qc.gates:
+                gate.angle = 0.456
+            path = f"test_gen_{ansatz}.pkl"
+            with open(path, "wb") as f:
+                pickle.dump(gen, f)
+            gen2 = Generator()
+            assert gen2.load_model_params(path)
+            assert any(g.angle == 0.456 for g in gen2.qc.gates)
+            os.remove(path)

@@ -1,6 +1,7 @@
 import sys
 import os
 
+# This needs to be before any imports from src to ensure the correct path is set
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
 
 from qgan.generator import Generator
@@ -41,6 +42,7 @@ class TestGeneratorAncillaLoading():
         CFG.gen_layers = 1
         CFG.gen_ansatz = "ZZ_X_Z"
         CFG.ancilla_topology = "ansatz"
+        CFG.target_hamiltonian = "cluster_h"
         
         ##############################################################################
         # Successful load, if we only change ancilla (same other settings).
@@ -126,4 +128,52 @@ class TestGeneratorAncillaLoading():
                 assert result is False
         
         CFG.ancilla_topology = "ansatz"  # Reset to original value
+        
+        ################################################################
+        # Change hamiltonian to make models incompatible
+        ################################################################
+        CFG.gen_layers = 1
+        CFG.gen_ansatz = "ZZ_X_Z"
+        CFG.ancilla_topology = "ansatz"
+        CFG.extra_ancilla = True  # Set to True to test with ancilla
+        CFG.target_hamiltonian = "custom_h"
+        CFG.custom_hamiltonian_terms = ["ZZ"]
+        
+        gen_other = Generator()
+        for path in paths:
+            result = gen_other.load_model_params(path)
+            # This should fail because the hamiltonian is incompatible with the one used in the saved model.
+            assert result is False
 
+    def test_partial_angle_loading(self):
+        CFG.system_size = 2
+        CFG.gen_layers = 1
+        CFG.extra_ancilla = False
+        
+        # Create a model with a known angle
+        gen = Generator()
+        for gate in gen.qc.gates:
+            gate.angle = 0.123
+        original_gates_num = len(gen.qc.gates)
+            
+        # Save the model
+        path = "tests/qgan/data/test_gen_partial.pkl"
+        os.remove(path) if os.path.exists(path) else None
+        save_model(gen, path)
+        
+        # Create a new model with different configurations:
+        for extra_ancilla in [True, False]:
+            CFG.extra_ancilla = extra_ancilla
+            for ancilla_topology in ["trivial", "disconnected", "ansatz", "bridge", "total"]:
+                CFG.ancilla_topology = ancilla_topology
+       
+                gen_with_ancilla = Generator()
+                # All angles should be different before loading
+                assert not all(g.angle == 0.123 for g in gen_with_ancilla.qc.gates)
+                # Load
+                gen_with_ancilla.load_model_params(path)
+                
+                # At least some angles should now be 0.123 (for gates not involving ancilla)
+                assert any(g.angle == 0.123 for g in gen_with_ancilla.qc.gates)
+                # Concretely the number of gates with angle 0.123 should be the same as in the original model without ancilla
+                assert len([g for g in gen_with_ancilla.qc.gates if g.angle == 0.123]) == original_gates_num

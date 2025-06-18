@@ -1,6 +1,7 @@
 import sys
 import os
 
+# This needs to be before any imports from src to ensure the correct path is set
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
 
 import pytest
@@ -9,7 +10,7 @@ from qgan.cost_functions import compute_cost, compute_fidelity, get_final_comp_s
 from qgan.generator import Generator
 from qgan.discriminator import Discriminator
 from qgan.ancilla import get_max_entangled_state_with_ancilla_if_needed
-from qgan.target import initialize_target_state
+from qgan.target import get_total_target_state
 from config import CFG
 
 @pytest.fixture
@@ -23,7 +24,7 @@ def final_states_for_discriminator():
             CFG.ancilla_mode = ancilla_mode
             # Compute input and target states:
             total_input_state: np.matrix = get_max_entangled_state_with_ancilla_if_needed(CFG.system_size)
-            total_target_state: np.matrix = initialize_target_state(total_input_state)
+            total_target_state: np.matrix = get_total_target_state(total_input_state)
             
             # Also try different ansatz and number of layers for gen:
             for ansatz in ["XX_YY_ZZ_Z", "ZZ_X_Z"]:
@@ -32,7 +33,8 @@ def final_states_for_discriminator():
                     CFG.gen_layers = num_layers
 
                     gen = Generator()
-                    final_target_and_gen_states.append((ancilla, ancilla_mode, get_final_comp_states_for_dis(gen, total_target_state, total_input_state)))
+                    total_gen_state: np.matrix = gen.get_total_gen_state(total_input_state)
+                    final_target_and_gen_states.append((ancilla, ancilla_mode, get_final_comp_states_for_dis(total_target_state, total_gen_state)))
             
     return final_target_and_gen_states
 
@@ -47,7 +49,7 @@ def gen_and_total_states_for_discriminator():
             CFG.ancilla_mode = ancilla_mode
             # Compute input and target states:
             total_input_state: np.matrix = get_max_entangled_state_with_ancilla_if_needed(CFG.system_size)
-            total_target_state: np.matrix = initialize_target_state(total_input_state)
+            total_target_state: np.matrix = get_total_target_state(total_input_state)
             
             # Also try different ansatz and number of layers for gen:
             for ansatz in ["XX_YY_ZZ_Z", "ZZ_X_Z"]:
@@ -55,7 +57,8 @@ def gen_and_total_states_for_discriminator():
                 for num_layers in [1, 3]:
                     CFG.gen_layers = num_layers
                     gen = Generator()
-                    gen_and_total_states_for_discriminator.append((ancilla, ancilla_mode, gen, total_target_state, total_input_state))
+                    total_gen_state: np.matrix = gen.get_total_gen_state(total_input_state)
+                    gen_and_total_states_for_discriminator.append((ancilla, ancilla_mode, gen, total_target_state, total_gen_state))
             
     return gen_and_total_states_for_discriminator
         
@@ -88,9 +91,9 @@ class TestCostFunctions():
                 
                 # Gradient of Discriminator should decrease the cost:
                 result_1 = compute_cost(dis, final_target_state, final_target_state)
-                dis.update_dis(gen, final_target_state, final_gen_state)
+                dis.update_dis(final_target_state, final_gen_state)
                 result_2 = compute_cost(dis, final_target_state, final_target_state)
-                dis.update_dis(gen, final_target_state, final_gen_state)
+                dis.update_dis(final_target_state, final_gen_state)
                 result_3 = compute_cost(dis, final_target_state, final_target_state)
                 assert isinstance(result_1, float) and isinstance(result_2, float) and isinstance(result_3, float)
         
@@ -101,7 +104,7 @@ class TestCostFunctions():
                 CFG.extra_ancilla = ancilla
                 CFG.ancilla_mode = ancilla_mode
                 dis = Discriminator()
-                dis.update_dis(gen, final_target_state, final_gen_state)
+                dis.update_dis(final_target_state, final_gen_state)
                 small_result_1 = compute_cost(dis, final_target_state, final_target_state)
                 small_result_2 = compute_cost(dis, final_gen_state, final_gen_state)
                 big_result = compute_cost(dis, final_target_state, final_gen_state)
@@ -117,6 +120,7 @@ class TestCostFunctions():
     def test_compute_cost_and_fidelity(self, final_states_for_discriminator):
         for _ in range(5):  # Run multiple times to ensure stability (randomness in Discriminator params)
             for final_states in final_states_for_discriminator: # Run multiple times to ensure stability (random in Gen)
+                _, _, final_states = final_states
                 dis = Discriminator()
                 cost = compute_cost(dis, *final_states)
                 fidelity = compute_fidelity(*final_states)

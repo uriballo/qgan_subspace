@@ -53,7 +53,6 @@ class Config:
         # ---------------------
         #   - load_timestamp: Timestamp to load a previous run (ex. None, 2025-06-06__02-05-10").
         #
-        #   - type_of_warm_start: Warm start type for loading models (only if loading).
         #       + "none": No warm start.
         #       + "all": Warm start all parameters, by a bit (strength).
         #       + "some": Warm start some parameters (strength), to completely random.
@@ -80,7 +79,7 @@ class Config:
         #   - ratio_step_dis_to_gen: Discriminator to generator training steps ratio (dis > gen), (default: 1-5).
         #
         #############################################################################################
-        self.epochs: int = 5
+        self.epochs: int = 10
         self.iterations_epoch: int = 50
         self.log_every_x_iter: int = 10
         self.max_fidelity: float = 0.99

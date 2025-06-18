@@ -1,5 +1,6 @@
 import sys
 import os
+# This needs to be before any imports from src to ensure the correct path is set
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
 
 
@@ -12,7 +13,5 @@ class TestPlotHub():
         # Should not raise error
         fidelities = np.random.rand(10)
         losses = np.random.rand(10)
-        try:
-            plot_hub.plt_fidelity_vs_iter(fidelities, losses, CFG, 1)
-        except Exception as e:
-            self.fail(f"plt_fidelity_vs_iter raised {e}")
+        
+        plot_hub.plt_fidelity_vs_iter(fidelities, losses, CFG, 1)
