@@ -38,7 +38,7 @@ def get_final_comp_states_for_dis(total_target_state: np.ndarray, total_gen_stat
 
 
 def compute_cost(dis, final_target_state: np.ndarray, final_gen_state: np.ndarray) -> float:
-    """Calculate the cost function
+    """Calculate the cost function. Which is basically equivalent to the Wasserstein distance.
 
     Args:
         dis (Discriminator): the discriminator.

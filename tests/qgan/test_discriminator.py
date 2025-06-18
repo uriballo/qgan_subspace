@@ -37,11 +37,11 @@ class TestDiscriminator():
                 assert psi.shape == phi.shape == (2**dis.alpha.shape[0], 2**dis.alpha.shape[0])
 
     def test_update_dis(self):
-        dis = Discriminator()
-        gen = Generator()
         total_target_state = np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1)))
         total_input_state = np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1)))
-        total_gen_state = gen.get_total_gen_state(total_input_state)
+        dis = Discriminator()
+        gen = Generator(total_input_state)
+        total_gen_state = gen.get_total_gen_state()
         
         old_alpha = dis.alpha.copy()
         old_beta = dis.beta.copy()

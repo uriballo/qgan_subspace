@@ -39,20 +39,17 @@ class Training:
     def __init__(self):
         """Builds the configuration for the Training. You might wanna comment/discomment lines, for changing the model."""
 
-        self.gen: Generator = Generator()
-        """Prepares the Generator with the size, ansatz, layers and ancilla, defined in config."""
-
-        self.dis: Discriminator = Discriminator()
-        """Prepares the Discriminatos, with the size, and ancilla defined in config."""
-
         self.total_input_state: np.matrix = get_max_entangled_state_with_ancilla_if_needed(CFG.system_size)
         """Preparation of max. entgl. state with ancilla qubit if needed."""
 
         self.total_target_state: np.matrix = get_total_target_state(self.total_input_state)
         """Prepare the target state, with the size and Target unitary defined in config."""
 
-        self.total_gen_state: np.matrix = self.gen.get_total_gen_state(self.total_input_state)
-        """The total state of the generator, which is updated during the training."""
+        self.gen: Generator = Generator(self.total_input_state)
+        """Prepares the Generator with the size, ansatz, layers and ancilla, defined in config."""
+
+        self.dis: Discriminator = Discriminator()
+        """Prepares the Discriminatos, with the size, and ancilla defined in config."""
 
     def run(self):
         """Run the training, saving the data, the model, the logs, and the results plots."""
@@ -84,17 +81,16 @@ class Training:
                 # Generator and Discriminator gradient descent
                 ###########################################################
                 # 1 step for generator
-                self.gen.update_gen(self.dis, self.total_target_state, self.total_gen_state, self.total_input_state)
-                self.total_gen_state = self.gen.get_total_gen_state(self.total_input_state)  # Update total gen state
+                self.gen.update_gen(self.dis, self.total_target_state)
                 # Ratio of steps for discriminator
                 for _ in range(CFG.ratio_step_dis_to_gen):
-                    self.dis.update_dis(self.total_target_state, self.total_gen_state)
+                    self.dis.update_dis(self.total_target_state, self.gen.total_gen_state)
 
                 ###########################################################
                 # Compute fidelity and loss
                 ###########################################################
                 fidelities[epoch_iter], losses[epoch_iter] = compute_fidelity_and_cost(
-                    self.dis, self.total_target_state, self.total_gen_state
+                    self.dis, self.total_target_state, self.gen.total_gen_state
                 )
 
                 ###########################################################
@@ -143,4 +139,4 @@ class Training:
         save_gen_final_params(self.gen, CFG.gen_final_params_path)
 
         endtime = datetime.now()
-        print_and_train_log("\nRun took: {} time.".format((endtime - starttime)), CFG.log_path)
+        print_and_train_log(f"\nRun took: {endtime - starttime} time.", CFG.log_path)

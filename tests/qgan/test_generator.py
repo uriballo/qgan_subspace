@@ -1,3 +1,4 @@
+import itertools
 import sys
 import os
 # This needs to be before any imports from src to ensure the correct path is set
@@ -12,12 +13,12 @@ from config import CFG
 class TestGenerator():
 
     def test_init(self):
-        gen = Generator()
+        gen = Generator(np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1))))
         assert gen.size == CFG.system_size + (1 if CFG.extra_ancilla else 0)
         assert gen.qc is not None
         
     def test_get_Untouched_qubits_x_Gen_matrix(self):
-        gen = Generator()
+        gen = Generator(np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1))))
         gen_matrix = gen._get_Untouched_qubits_x_Gen_matrix()
         assert gen_matrix is not None
         
@@ -30,14 +31,12 @@ class TestGenerator():
         assert np.allclose(partial_trace, gen_mat_rep)
 
     def test_update_gen(self):
-        gen = Generator()
-        dis = Discriminator()
         total_target_state = np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1)))
-        total_input_state = np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1)))
-        total_gen_state = np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1)))
+        gen = Generator(np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1))))
+        dis = Discriminator()
         
         old_angles = [g.angle for g in gen.qc.gates].copy()
-        gen.update_gen(dis, total_target_state, total_gen_state, total_input_state)
+        gen.update_gen(dis, total_target_state)
         
         # Check that it updates the theta parameters
         new_angles = [g.angle for g in gen.qc.gates].copy()
@@ -48,7 +47,7 @@ class TestGenerator():
             CFG.gen_ansatz = ansatz
             CFG.gen_layers = 1 
             CFG.extra_ancilla = False
-            gen = Generator()
+            gen = Generator(np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1))))
             assert gen.qc is not None
             assert len(gen.qc.gates) >= 1
 
@@ -56,29 +55,28 @@ class TestGenerator():
         # Try all combinations of ancilla_mode and ancilla_topology
         modes = ["pass", "project", "trace"]
         topologies = ["trivial", "disconnected", "ansatz", "bridge", "total"]
-        for mode in modes:
-            for topo in topologies:
-                CFG.extra_ancilla = True
-                CFG.ancilla_mode = mode
-                CFG.ancilla_topology = topo
-                CFG.system_size = 2
-                CFG.gen_layers = 1
-                gen = Generator()
-                assert gen.qc is not None
-                assert len(gen.qc.gates) >= 1
+        for mode, topo in itertools.product(modes, topologies):
+            CFG.extra_ancilla = True
+            CFG.ancilla_mode = mode
+            CFG.ancilla_topology = topo
+            CFG.system_size = 2
+            CFG.gen_layers = 1
+            gen = Generator(np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1))))
+            assert gen.qc is not None
+            assert len(gen.qc.gates) >= 1
 
     def test_save_and_load_with_various_ansatz(self):
         for ansatz in ["XX_YY_ZZ_Z", "ZZ_X_Z"]:
             CFG.gen_ansatz = ansatz
             CFG.gen_layers = 1 
             CFG.extra_ancilla = False
-            gen = Generator()
+            gen = Generator(np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1))))
             for gate in gen.qc.gates:
                 gate.angle = 0.456
             path = f"test_gen_{ansatz}.pkl"
             with open(path, "wb") as f:
                 pickle.dump(gen, f)
-            gen2 = Generator()
+            gen2 = Generator(np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1))))
             assert gen2.load_model_params(path)
             assert any(g.angle == 0.456 for g in gen2.qc.gates)
             os.remove(path)

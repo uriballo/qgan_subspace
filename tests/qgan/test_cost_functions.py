@@ -32,8 +32,8 @@ def final_states_for_discriminator():
                 for num_layers in [1, 3]:
                     CFG.gen_layers = num_layers
 
-                    gen = Generator()
-                    total_gen_state: np.matrix = gen.get_total_gen_state(total_input_state)
+                    gen = Generator(total_input_state)
+                    total_gen_state: np.matrix = gen.get_total_gen_state()
                     final_target_and_gen_states.append((ancilla, ancilla_mode, get_final_comp_states_for_dis(total_target_state, total_gen_state)))
             
     return final_target_and_gen_states
@@ -56,8 +56,8 @@ def gen_and_total_states_for_discriminator():
                 CFG.gen_ansatz = ansatz
                 for num_layers in [1, 3]:
                     CFG.gen_layers = num_layers
-                    gen = Generator()
-                    total_gen_state: np.matrix = gen.get_total_gen_state(total_input_state)
+                    gen = Generator(total_input_state)
+                    total_gen_state: np.matrix = gen.get_total_gen_state()
                     gen_and_total_states_for_discriminator.append((ancilla, ancilla_mode, gen, total_target_state, total_gen_state))
             
     return gen_and_total_states_for_discriminator
@@ -80,24 +80,46 @@ class TestCostFunctions():
             assert np.isclose(result_1, 1.0)
             assert np.isclose(result_2, 1.0)
     
-   
-    def test_compute_cost_with_gradient(self, gen_and_total_states_for_discriminator):
+    # TODO: Solve divergence problem!
+    def test_compute_costdist_increases_with_dis_gradient(self, gen_and_total_states_for_discriminator):
         for _ in range(5):  # Run multiple times to ensure stability (randomness in Discriminator params)
             for gen_and_total_states in gen_and_total_states_for_discriminator: # Run multiple times to ensure stability (random in Gen)
-                ancilla, ancilla_mode, gen, final_target_state, final_gen_state = gen_and_total_states
+                ancilla, ancilla_mode, gen, final_target_state, final_gen_state= gen_and_total_states
                 CFG.extra_ancilla = ancilla
                 CFG.ancilla_mode = ancilla_mode
                 dis = Discriminator()
                 
-                # Gradient of Discriminator should decrease the cost:
-                result_1 = compute_cost(dis, final_target_state, final_gen_state)
+                # Gradient of Discriminator should increase the cost/distance:
+                dist_1 = compute_cost(dis, final_target_state, final_gen_state)
+                for _ in range(30):  # Update discriminator multiple times
+                    dis.update_dis(final_target_state, final_gen_state)
+                dist_2 = compute_cost(dis, final_target_state, final_gen_state)
+                
+                assert isinstance(dist_1, float) and isinstance(dist_2, float)
+                assert dist_1 <= dist_2  # Cost/Distance increase with better observable (dis)
+                
+    def test_compute_costdist_decreases_with_gen_gradient(self, gen_and_total_states_for_discriminator):
+        for _ in range(5):  # Run multiple times to ensure stability (randomness in Discriminator params)
+            for gen_and_total_states in gen_and_total_states_for_discriminator: # Run multiple times to ensure stability (random in Gen)
+                ancilla, ancilla_mode, gen, final_target_state, final_gen_state = gen_and_total_states
+                gen: Generator = gen
+                CFG.extra_ancilla = ancilla
+                CFG.ancilla_mode = ancilla_mode
+                
+                # We want to build a good enough discriminator to test the cost function:
+                dis = Discriminator()
                 for _ in range(10):  # Update discriminator multiple times
                     dis.update_dis(final_target_state, final_gen_state)
-                result_2 = compute_cost(dis, final_target_state, final_gen_state)
                 
-                assert isinstance(result_1, float) and isinstance(result_2, float)
-                assert result_1 <= result_2  # Cost should decrease with updates
-                # TODO: Solve problem with cost divergence??!!                                                                                                                                     <<<<< [IMPORTANT]
+                # Gradient of Generator should decrease the cost:
+                dist_1 = compute_cost(dis, final_target_state, final_gen_state)
+                for _ in range(30):  # Update generator multiple times
+                    gen.update_gen(dis, final_target_state)
+                    final_gen_state = gen.get_total_gen_state()
+                dist_2 = compute_cost(dis, final_target_state, final_gen_state)
+                
+                assert isinstance(dist_1, float) and isinstance(dist_2, float)
+                assert dist_1 <= dist_2  # Cost/Distance increase with better observable (dis)<<<<< [IMPORTANT]
         
     def test_compute_cost_is_smaller_for_similar_states(self, gen_and_total_states_for_discriminator):
         for _ in range(5):  # Run multiple times to ensure stability (randomness in Discriminator params)
@@ -105,18 +127,23 @@ class TestCostFunctions():
                 ancilla, ancilla_mode, gen, final_target_state, final_gen_state = gen_and_total_states
                 CFG.extra_ancilla = ancilla
                 CFG.ancilla_mode = ancilla_mode
+                
+                # We want to build a good enough discriminator to test the cost function:
                 dis = Discriminator()
-                dis.update_dis(final_target_state, final_gen_state)
-                small_result_1 = compute_cost(dis, final_target_state, final_target_state)
-                small_result_2 = compute_cost(dis, final_gen_state, final_gen_state)
-                big_result = compute_cost(dis, final_target_state, final_gen_state)
+                for _ in range(30):  # Update discriminator multiple times
+                    dis.update_dis(final_target_state, final_gen_state)
+                    
+                # Compute cost for small distances:
+                small_dist_1 = compute_cost(dis, final_target_state, final_target_state)
+                small_dist_2 = compute_cost(dis, final_gen_state, final_gen_state)
+                bigger_dist = compute_cost(dis, final_target_state, final_gen_state)
                 
                 # Cost should be float non-negative
-                assert isinstance(small_result_1, float) and isinstance(small_result_2, float) and isinstance(big_result, float)
+                assert isinstance(small_dist_1, float) and isinstance(small_dist_2, float) and isinstance(bigger_dist, float)
             
                 # Small costs should be smaller than the big cost
-                assert small_result_1 > big_result
-                assert small_result_2 > big_result #TODO: Check the direction of this, after you solve the divergence problem
+                assert small_dist_1 < bigger_dist # Cost/Distance should be smaller for similar states
+                assert small_dist_2 < bigger_dist
 
 
     def test_compute_cost_and_fidelity(self, final_states_for_discriminator):

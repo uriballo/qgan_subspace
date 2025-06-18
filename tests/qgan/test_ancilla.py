@@ -144,7 +144,7 @@ class TestAncilla():
             ###################################################
             total_input_state = get_max_entangled_state_with_ancilla_if_needed(CFG.system_size)
             total_target_state = get_total_target_state(total_input_state)
-            gen = Generator()
+            gen = Generator(total_input_state)
             
             # Set the generator to the Identity (as target), but with some arbitrary rotations to check ancilla logic:
             for change_gates_in_X_qubit_of_gen in ["none", "ancilla", "first", "second"]:
@@ -166,7 +166,7 @@ class TestAncilla():
                         if gate.qubit1== 1 and gate.qubit2 is None:
                             gate.angle = np.random.uniform(0, 2 * np.pi)
                     
-                total_gen_state = gen.get_total_gen_state(total_input_state)
+                total_gen_state = gen.get_total_gen_state()
 
                 ###################################################
                 # Comparison:

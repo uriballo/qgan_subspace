@@ -30,7 +30,7 @@ from tools.qobjects import Identity, QuantumCircuit, QuantumGate
 class Generator:
     """Generator class for Quantum GAN."""
 
-    def __init__(self):
+    def __init__(self, total_input_state: np.ndarray):
         # Set general used params:
         self.size: int = CFG.system_size + (1 if CFG.extra_ancilla else 0)
         self.qc: QuantumCircuit = QuantumCircuit(self.size, "generator")
@@ -46,8 +46,10 @@ class Generator:
 
         # Set the ansatz circuit:
         self.qc = Ansatz.get_ansatz_type_circuit(self.ansatz)(self.qc, self.size, self.layers)
+        self.total_input_state: np.ndarray = total_input_state
+        self.total_gen_state = self.get_total_gen_state()
 
-    def get_total_gen_state(self, total_input_state: np.ndarray) -> np.ndarray:
+    def get_total_gen_state(self) -> np.ndarray:
         """Get the total generator state, including the untouched qubits in front (choi).
 
         Args:
@@ -58,7 +60,7 @@ class Generator:
         """
         Untouched_x_G: np.ndarray = self._get_Untouched_qubits_x_Gen_matrix()
 
-        return np.matmul(Untouched_x_G, total_input_state)
+        return np.matmul(Untouched_x_G, self.total_input_state)
 
     def _get_Untouched_qubits_x_Gen_matrix(self) -> np.ndarray:
         """Get the matrix representation of the circuit at the Generator step, including the untouched qubits in front (choi).
@@ -72,8 +74,6 @@ class Generator:
         self,
         dis: Discriminator,
         total_target_state: np.ndarray,
-        total_gen_state: np.ndarray,
-        total_input_state: np.ndarray,
     ):
         """Update the generator parameters (angles) using the optimizer.
 
@@ -81,17 +81,14 @@ class Generator:
             dis (Discriminator): The discriminator to compute gradients.
             total_target_state (np.ndarray): The target state vector.
             total_gen_state (np.ndarray): The current generator state vector.
-            total_input_state (np.ndarray): The input state vector.
         """
         ###############################################################
         # Compute the gradient
         ###############################################################
         # Store old angles, needed later for the optimizer:
         theta = []
-        for gate in self.qc.gates:
-            theta.append(gate.angle)
-
-        grad: np.ndarray = np.asarray(self._grad_theta(dis, total_target_state, total_gen_state, total_input_state))
+        theta.extend(gate.angle for gate in self.qc.gates)
+        grad: np.ndarray = np.asarray(self._grad_theta(dis, total_target_state, self.total_gen_state))
         new_angle = self.optimizer.move_in_grad(np.asarray(theta), grad, "min")
 
         ###############################################################
@@ -100,12 +97,16 @@ class Generator:
         for i in range(self.qc.depth):
             self.qc.gates[i].angle = new_angle[i]
 
+        ###############################################################
+        # Update the total generator state with the new angles
+        ###############################################################
+        self.total_gen_state = self.get_total_gen_state()
+
     def _grad_theta(
         self,
         dis: Discriminator,
         total_target_state: np.ndarray,
         total_gen_state: np.ndarray,
-        total_input_state: np.ndarray,
     ) -> np.ndarray:
         """Compute the gradient of the generator parameters (angles) with respect to the discriminator's output.
 
@@ -113,7 +114,6 @@ class Generator:
             dis (Discriminator): The discriminator to compute gradients.
             total_target_state (np.ndarray): The target state vector.
             total_gen_state (np.ndarray): The current generator state vector.
-            total_input_state (np.ndarray): The input state vector.
 
         Returns:
             np.ndarray: The gradient of the generator parameters.
@@ -134,7 +134,7 @@ class Generator:
             grad_g_psi.append(0)
 
             # For phi term
-            gen_grad = np.matmul(grad_i, total_input_state)
+            gen_grad = np.matmul(grad_i, self.total_input_state)
             final_gen_grad = np.matrix(get_final_gen_state_for_discriminator(gen_grad))
             tmp_grad = np.matmul(final_gen_grad.getH(), np.matmul(phi, final_gen_state)) + np.matmul(final_gen_state.getH(), np.matmul(phi, final_gen_grad))
 

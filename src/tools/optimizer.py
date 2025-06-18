@@ -44,20 +44,18 @@ class MomentumOptimizer:
         theta_tmp = _flatten(theta)
 
         if min_or_max == "min":
-            if self.v is None:
-                self.v = [-self.eta * g for g in grad_list]
-            else:
-                self.v = [self.miu * v - self.eta * g for v, g in zip(self.v, grad_list)]
-
-            new_theta = [theta_i + v for theta_i, v in zip(theta_tmp, self.v)]
+            sign = -1
+        elif min_or_max == "max":
+            sign = 1
         else:
-            if self.v is None:
-                self.v = [self.eta * g for g in grad_list]
-            else:
-                self.v = [self.miu * v + self.eta * g for v, g in zip(self.v, grad_list)]
+            raise ValueError("min_or_max must be either 'min' or 'max'")
 
-            new_theta = [theta_i + v for theta_i, v in zip(theta_tmp, self.v)]
+        if self.v is None:
+            self.v = [sign * self.eta * g for g in grad_list]
+        else:
+            self.v = [self.miu * v + sign * self.eta * g for v, g in zip(self.v, grad_list)]
 
+        new_theta = [theta_i + v for theta_i, v in zip(theta_tmp, self.v)]
         new_theta = _unflatten(new_theta, theta)
 
         return new_theta
