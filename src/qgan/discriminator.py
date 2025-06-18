@@ -236,7 +236,7 @@ class Discriminator:
         # This one could work, but it wouldn't make sense, since the discriminator would be useless, better to stop:
         if saved_dis.target_hamiltonian != self.target_hamiltonian:
             print_and_train_log(
-                "ERROR: Saved generator model is incompatible (target hamiltonian mismatch).\n", CFG.log_path
+                "ERROR: Saved discriminator model is incompatible (target hamiltonian mismatch).\n", CFG.log_path
             )
             cant_load = True
 

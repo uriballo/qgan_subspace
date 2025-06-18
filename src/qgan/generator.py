@@ -41,7 +41,7 @@ class Generator:
         self.ancilla_topology: str = CFG.ancilla_topology  # Type doesn't matter, ancilla always passes through gen
         self.ansatz: str = CFG.gen_ansatz
         self.layers: int = CFG.gen_layers
-        self.target_size: str = CFG.system_size
+        self.target_size: int = CFG.system_size
         self.target_hamiltonian: str = CFG.target_hamiltonian
 
         # Set the ansatz circuit:
