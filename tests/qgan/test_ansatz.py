@@ -8,8 +8,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 
 
 
-import os
-
 from tools.data.data_managers import save_model
 from qgan.generator import Generator, Ansatz
 from config import CFG

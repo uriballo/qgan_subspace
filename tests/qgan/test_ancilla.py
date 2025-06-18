@@ -155,7 +155,7 @@ class TestAncilla():
                 if change_gates_in_X_qubit_of_gen == "ancilla":
                     for gate in gen.qc.gates:
                         if gate.qubit1 == CFG.system_size and (topology == "disconnected" or gate.qubit2 is None):
-                            gate.angle == np.random.uniform(0, 2 * np.pi)
+                            gate.angle = np.random.uniform(0, 2 * np.pi)
                 # Change gates not in the ancilla (first and second qubits):
                 if change_gates_in_X_qubit_of_gen == "first":
                     for gate in gen.qc.gates:
