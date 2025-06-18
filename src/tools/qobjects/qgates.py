@@ -139,11 +139,11 @@ def XX_Rotation(size, qubit1, qubit2, param, is_grad):
         else:
             matrix = np.kron(matrix, I)
 
-    if is_grad is not False:
-        return -1j * np.matmul(matrix, linalg.expm(-1j * param * matrix))
-    try:
+    try:  # return matrix
+        if is_grad:
+            return -1j * np.matmul(matrix, linalg.expm(-1j * param * matrix))
         return linalg.expm(-1j * param * matrix)
-        # return matrix
+
     except Exception:
         print("param:\n:", param)
 
@@ -156,11 +156,11 @@ def YY_Rotation(size, qubit1, qubit2, param, is_grad):
         else:
             matrix = np.kron(matrix, I)
 
-    if is_grad is not False:
-        return -1j * np.matmul(matrix, linalg.expm(-1j * param * matrix))
-    try:
+    try:  # return matrix
+        if is_grad:
+            return -1j * np.matmul(matrix, linalg.expm(-1j * param * matrix))
         return linalg.expm(-1j * param * matrix)
-        # return matrix
+
     except Exception:
         print("param:\n:", param)
 
@@ -173,11 +173,11 @@ def ZZ_Rotation(size, qubit1, qubit2, param, is_grad):
         else:
             matrix = np.kron(matrix, I)
 
-    if is_grad is not False:
-        return 1j / 2 * np.matmul(matrix, linalg.expm(1j / 2 * param * matrix))
-    try:
+    try:  # return matrix
+        if is_grad:
+            return 1j / 2 * np.matmul(matrix, linalg.expm(1j / 2 * param * matrix))
         return linalg.expm(1j / 2 * param * matrix)
-        # return -1/2 * matrix
+
     except Exception:
         print("param:\n:", param)
 
@@ -298,7 +298,7 @@ class QuantumGate:
                     if signal == "+":
                         param += self.s
                     else:
-                        param -= -self.s
+                        param -= self.s
                     is_grad = False
             except:
                 param = param_table[self.angle]
