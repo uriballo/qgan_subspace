@@ -63,10 +63,10 @@ class TestGeneratorAnsatzAncillaModes():
             gen.qc = Ansatz.get_ansatz_type_circuit(CFG.gen_ansatz)(gen.qc, gen.size, CFG.gen_layers)
             new_num_gates = len(gen.qc.gates)
         
-        if CFG.ancilla_topology != "trivial":
-            assert new_num_gates > old_num_gates
-        else:
-            assert new_num_gates == old_num_gates, "In trivial topology, the number of gates should not change"
+            if topo != "trivial":
+                assert new_num_gates > old_num_gates
+            else:
+                assert new_num_gates == old_num_gates, "In trivial topology, the number of gates should not change"
             
     def test_ancilla_modes_and_topologies(self):
         # Try all combinations of ancilla_mode and ancilla_topology
