@@ -34,8 +34,8 @@ class Config:
         #   - N_reps_each_init_exp: Number of repetitions for each initial experiment afterwards (with changes), (default: 5).
         #
         #############################################################################################
-        self.N_initial_exp: int = 20  # TODO: For loop twice, first for initial experiments, second for repetitions.
-        self.N_reps_each_init_exp: int = 5  # TODO: Change the ancilla mode and topology after the initial experiments.
+        self.N_initial_exp: int = 20
+        self.N_reps_each_init_exp: int = 5
         self.reps_new_config: dict[str, Any] = (
             {
                 "extra_ancilla": True,
@@ -45,6 +45,7 @@ class Config:
                 "warm_start_strength": 0.1,
             },
         )
+        # TODO: Loop twice, first for initial experiments, second for repetitions starting from the last runs (with changes).
         # TODO: Also add so that automatically makes the analysis graphs of the improvements, and plots them in folder.
 
         #############################################################################################
@@ -120,10 +121,9 @@ class Config:
         self.system_size: int = 2
         self.extra_ancilla: bool = True
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "project"
-        # TODO: [FUTURE] Implement "project" with norm somewhere (pass unormalized state, or add a penalizer in cost?).
-        # TODO: [FUTURE] Decide what to do with trace (work with rho, instead than sampling?).
+        # TODO: [FUTURE] Implement "project" with norm somewhere, passing unnormalized states, or add penalizer to cost?
+        # TODO: [FUTURE] Decide what to do with trace, make all code work with density matrices, instead than sampling?
         self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "ansatz"
-        # TODO: [URGENT] Try "project" and "total" and see if you observe any difference in the results, to Ayaka.
 
         #############################################################################################
         # -----------------------
@@ -136,7 +136,7 @@ class Config:
         #       + "ZZ_X_Z": 2 body Z, 1 body X and 1 body Z terms.
         #
         #############################################################################################
-        self.gen_layers: int = 3  # 20 #15 #10 #4 #3 #2 ...
+        self.gen_layers: int = 3  # 2, 3, 5, 10, 20 ...
         self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "XX_YY_ZZ_Z"
 
         #############################################################################################
