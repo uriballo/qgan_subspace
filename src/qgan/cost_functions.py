@@ -20,6 +20,18 @@ from qgan.ancilla import get_final_gen_state_for_discriminator, get_final_target
 
 np.random.seed()
 
+def braket(bra: np.ndarray, op:np.ndarray, ket: np.ndarray) -> float:
+    """Calculate the braket (inner product) between two quantum states.
+
+    Args:
+        bra (np.ndarray): The bra vector.
+        ket (np.ndarray): The ket vector.
+
+    Returns:
+        float: The inner product of the two vectors.
+    """
+    return np.matmul(bra.getH(), np.matmul(op, ket))
+
 
 def get_final_comp_states_for_dis(total_target_state: np.ndarray, total_gen_state: np.ndarray) -> tuple:
     """Get the final target and gen states for comparison in the discriminator.
@@ -51,17 +63,17 @@ def compute_cost(dis, final_target_state: np.ndarray, final_gen_state: np.ndarra
     A, B, psi, phi = dis.get_dis_matrices_rep()
 
     # fmt: off
-    term1 = np.matmul(final_gen_state.getH(), np.matmul(A, final_gen_state))
-    term2 = np.matmul(final_target_state.getH(), np.matmul(B, final_target_state))
+    term1 = braket(final_gen_state, A, final_gen_state)
+    term2 = braket(final_target_state, B, final_target_state)
 
-    term3 = np.matmul(final_gen_state.getH(), np.matmul(B, final_target_state))
-    term4 = np.matmul(final_target_state.getH(), np.matmul(A, final_gen_state))
+    term3 = braket(final_gen_state, B, final_target_state)
+    term4 = braket(final_target_state, A, final_gen_state)
 
-    term5 = np.matmul(final_gen_state.getH(), np.matmul(A, final_target_state))
-    term6 = np.matmul(final_target_state.getH(), np.matmul(B, final_gen_state))
+    term5 = braket(final_gen_state, A, final_target_state)
+    term6 = braket(final_target_state, B, final_gen_state)
 
-    term7 = np.matmul(final_gen_state.getH(), np.matmul(B, final_gen_state))
-    term8 = np.matmul(final_target_state.getH(), np.matmul(A, final_target_state))
+    term7 = braket(final_gen_state, B, final_gen_state)
+    term8 = braket(final_target_state, A, final_target_state)
 
     psiterm = np.trace(np.matmul(np.matmul(final_target_state, final_target_state.getH()), psi))
     phiterm = np.trace(np.matmul(np.matmul(final_gen_state, final_gen_state.getH()), phi))

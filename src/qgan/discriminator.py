@@ -20,7 +20,7 @@ import numpy as np
 from scipy.linalg import expm
 
 from config import CFG
-from qgan.cost_functions import get_final_comp_states_for_dis
+from qgan.cost_functions import get_final_comp_states_for_dis, braket
 from tools.data.data_managers import print_and_train_log
 from tools.optimizer import MomentumOptimizer
 from tools.qobjects.qgates import I, X, Y, Z
@@ -318,10 +318,10 @@ class DiscriminatorGradientStep:
             ##################################################################
             # Compute the regularization terms:
             ##################################################################
-            term1 = cs * np.matmul(final_gen_state.getH(), np.matmul(A, final_gen_state)) * np.matmul(final_target_state.getH(), np.matmul(grad_psi, np.matmul(B, final_target_state)))
-            term2 = cs * np.matmul(final_gen_state.getH(), np.matmul(grad_psi, np.matmul(B, final_target_state))) * np.matmul(final_target_state.getH(), np.matmul(A, final_gen_state))
-            term3 = cs * np.matmul(final_gen_state.getH(), np.matmul(A, final_target_state)) * np.matmul(final_target_state.getH(), np.matmul(grad_psi, np.matmul(B, final_gen_state)))
-            term4 = cs * np.matmul(final_gen_state.getH(), np.matmul(grad_psi, np.matmul(B, final_gen_state))) * np.matmul(final_target_state.getH(), np.matmul(A, final_target_state))
+            term1 = cs * braket(final_gen_state, A, final_gen_state) * braket(final_target_state, grad_psi, B, final_target_state)
+            term2 = cs * braket(final_gen_state, grad_psi, B, final_target_state) * braket(final_target_state, A, final_gen_state)
+            term3 = cs * braket(final_gen_state, A, final_target_state) * braket(final_target_state, grad_psi, B, final_gen_state)
+            term4 = cs * braket(final_gen_state, grad_psi, B, final_gen_state) * braket(final_target_state, A, final_target_state)
             gradreg_list.append(np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4)))
             # gradreg_list.append(np.asscalar(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4)))
         # fmt: on
@@ -360,10 +360,10 @@ class DiscriminatorGradientStep:
             ##################################################################
             # Compute the regularization terms:
             ##################################################################
-            term1 = cs * np.matmul(final_gen_state.getH(), np.matmul(grad_phi, np.matmul(A, final_gen_state))) * np.matmul(final_target_state.getH(), np.matmul(B, final_target_state))
-            term2 = cs * np.matmul(final_gen_state.getH(), np.matmul(B, final_target_state)) * np.matmul(final_target_state.getH(), np.matmul(grad_phi, np.matmul(A, final_gen_state)))
-            term3 = cs * np.matmul(final_gen_state.getH(), np.matmul(grad_phi, np.matmul(A, final_target_state))) * np.matmul(final_target_state.getH(), np.matmul(B, final_gen_state))
-            term4 = cs * np.matmul(final_gen_state.getH(), np.matmul(B, final_gen_state)) * np.matmul(final_target_state.getH(), np.matmul(grad_phi, np.matmul(A, final_target_state)))
+            term1 = cs * braket(final_gen_state, grad_phi, A, final_gen_state) * braket(final_target_state, B, final_target_state)
+            term2 = cs * braket(final_gen_state, B, final_target_state) * braket(final_target_state, grad_phi, A, final_gen_state)
+            term3 = cs * braket(final_gen_state, grad_phi, A, final_target_state) * braket(final_target_state, B, final_gen_state)
+            term4 = cs * braket(final_gen_state, B, final_gen_state) * braket(final_target_state, grad_phi, A, final_target_state)
             gradreg_list.append(np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4)))
             # gradreg_list.append(np.asscalar(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4)))
         # fmt: on

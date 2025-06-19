@@ -20,7 +20,7 @@ import numpy as np
 
 from config import CFG
 from qgan.ancilla import get_final_gen_state_for_discriminator
-from qgan.cost_functions import get_final_comp_states_for_dis
+from qgan.cost_functions import get_final_comp_states_for_dis, braket
 from qgan.discriminator import Discriminator
 from tools.data.data_managers import print_and_train_log
 from tools.optimizer import MomentumOptimizer
@@ -142,14 +142,14 @@ class Generator:
             # grad_g_phi.append(np.asscalar(tmp_grad))
 
             # For reg term
-            term1 = np.matmul(final_gen_grad.getH(), np.matmul(A, final_gen_state)) * np.matmul(final_target_state.getH(), np.matmul(B, final_target_state))
-            term2 = np.matmul(final_gen_state.getH(), np.matmul(A, final_gen_grad)) * np.matmul(final_target_state.getH(), np.matmul(B, final_target_state))
-            term3 = np.matmul(final_gen_grad.getH(), np.matmul(B, final_target_state)) * np.matmul(final_target_state.getH(), np.matmul(A, final_gen_state))
-            term4 = np.matmul(final_gen_state.getH(), np.matmul(B, final_target_state)) * np.matmul(final_target_state.getH(), np.matmul(A, final_gen_grad))
-            term5 = np.matmul(final_gen_grad.getH(), np.matmul(A, final_target_state)) * np.matmul(final_target_state.getH(), np.matmul(B, final_gen_state))
-            term6 = np.matmul(final_gen_state.getH(), np.matmul(A, final_target_state)) * np.matmul(final_target_state.getH(), np.matmul(B, final_gen_grad))
-            term7 = np.matmul(final_gen_grad.getH(), np.matmul(B, final_gen_state)) * np.matmul(final_target_state.getH(), np.matmul(A, final_target_state))
-            term8 = np.matmul(final_gen_state.getH(), np.matmul(B, final_gen_grad)) * np.matmul(final_target_state.getH(), np.matmul(A, final_target_state))
+            term1 = braket(final_gen_grad, A, final_gen_state) * braket(final_target_state, B, final_target_state)
+            term2 = braket(final_gen_state, A, final_gen_grad) * braket(final_target_state, B, final_target_state)
+            term3 = braket(final_gen_grad, B, final_target_state) * braket(final_target_state, A, final_gen_state)
+            term4 = braket(final_gen_state, B, final_target_state) * braket(final_target_state, A, final_gen_grad)
+            term5 = braket(final_gen_grad, A, final_target_state) * braket(final_target_state, B, final_gen_state)
+            term6 = braket(final_gen_state, A, final_target_state) * braket(final_target_state, B, final_gen_grad)
+            term7 = braket(final_gen_grad, B, final_gen_state) * braket(final_target_state, A, final_target_state)
+            term8 = braket(final_gen_state, B, final_gen_grad) * braket(final_target_state, A, final_target_state)
             tmp_reg_grad = CFG.lamb / np.e * (CFG.cst1 * (term1 + term2) - CFG.cst2 * (term3 + term4) - CFG.cst2 * (term5 + term6) + CFG.cst3 * (term7 + term8))
 
             grad_g_reg.append(np.ndarray.item(tmp_reg_grad))
