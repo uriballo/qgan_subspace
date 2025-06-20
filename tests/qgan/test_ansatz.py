@@ -12,10 +12,16 @@ from tools.data.data_managers import save_model
 from qgan.generator import Generator, Ansatz
 from config import CFG
 
+# Set up the same configuration than inside the tests.
+CFG.extra_ancilla = True
+CFG.system_size = 3
 total_input_state = np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1)))
 
 class TestGeneratorAnsatzAncillaModes():
     def test_all_ansatz_types(self):
+        CFG.extra_ancilla = True
+        CFG.system_size = 3
+        
         for ansatz in ["XX_YY_ZZ_Z", "ZZ_X_Z"]:
             gen = Generator(total_input_state)
             gen.qc = Ansatz.get_ansatz_type_circuit(ansatz)(gen.qc, gen.size, 1)
@@ -30,6 +36,9 @@ class TestGeneratorAnsatzAncillaModes():
         assert len(gen1.qc.gates) > len(gen2.qc.gates), "XX_YY_ZZ_Z should have more gates than ZZ_X_Z"
     
     def test_number_of_gates_duplicates_with_layers(self):
+        CFG.extra_ancilla = True
+        CFG.system_size = 3
+        
         for ansatz in ["XX_YY_ZZ_Z", "ZZ_X_Z"]:
             CFG.gen_ansatz = ansatz
             

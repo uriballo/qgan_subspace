@@ -94,6 +94,40 @@ class Discriminator:
                 phi_i += self.beta[i][j] * herm_j
             psi, phi = np.kron(psi, psi_i), np.kron(phi, phi_i)
         return psi, phi
+    
+    
+    def get_dis_matrices_rep(self) -> tuple:
+        """Computes the matrices A and B from the psi and phi matrices, scaled by the inverse of lambda.
+
+        Raises:
+            ValueError: If lambda is zero or if psi or phi are not square matrices.
+
+        Returns:
+            tuple: A tuple containing the matrices A, B, psi, phi.
+        """
+        psi, phi = self.get_psi_and_phi()
+        A, B = None, None
+
+        #########################################################
+        # Compute the matrix A, with expm:
+        ##########################################################
+        try:
+            A = expm((-1 / lamb) * phi)
+        except ValueError:
+            print_and_train_log(f"Can't exp(phi/lamb), 1/lamb: {(1 / lamb)}, size of phi:{phi.shape}\n", CFG.log_path)
+
+        #########################################################
+        # Compute the matrix B, with expm:
+        ##########################################################
+        try:
+            B = expm((1 / lamb) * psi)
+        except ValueError:
+            print_and_train_log(f"Can't exp(psi/lamb), 1/lamb: {(1 / lamb)}, size of psi: {psi.shape}\n", CFG.log_path)
+
+        if A is None or B is None:
+            raise ValueError("Invalid lambda, phi, or psi parameters for computing gradients.")
+
+        return A, B, psi, phi
 
     def update_dis(self, total_target_state: np.ndarray, total_gen_state: np.ndarray):
         """Update the discriminator parameters (alpha, beta) using the gradients.
@@ -149,7 +183,7 @@ class Discriminator:
             ###########################################################
             # Compute the alpha or beta gradient step:
             ############################################################
-            grad_step = DiscriminatorGradientStep(self).grad_step(param)
+            grad_step = self._grad_alpha if param == "alpha" else self._grad_beta if param == "beta" else None
             gradpsi_list, gradphi_list, gradreg_list = grad_step(final_target_state, final_gen_state, A, B, type)
 
             # Add grad of psi, phi and reg terms
@@ -160,132 +194,6 @@ class Discriminator:
         grad = np.real(grad_psi_term - grad_phi_term - grad_reg_term)
 
         return grad
-
-    def get_dis_matrices_rep(self) -> tuple:
-        """Computes the matrices A and B from the psi and phi matrices, scaled by the inverse of lambda.
-
-        Raises:
-            ValueError: If lambda is zero or if psi or phi are not square matrices.
-
-        Returns:
-            tuple: A tuple containing the matrices A, B, psi, phi.
-        """
-        psi, phi = self.get_psi_and_phi()
-        A, B = None, None
-
-        #########################################################
-        # Compute the matrix A, with expm:
-        ##########################################################
-        try:
-            A = expm((-1 / lamb) * phi)
-        except ValueError:
-            print_and_train_log(f"Can't exp(phi/lamb), 1/lamb: {(1 / lamb)}, size of phi:{phi.shape}\n", CFG.log_path)
-
-        #########################################################
-        # Compute the matrix B, with expm:
-        ##########################################################
-        try:
-            B = expm((1 / lamb) * psi)
-        except ValueError:
-            print_and_train_log(f"Can't exp(psi/lamb), 1/lamb: {(1 / lamb)}, size of psi: {psi.shape}\n", CFG.log_path)
-
-        if A is None or B is None:
-            raise ValueError("Invalid lambda, phi, or psi parameters for computing gradients.")
-
-        return A, B, psi, phi
-
-    def load_model_params(self, file_path: str) -> bool:
-        """
-        Load discriminator parameters (alpha, beta) from a saved model, if compatible.
-
-        If the saved model has one less qubit (no ancilla), load only the matching parameters.
-
-        WARNING: Only load trusted pickle files! Untrusted files may be insecure.
-
-        Args:
-            file_path (str): Path to the saved discriminator model file.
-
-        Returns:
-            bool: True if the model was loaded successfully and is compatible, False otherwise.
-        """
-        ######################################################################
-        # Check if the file exists and is a valid pickle file
-        ########################################################################
-        if not os.path.exists(file_path):
-            print_and_train_log("Discriminator model file not found\n", CFG.log_path)
-            return False
-        try:
-            with open(file_path, "rb") as f:
-                saved_dis: Discriminator = pickle.load(f)
-        except (OSError, pickle.UnpicklingError) as e:
-            print_and_train_log(f"ERROR: Could not load discriminator model: {e}\n", CFG.log_path)
-            return False
-
-        ##################################################################
-        # Check for the cases you should't load -> Stop
-        ##################################################################s
-        cant_load = False
-
-        # For this corner case, in reality the load will still work, since we always have matrices NxN or (N+1)x(N+1)
-        # but you would load a Discriminator for distinguishing a T(3) to a T(4), or vice-versa, which shouldn't happen..
-        if saved_dis.target_size != self.target_size:
-            print_and_train_log(
-                "ERROR: Saved discriminator model is incompatible (target size mismatch).\n", CFG.log_path
-            )
-            cant_load = True
-
-        # This one could work, but it wouldn't make sense, since the discriminator would be useless, better to stop:
-        if saved_dis.target_hamiltonian != self.target_hamiltonian:
-            print_and_train_log(
-                "ERROR: Saved discriminator model is incompatible (target hamiltonian mismatch).\n", CFG.log_path
-            )
-            cant_load = True
-
-        if cant_load:
-            return False
-
-        ########################################################################
-        # Check for exact match (same size)
-        ########################################################################
-        if saved_dis.size == self.size:  # This size check, already takes care into ancilla match!
-            self.alpha = saved_dis.alpha.copy()
-            self.beta = saved_dis.beta.copy()
-            print_and_train_log("Discriminator parameters loaded\n", CFG.log_path)
-            return True
-
-        ##################################################################
-        # When one qubit difference (adding or removing an ancilla with pass)
-        ###################################################################
-        if abs(saved_dis.size - self.size) == 1:  # This size check, already takes care into ancilla match!
-            # Determine the minimum number of qubits (the overlap)
-            min_size = min(saved_dis.size, self.size)
-            # Load only the matching parameters
-            self.alpha[:min_size] = saved_dis.alpha[:min_size].copy()
-            self.beta[:min_size] = saved_dis.beta[:min_size].copy()
-            print_and_train_log("Discriminator parameters loaded partially (one qubit difference).\n", CFG.log_path)
-            return True
-
-        print_and_train_log("Saved discriminator model is incompatible (size or shape mismatch).\n", CFG.log_path)
-        return False
-
-
-class DiscriminatorGradientStep:
-    """Class for computing the gradient steps of the discriminator."""
-
-    def __init__(self, dis: Discriminator):
-        """Initialize the DiscriminatorGradientStep with the size of the system."""
-        self.dis = dis
-
-    def grad_step(self, param: str) -> callable:
-        """Get the gradient step function for the specified parameter.
-
-        Args:
-            param (str): The parameter to compute the gradient for ("alpha" or "beta").
-
-        Returns:
-            callable: The gradient step function for the specified parameter (alpha or beta).
-        """
-        return self._grad_alpha if param == "alpha" else self._grad_beta if param == "beta" else None
 
     def _grad_alpha(self, final_target_state, final_gen_state, A: np.ndarray, B: np.ndarray, type: str) -> np.ndarray:
         """Calculate a step of the gradient of the discriminator with respect to alpha.
@@ -385,21 +293,96 @@ class DiscriminatorGradientStep:
         ########################################################################
         # Chose respect which variable to compute the gradient (alpha or beta)
         ########################################################################
-        coefficients = self.dis.alpha if respect_to == "psi" else self.dis.beta
+        coefficients = self.alpha if respect_to == "psi" else self.beta
 
         ########################################################################
         # Compute gradients for each qubit:
         ########################################################################
         grad_matrix = []
-        for i in range(self.dis.size):
+        for i in range(self.size):
             grad_matrix_I = 1
-            for j in range(self.dis.size):
+            for j in range(self.size):
                 if i == j:
-                    grad_matrix_j = self.dis.herm[type]
+                    grad_matrix_j = self.herm[type]
                 else:
-                    grad_matrix_j = np.zeros_like(self.dis.herm[0], dtype=complex)
-                    for k, herm_k in enumerate(self.dis.herm):
+                    grad_matrix_j = np.zeros_like(self.herm[0], dtype=complex)
+                    for k, herm_k in enumerate(self.herm):
                         grad_matrix_j += coefficients[j][k] * herm_k
                 grad_matrix_I = np.kron(grad_matrix_I, grad_matrix_j)
             grad_matrix.append(grad_matrix_I)
         return grad_matrix
+
+    
+    def load_model_params(self, file_path: str) -> bool:
+        """
+        Load discriminator parameters (alpha, beta) from a saved model, if compatible.
+
+        If the saved model has one less qubit (no ancilla), load only the matching parameters.
+
+        WARNING: Only load trusted pickle files! Untrusted files may be insecure.
+
+        Args:
+            file_path (str): Path to the saved discriminator model file.
+
+        Returns:
+            bool: True if the model was loaded successfully and is compatible, False otherwise.
+        """
+        ######################################################################
+        # Check if the file exists and is a valid pickle file
+        ########################################################################
+        if not os.path.exists(file_path):
+            print_and_train_log("Discriminator model file not found\n", CFG.log_path)
+            return False
+        try:
+            with open(file_path, "rb") as f:
+                saved_dis: Discriminator = pickle.load(f)
+        except (OSError, pickle.UnpicklingError) as e:
+            print_and_train_log(f"ERROR: Could not load discriminator model: {e}\n", CFG.log_path)
+            return False
+
+        ##################################################################
+        # Check for the cases you should't load -> Stop
+        ##################################################################s
+        cant_load = False
+
+        # For this corner case, in reality the load will still work, since we always have matrices NxN or (N+1)x(N+1)
+        # but you would load a Discriminator for distinguishing a T(3) to a T(4), or vice-versa, which shouldn't happen..
+        if saved_dis.target_size != self.target_size:
+            print_and_train_log(
+                "ERROR: Saved discriminator model is incompatible (target size mismatch).\n", CFG.log_path
+            )
+            cant_load = True
+
+        # This one could work, but it wouldn't make sense, since the discriminator would be useless, better to stop:
+        if saved_dis.target_hamiltonian != self.target_hamiltonian:
+            print_and_train_log(
+                "ERROR: Saved discriminator model is incompatible (target hamiltonian mismatch).\n", CFG.log_path
+            )
+            cant_load = True
+
+        if cant_load:
+            return False
+
+        ########################################################################
+        # Check for exact match (same size)
+        ########################################################################
+        if saved_dis.size == self.size:  # This size check, already takes care into ancilla match!
+            self.alpha = saved_dis.alpha.copy()
+            self.beta = saved_dis.beta.copy()
+            print_and_train_log("Discriminator parameters loaded\n", CFG.log_path)
+            return True
+
+        ##################################################################
+        # When one qubit difference (adding or removing an ancilla with pass)
+        ###################################################################
+        if abs(saved_dis.size - self.size) == 1:  # This size check, already takes care into ancilla match!
+            # Determine the minimum number of qubits (the overlap)
+            min_size = min(saved_dis.size, self.size)
+            # Load only the matching parameters
+            self.alpha[:min_size] = saved_dis.alpha[:min_size].copy()
+            self.beta[:min_size] = saved_dis.beta[:min_size].copy()
+            print_and_train_log("Discriminator parameters loaded partially (one qubit difference).\n", CFG.log_path)
+            return True
+
+        print_and_train_log("Saved discriminator model is incompatible (size or shape mismatch).\n", CFG.log_path)
+        return False
