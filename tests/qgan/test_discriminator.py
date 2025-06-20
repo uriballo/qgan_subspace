@@ -33,7 +33,7 @@ class TestDiscriminator():
                
                 # Checks shapes 
                 dis = Discriminator()
-                psi, phi = dis.getPsiPhi()
+                psi, phi = dis.get_psi_and_phi()
                 assert psi.shape == phi.shape == (2**dis.alpha.shape[0], 2**dis.alpha.shape[0])
 
     def test_update_dis(self):

@@ -44,8 +44,8 @@ class Discriminator:
 
     For computing the gradients, we use the following matrices:
     -----------------------------------------------------------
-        - A: -1/lamb * phi
-        - B: 1/lamb * psi
+        - A: expm(-1/lamb * phi)
+        - B: expm(1/lamb * psi)
     """
 
     def __init__(self):
@@ -72,7 +72,7 @@ class Discriminator:
             self.alpha[i] = -1 + 2 * np.random.random(len(self.herm))
             self.beta[i] = -1 + 2 * np.random.random(len(self.herm))
 
-    def getPsiPhi(self) -> np.ndarray:
+    def get_psi_and_phi(self) -> np.ndarray:
         """Get matrix representation of real (psi) & imaginary (phi) part of the discriminator
 
         Size of alpha/beta params (coefficients for each herm) = (num_qubit, 4)
@@ -103,11 +103,11 @@ class Discriminator:
             total_gen_state (np.ndarray): The total gen state of the system.
         """
         ################################################################
-        # Get the current Generator and Discriminator states:
+        # Get the current Generator, Target and Discriminator states:
         ################################################################
         final_target_state, final_gen_state = get_final_comp_states_for_dis(total_target_state, total_gen_state)
         A, B, _, _ = self.get_dis_matrices_rep()
-
+        
         ####################################################
         # Update alpha
         ####################################################
@@ -140,9 +140,10 @@ class Discriminator:
         ################################################################
         # Initialize gradients on 0:
         #################################################################
-        grad_psi_term = np.zeros_like(self.beta, dtype=complex)
-        grad_phi_term = np.zeros_like(self.beta, dtype=complex)
-        grad_reg_term = np.zeros_like(self.beta, dtype=complex)
+        zero_param = self.alpha if param == "alpha" else self.beta
+        grad_psi_term = np.zeros_like(zero_param, dtype=complex)
+        grad_phi_term = np.zeros_like(zero_param, dtype=complex)
+        grad_reg_term = np.zeros_like(zero_param, dtype=complex)
 
         for type in range(len(self.herm)):
             ###########################################################
@@ -169,7 +170,7 @@ class Discriminator:
         Returns:
             tuple: A tuple containing the matrices A, B, psi, phi.
         """
-        psi, phi = self.getPsiPhi()
+        psi, phi = self.get_psi_and_phi()
         A, B = None, None
 
         #########################################################
@@ -299,7 +300,7 @@ class DiscriminatorGradientStep:
         Returns:
             tuple: A tuple containing the gradients of psi, phi, and regularization terms.
         """
-        gradpsi: list = self._grad_psi_phi(type, respect_to="psi")
+        gradpsi: list = self._grad_psi_or_phi(type, respect_to="psi")
         gradpsi_list, gradphi_list, gradreg_list = [], [], []
 
         # fmt: off
@@ -307,7 +308,7 @@ class DiscriminatorGradientStep:
             ##################################################################
             # Compute the gradient of psi with respect to alpha
             ##################################################################
-            gradpsi_list.append(np.ndarray.item(np.matmul(final_target_state.getH(), np.matmul(grad_psi, final_target_state))))
+            gradpsi_list.append(np.ndarray.item(braket(final_target_state, grad_psi, final_target_state)))
             # gradpsi_list.append(np.asscalar(np.matmul(target_state.getH(), np.matmul(grad_psi, target_state))))
 
             ##################################################################
@@ -341,7 +342,7 @@ class DiscriminatorGradientStep:
         Returns:
             tuple: A tuple containing the gradients of psi, phi, and regularization terms.
         """
-        gradphi: list = self._grad_psi_phi(type, respect_to="phi")
+        gradphi: list = self._grad_psi_or_phi(type, respect_to="phi")
         gradpsi_list, gradphi_list, gradreg_list = [], [], []
 
         # fmt: off
@@ -354,7 +355,7 @@ class DiscriminatorGradientStep:
             ##################################################################
             # Compute the gradient of phi with respect to beta
             ##################################################################
-            gradphi_list.append(np.ndarray.item(np.matmul(final_gen_state.getH(), np.matmul(grad_phi, final_gen_state))))
+            gradphi_list.append(np.ndarray.item(braket(final_gen_state, grad_phi, final_gen_state)))
             # gradphi_list.append(np.asscalar(np.matmul(total_gen_state.getH(), np.matmul(grad_phi, total_gen_state))))
 
             ##################################################################
@@ -371,7 +372,7 @@ class DiscriminatorGradientStep:
         return gradpsi_list, gradphi_list, gradreg_list
 
     # Psi/Phi gradients
-    def _grad_psi_phi(self, type: int, respect_to: str) -> list:
+    def _grad_psi_or_phi(self, type: int, respect_to: str) -> list:
         """Calculate the gradient of the discriminator with respect to psi/phi.
 
         Args:
@@ -384,23 +385,21 @@ class DiscriminatorGradientStep:
         ########################################################################
         # Chose respect which variable to compute the gradient (alpha or beta)
         ########################################################################
-        alpha_or_beta = self.dis.alpha if respect_to == "psi" else self.dis.beta if respect_to == "phi" else None
-        if alpha_or_beta is None:
-            raise ValueError("`respect_to` must be either 'psi' or 'phi'.")
+        coefficients = self.dis.alpha if respect_to == "psi" else self.dis.beta
 
         ########################################################################
         # Compute gradients for each qubit:
         ########################################################################
-        grad_psi_phi = []
+        grad_matrix = []
         for i in range(self.dis.size):
-            grad_psi_phi_I = 1
+            grad_matrix_I = 1
             for j in range(self.dis.size):
                 if i == j:
-                    grad_psi_phi_i = self.dis.herm[type]
+                    grad_matrix_j = self.dis.herm[type]
                 else:
-                    grad_psi_phi_i = np.zeros_like(self.dis.herm[0], dtype=complex)
+                    grad_matrix_j = np.zeros_like(self.dis.herm[0], dtype=complex)
                     for k, herm_k in enumerate(self.dis.herm):
-                        grad_psi_phi_i += alpha_or_beta[j][k] * herm_k
-                grad_psi_phi_I = np.kron(grad_psi_phi_I, grad_psi_phi_i)
-            grad_psi_phi.append(grad_psi_phi_I)
-        return grad_psi_phi
+                        grad_matrix_j += coefficients[j][k] * herm_k
+                grad_matrix_I = np.kron(grad_matrix_I, grad_matrix_j)
+            grad_matrix.append(grad_matrix_I)
+        return grad_matrix
