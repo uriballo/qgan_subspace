@@ -193,7 +193,7 @@ class Discriminator:
 
         grad = np.real(grad_psi_term - grad_phi_term - grad_reg_term)
 
-        return grad
+        return np.asarray(grad)
 
     def _grad_alpha(self, final_target_state, final_gen_state, A: np.ndarray, B: np.ndarray, type: str) -> np.ndarray:
         """Calculate a step of the gradient of the discriminator with respect to alpha.

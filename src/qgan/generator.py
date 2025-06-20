@@ -58,17 +58,21 @@ class Generator:
         Returns:
             np.ndarray: The total generator state vector.
         """
-        Untouched_x_G: np.ndarray = self._get_Untouched_qubits_x_Gen_matrix()
+        Untouched_x_G: np.ndarray = np.kron(Identity(CFG.system_size), self.qc.get_mat_rep())
 
         return np.matmul(Untouched_x_G, self.total_input_state)
-
-    def _get_Untouched_qubits_x_Gen_matrix(self) -> np.ndarray:
-        """Get the matrix representation of the circuit at the Generator step, including the untouched qubits in front (choi).
-
+    
+    def get_total_gen_grad(self, index) -> np.ndarray:
+        """Get the total generator gradient for a specific gate index.
+        
+        Args:
+            index (int): The index of the gate for which to compute the gradient.
+        
         Returns:
-            np.ndarray: The Kronecker product of the untouched qubits (choi) and the quantum circuit's matrix representation.
+            np.ndarray: The total generator gradient vector for the specified gate.
         """
-        return np.kron(Identity(CFG.system_size), self.qc.get_mat_rep())
+        Untouched_x_G_grad_i = np.kron(Identity(CFG.system_size), self.qc.get_grad_mat_rep(index))
+        return np.matmul(Untouched_x_G_grad_i, self.total_input_state)
 
     def update_gen(self, dis: Discriminator, total_target_state: np.ndarray):
         """Update the generator parameters (angles) using the optimizer.
@@ -80,11 +84,11 @@ class Generator:
         ###############################################################
         # Compute the gradient
         ###############################################################
-        grad: np.ndarray = np.asarray(self._grad_theta(dis, total_target_state, self.total_gen_state))
+        grad: np.ndarray = self._grad_theta(dis, total_target_state, self.total_gen_state)
         
         # Get the new thetas from the gradient
-        theta = [gate.angle for gate in self.qc.gates]
-        new_theta = self.optimizer.move_in_grad(np.asarray(theta), grad, "min")
+        theta = np.asarray([gate.angle for gate in self.qc.gates])
+        new_theta = self.optimizer.move_in_grad(theta, grad, "min")
 
         ###############################################################
         # Update the angles in the quantum circuit
@@ -123,14 +127,12 @@ class Generator:
 
         for i in range(self.qc.depth):
             # fmt: off
-            grad_i = np.kron(Identity(CFG.system_size), self.qc.get_grad_mat_rep(i))
-
             # For psi term
             grad_g_psi.append(0)
 
             # For phi term
-            gen_grad = np.matmul(grad_i, self.total_input_state)
-            final_gen_grad = np.matrix(get_final_gen_state_for_discriminator(gen_grad))
+            total_gen_grad = self.get_total_gen_grad(i)
+            final_gen_grad = get_final_gen_state_for_discriminator(total_gen_grad)
             tmp_grad = np.matmul(final_gen_grad.getH(), np.matmul(phi, final_gen_state)) + np.matmul(final_gen_state.getH(), np.matmul(phi, final_gen_grad))
 
             grad_g_phi.append(np.ndarray.item(tmp_grad))
@@ -157,7 +159,7 @@ class Generator:
 
         grad = np.real(g_psi - g_phi - g_reg)
 
-        return grad
+        return np.asarray(grad)
 
     def load_model_params(self, file_path: str) -> bool:
         """
