@@ -29,7 +29,45 @@ from tools.data.data_managers import print_and_train_log
 ##################################################################
 def run_single_training():
     """
-    Runs a single training instance (the default case when testing=False).
+    Runs a single training instance.
+    """
+    try:
+        ##############################################################
+        # Run single training instance with specified configuration
+        ##############################################################
+        training_instance = Training()
+        training_instance.run()
+        success_msg = "\nDefault configuration run COMPLETED SUCCESSFULLY.\n"
+        print_and_train_log(success_msg, CFG.log_path)  # Log to file
+
+    except Exception as e:  # noqa: BLE001
+        ##############################################################
+        # Handle exceptions during the training run
+        ##############################################################
+        tb_str = traceback.format_exc()
+        error_msg = (
+            f"\n{'-' * 60}\n"
+            f"FAILED: Default configuration run!\n"
+            f"Error Type: {type(e).__name__}\n"
+            f"Error Message: {e!s}\n"
+            f"Traceback:\n{tb_str}"
+            f"{'=' * 60}\n"
+        )
+        print_and_train_log(error_msg, CFG.log_path)  # Log to file
+
+
+##################################################################
+# MULTIPLE RUNS mode
+##################################################################
+def run_multiple_trainings():
+    """
+    Runs multiple trainings instances, with a change in the middle.
+
+    Loops twice, first for `CFG.N_initial_exp`, second for `CFG.N_reps_each_init_exp`,
+    starting from the last runs, changing what is specified in `CFG.reps_new_config`.
+
+    Also automatically makes graphs to analyze the training success probability increase,
+    respect the controls, where no changes happened, and plots them in folder.
     """
     try:
         ##############################################################
