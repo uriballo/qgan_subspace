@@ -26,28 +26,6 @@ class Config:
     def __init__(self):
         """Configuration for the QGAN experiment, which sets up all parameters required for training it."""
 
-        ############################################################################################
-        # ---------------------
-        # RUNS CONFIGURATION
-        # ---------------------
-        #   - N_initial_exp: Number of initial experiments to run (without change), (default: 20).
-        #   - N_reps_each_init_exp: Number of repetitions for each initial experiment afterwards (with changes), (default: 5).
-        #
-        #############################################################################################
-        self.N_initial_exp: int = 20
-        self.N_reps_each_init_exp: int = 5
-        self.reps_new_config: dict[str, Any] = (
-            {
-                "extra_ancilla": True,
-                "ancilla_mode": "pass",
-                "ancilla_topology": "trivial",
-                "type_of_warm_star": "all",
-                "warm_start_strength": 0.1,
-            },
-        )
-        # TODO: Loop twice, first for initial experiments, second for repetitions starting from the last runs (with changes).
-        # TODO: Also add so that automatically makes the analysis graphs of the improvements, and plots them in folder.
-
         #############################################################################################
         # ---------------------
         # LOADING CONFIGURATION
