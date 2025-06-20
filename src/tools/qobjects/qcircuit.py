@@ -27,7 +27,7 @@ class QuantumCircuit:
         self.gates = []
         self.name = name
 
-    def check_ciruit(self):
+    def check_circuit(self):
         for j, gate_j in enumerate(self.gates):
             if gate_j.qubit1 is not None and gate_j.qubit2 is not None:
                 if gate_j.qubit1 > self.size - 1:

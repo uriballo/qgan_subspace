@@ -5,13 +5,18 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
 
 from config import CFG
-from qgan.ancilla import get_final_gen_state_for_discriminator, get_final_target_state_for_discriminator, project_ancilla_zero, trace_out_ancilla
+from qgan.ancilla import (
+    get_final_gen_state_for_discriminator,
+    get_final_target_state_for_discriminator,
+    project_ancilla_zero,
+    trace_out_ancilla,
+    get_max_entangled_state_with_ancilla_if_needed,
+)
 import numpy as np
 from qgan.target import get_target_unitary, get_total_target_state
 from qgan.generator import Generator
 from qgan.discriminator import Discriminator
-from qgan.ancilla import get_max_entangled_state_with_ancilla_if_needed
-from qgan.cost_functions import compute_cost, compute_fidelity
+from qgan.cost_functions import compute_fidelity
 from tools.qobjects.qgates import Identity
 
 class TestAncilla():

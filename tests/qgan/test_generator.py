@@ -1,6 +1,8 @@
 import itertools
 import sys
 import os
+
+from tools.qobjects.qgates import Identity
 # This needs to be before any imports from src to ensure the correct path is set
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
 
@@ -17,9 +19,17 @@ class TestGenerator():
         assert gen.size == CFG.system_size + (1 if CFG.extra_ancilla else 0)
         assert gen.qc is not None
         
+    def test_get_total_gen_state(self):
+        gen = Generator(np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1))))
+        gen_state = gen.get_total_gen_state()
+        assert gen_state is not None
+        
+        total_size = gen.size+gen.target_size
+        assert gen_state.shape == (2**total_size, 1)
+        
     def test_get_Untouched_qubits_x_Gen_matrix(self):
         gen = Generator(np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1))))
-        gen_matrix = gen._get_Untouched_qubits_x_Gen_matrix()
+        gen_matrix = np.kron(Identity(CFG.system_size), gen.qc.get_mat_rep()) # This is the matrix before the product with initial state
         assert gen_matrix is not None
         
         total_size = gen.size+gen.target_size
