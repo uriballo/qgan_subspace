@@ -18,10 +18,11 @@ from datetime import datetime
 import numpy as np
 
 from config import CFG
-from qgan.cost_functions import compute_fidelity_and_cost
+from qgan.ancilla import get_max_entangled_state_with_ancilla_if_needed
+from qgan.cost_functions import compute_fidelity_and_cost, get_final_comp_states_for_dis
 from qgan.discriminator import Discriminator
 from qgan.generator import Generator
-from qgan.target import get_maximally_entangled_state, initialize_target_state
+from qgan.target import get_total_target_state
 from tools.data.data_managers import (
     print_and_train_log,
     save_fidelity_loss,
@@ -38,13 +39,13 @@ class Training:
     def __init__(self):
         """Builds the configuration for the Training. You might wanna comment/discomment lines, for changing the model."""
 
-        self.total_input_state: np.matrix = get_maximally_entangled_state(CFG.system_size)
+        self.total_input_state: np.matrix = get_max_entangled_state_with_ancilla_if_needed(CFG.system_size)
         """Preparation of max. entgl. state with ancilla qubit if needed."""
 
-        self.total_target_state: np.matrix = initialize_target_state(self.total_input_state)
+        self.total_target_state: np.matrix = get_total_target_state(self.total_input_state)
         """Prepare the target state, with the size and Target unitary defined in config."""
 
-        self.gen: Generator = Generator()
+        self.gen: Generator = Generator(self.total_input_state)
         """Prepares the Generator with the size, ansatz, layers and ancilla, defined in config."""
 
         self.dis: Discriminator = Discriminator()
@@ -77,19 +78,24 @@ class Training:
             num_epochs += 1
             for epoch_iter in range(CFG.iterations_epoch):
                 ###########################################################
-                # Generator and Discriminator gradient descent
+                # Gen and Dis gradient descent
                 ###########################################################
-                # 1 step for generator
-                self.gen.update_gen(self.dis, self.total_target_state, self.total_input_state)
-                # Ratio of steps for discriminator
-                for _ in range(CFG.ratio_step_dis_to_gen):
-                    self.dis.update_dis(self.gen, self.total_target_state, self.total_input_state)
+                for _ in range(CFG.steps_gen):
+                    self.gen.update_gen(self.dis, self.total_target_state)
+
+                # Remove ancilla if needed, with ancilla mode, before discriminator:
+                final_target_state, final_gen_state = get_final_comp_states_for_dis(
+                    self.total_target_state, self.gen.total_gen_state
+                )
+
+                for _ in range(CFG.steps_dis):
+                    self.dis.update_dis(final_target_state, final_gen_state)
 
                 ###########################################################
                 # Compute fidelity and loss
                 ###########################################################
                 fidelities[epoch_iter], losses[epoch_iter] = compute_fidelity_and_cost(
-                    self.gen, self.dis, self.total_target_state, self.total_input_state
+                    self.dis, final_target_state, final_gen_state
                 )
 
                 ###########################################################
@@ -138,4 +144,4 @@ class Training:
         save_gen_final_params(self.gen, CFG.gen_final_params_path)
 
         endtime = datetime.now()
-        print_and_train_log("\nRun took: {} time.".format((endtime - starttime)), CFG.log_path)
+        print_and_train_log(f"\nRun took: {endtime - starttime} time.", CFG.log_path)

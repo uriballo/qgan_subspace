@@ -14,7 +14,7 @@
 """the configuration for hamiltonian simulation task"""
 
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 import numpy as np
 
@@ -26,7 +26,7 @@ class Config:
     def __init__(self):
         """Configuration for the QGAN experiment, which sets up all parameters required for training it."""
 
-        #############################################################################################
+        ############################################################################################
         # ---------------------
         # RUNS CONFIGURATION
         # ---------------------
@@ -34,8 +34,18 @@ class Config:
         #   - N_reps_each_init_exp: Number of repetitions for each initial experiment afterwards (with changes), (default: 5).
         #
         #############################################################################################
-        self.N_initial_exp: int = 20  # TODO: For loop twice, first for initial experiments, second for repetitions.
-        self.N_reps_each_init_exp: int = 5  # TODO: Change the ancilla mode and topology after the initial experiments.
+        self.N_initial_exp: int = 20
+        self.N_reps_each_init_exp: int = 5
+        self.reps_new_config: dict[str, Any] = (
+            {
+                "extra_ancilla": True,
+                "ancilla_mode": "pass",
+                "ancilla_topology": "trivial",
+                "type_of_warm_star": "all",
+                "warm_start_strength": 0.1,
+            },
+        )
+        # TODO: Loop twice, first for initial experiments, second for repetitions starting from the last runs (with changes).
         # TODO: Also add so that automatically makes the analysis graphs of the improvements, and plots them in folder.
 
         #############################################################################################
@@ -44,7 +54,7 @@ class Config:
         # ---------------------
         #   - load_timestamp: Timestamp to load a previous run (ex. None, 2025-06-06__02-05-10").
         #
-        #   - type_of_warm_start: Warm start type for loading models (only if loading).
+        #   - type_of_warm_start: Warm start type for loading models (only if load_timestamp != None).
         #       + "none": No warm start.
         #       + "all": Warm start all parameters, by a bit (strength).
         #       + "some": Warm start some parameters (strength), to completely random.
@@ -68,14 +78,15 @@ class Config:
         #
         #   - max_fidelity: Stopping criterion for fidelity (default: ~0.99)
         #
-        #   - ratio_step_dis_to_gen: Discriminator to generator training steps ratio (dis > gen), (default: 1-5).
+        #   - steps_gen/dis: Discriminator and Generator training steps in each iter (default: 1-5).
         #
         #############################################################################################
-        self.epochs: int = 5
-        self.iterations_epoch: int = 50
-        self.log_every_x_iter: int = 10
+        self.epochs: int = 10
+        self.iterations_epoch: int = 100
+        self.log_every_x_iter: int = 1
         self.max_fidelity: float = 0.99
-        self.ratio_step_dis_to_gen: int = 1
+        self.steps_gen: int = 2
+        self.steps_dis: int = 1
 
         #############################################################################################
         # ---------------------
@@ -107,11 +118,13 @@ class Config:
         # |  P  |                 |                 |                 |      A────────        |      A────────         |
         # |-----|-----------------|-----------------|-----------------|-----------------------|------------------------|
         #
-        #############################################################################################
-        self.system_size: int = 3
+        ###############################################################################################
+        self.system_size: int = 2
         self.extra_ancilla: bool = True
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "project"
-        self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "ansatz"
+        # TODO: [FUTURE] Implement "project" with norm somewhere, passing unnormalized states, or add penalizer to cost?
+        # TODO: [FUTURE] Decide what to do with trace, make all code work with density matrices, instead than sampling?
+        self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "bridge"
 
         #############################################################################################
         # -----------------------
@@ -124,8 +137,8 @@ class Config:
         #       + "ZZ_X_Z": 2 body Z, 1 body X and 1 body Z terms.
         #
         #############################################################################################
-        self.gen_layers: int = 3  # 20 #15 #10 #4 #3 #2 ...
-        self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "XX_YY_ZZ_Z"
+        self.gen_layers: int = 3  # 2, 3, 5, 10, 20 ...
+        self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "ZZ_X_Z"
 
         #############################################################################################
         # ---------------------
@@ -213,7 +226,8 @@ class Config:
             f"log_every_x_iter: {self.log_every_x_iter},\n"
             f"max_fidelity: {self.max_fidelity},\n"
             f"l_rate: {self.l_rate},\n"
-            f"ratio_step_dis_to_gen: {self.ratio_step_dis_to_gen},\n"
+            f"steps_gen: {self.steps_gen},\n"
+            f"steps_dis: {self.steps_dis},\n"
             "================================================== \n"
         )
 
@@ -229,7 +243,7 @@ CFG = Config()
 # TEST CONFIGURATIONS
 # -----------------------------------
 #   Contains a list of dictionaries with different configurations
-#   to run in a row, executing `main_testing.py`.
+#   to run in a row, executing while executing the tests with pytest.
 #
 #############################################################################################
 test_configurations = [

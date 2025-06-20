@@ -21,35 +21,56 @@ from qgan.ancilla import get_final_gen_state_for_discriminator, get_final_target
 np.random.seed()
 
 
-def get_final_comp_states_for_dis(gen, total_target_state: np.ndarray, total_input_state: np.ndarray) -> tuple:
+def braket(*args) -> float:
+    """Calculate the braket (inner product) between two quantum states.
+
+    Args:
+        args: The arguments can be either two vectors (bra and ket), three (bra, operator, ket) or bigger (bra, operator^N, ket).
+
+    Returns:
+        float: The inner product of the two vectors.
+    """
+    if len(args) == 2:
+        bra, ket = args
+        return np.matmul(bra.getH(), ket)
+    if len(args) == 3:
+        bra, op, ket = args
+        return np.matmul(bra.getH(), np.matmul(op, ket))
+    elif len(args) > 3:
+        bra, *ops, ket = args
+        result = ket
+        for op in ops:
+            result = np.matmul(op, ket)
+        return np.matmul(bra.getH(), result)
+    else:
+        raise ValueError(
+            "braket function requires at least two arguments (bra and ket) or more than three (bra, operators, ket)."
+        )
+
+
+def get_final_comp_states_for_dis(total_target_state: np.ndarray, total_gen_state: np.ndarray) -> tuple:
     """Get the final target and gen states for comparison in the discriminator.
 
     Args:
-        gen (Generator): the generator.
         total_target_state (np.ndarray): the target state, which is the target state.
-        total_input_state (np.ndarray): the input state, which is the maximally entangled state.
+        total_gen_state (np.ndarray): the gen state, which is the total gen state.
 
 
     Returns:
         tuple[np.ndarray]: the final gen state and target state for the discriminator.
     """
-    Untouched_x_G: np.ndarray = gen.get_Untouched_qubits_and_Gen()
-
-    total_output_state: np.ndarray = np.matmul(Untouched_x_G, total_input_state)
-
-    final_gen_state: np.ndarray = get_final_gen_state_for_discriminator(total_output_state)
+    final_gen_state: np.ndarray = get_final_gen_state_for_discriminator(total_gen_state)
     final_target_state: np.ndarray = get_final_target_state_for_discriminator(total_target_state)
     return final_target_state, final_gen_state
 
 
 def compute_cost(dis, final_target_state: np.ndarray, final_gen_state: np.ndarray) -> float:
-    """Calculate the cost function
+    """Calculate the cost function. Which is basically equivalent to the Wasserstein distance.
 
     Args:
-        gen (Generator): the generator.
         dis (Discriminator): the discriminator.
         total_target_state (np.ndarray): the target state.
-        total_input_state (np.ndarray): the input state.
+        total_gen_state (np.ndarray): the gen state.
 
     Returns:
         float: the cost function.
@@ -57,23 +78,22 @@ def compute_cost(dis, final_target_state: np.ndarray, final_gen_state: np.ndarra
     A, B, psi, phi = dis.get_dis_matrices_rep()
 
     # fmt: off
-    term1 = np.matmul(final_gen_state.getH(), np.matmul(A, final_gen_state))
-    term2 = np.matmul(final_target_state.getH(), np.matmul(B, final_target_state))
+    term1 = braket(final_gen_state, A, final_gen_state)
+    term2 = braket(final_target_state, B, final_target_state)
 
-    term3 = np.matmul(final_gen_state.getH(), np.matmul(B, final_target_state))
-    term4 = np.matmul(final_target_state.getH(), np.matmul(A, final_gen_state))
+    term3 = braket(final_gen_state, B, final_target_state)
+    term4 = braket(final_target_state, A, final_gen_state)
 
-    term5 = np.matmul(final_gen_state.getH(), np.matmul(A, final_target_state))
-    term6 = np.matmul(final_target_state.getH(), np.matmul(B, final_gen_state))
+    term5 = braket(final_gen_state, A, final_target_state)
+    term6 = braket(final_target_state, B, final_gen_state)
 
-    term7 = np.matmul(final_gen_state.getH(), np.matmul(B, final_gen_state))
-    term8 = np.matmul(final_target_state.getH(), np.matmul(A, final_target_state))
+    term7 = braket(final_gen_state, B, final_gen_state)
+    term8 = braket(final_target_state, A, final_target_state)
 
     psiterm = np.trace(np.matmul(np.matmul(final_target_state, final_target_state.getH()), psi))
     phiterm = np.trace(np.matmul(np.matmul(final_gen_state, final_gen_state.getH()), phi))
 
-    regterm = np.ndarray.item(CFG.lamb / np.e * (CFG.cst1 * term1 * term2 - CFG.cst2 * term3 * term4 - CFG.cst2 * term5 * term6 + CFG.cst3 * term7 * term8))
-    # regterm = np.asscalar(CFG.lamb / np.e * (CFG.cst1 * term1 * term2 - CFG.cst2 * term3 * term4 - CFG.cst2 * term5 * term6 + CFG.cst3 * term7 * term8))
+    regterm = np.ndarray.item(CFG.lamb / np.e * (CFG.cst1 * term1 * term2 - CFG.cst2 * (term3 * term4 + term5 * term6) + CFG.cst3 * term7 * term8))
     # fmt: on
 
     loss = np.real(psiterm - phiterm - regterm)
@@ -91,27 +111,22 @@ def compute_fidelity(final_target_state: np.ndarray, final_gen_state: np.ndarray
     Returns:
         float: the fidelity between the target state and the gen state.
     """
-    braket = np.matmul(final_target_state.getH(), final_gen_state)
-    return np.abs(np.ndarray.item(braket)) ** 2
+    braket_result = braket(final_target_state, final_gen_state)
+    return np.abs(np.ndarray.item(braket_result)) ** 2
     # return np.abs(np.asscalar(np.matmul(target_state.getH(), total_final_state))) ** 2
 
 
-def compute_fidelity_and_cost(
-    gen, dis, total_target_state: np.ndarray, total_input_state: np.ndarray
-) -> tuple[float, float]:
+def compute_fidelity_and_cost(dis, final_target_state: np.ndarray, final_gen_state: np.ndarray) -> tuple[float, float]:
     """Calculate the fidelity and cost function
 
     Args:
-        gen (Generator): the generator.
         dis (Discriminator): the discriminator.
-        total_target_state (np.ndarray): the target state.
-        total_input_state (np.ndarray): the input state.
+        final_target_state (np.ndarray): the target state.
+        final_gen_state (np.ndarray): the gen state.
 
     Returns:
         tuple[float, float]: the fidelity and cost function.
     """
-    final_target_state, final_gen_state = get_final_comp_states_for_dis(gen, total_target_state, total_input_state)
-
     fidelity = compute_fidelity(final_target_state, final_gen_state)
     cost = compute_cost(dis, final_target_state, final_gen_state)
 
