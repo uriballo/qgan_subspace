@@ -2,7 +2,6 @@ import itertools
 import sys
 import os
 
-from tools.qobjects.qgates import Identity
 # This needs to be before any imports from src to ensure the correct path is set
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
 
@@ -10,6 +9,7 @@ import pickle
 import numpy as np
 from qgan.discriminator import Discriminator
 from qgan.generator import Generator
+from tools.qobjects.qgates import Identity
 from config import CFG
 
 class TestGenerator():

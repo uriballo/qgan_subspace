@@ -20,7 +20,7 @@ import numpy as np
 from scipy.linalg import expm
 
 from config import CFG
-from qgan.cost_functions import get_final_comp_states_for_dis, braket
+from qgan.cost_functions import braket, get_final_comp_states_for_dis
 from tools.data.data_managers import print_and_train_log
 from tools.optimizer import MomentumOptimizer
 from tools.qobjects.qgates import I, X, Y, Z
@@ -71,14 +71,13 @@ class Discriminator:
         for i in range(self.size):
             self.alpha[i] = -1 + 2 * np.random.random(len(self.herm))
             self.beta[i] = -1 + 2 * np.random.random(len(self.herm))
-        
-        self.normalize_params() #TODO: Temporary solution, for not letting it diverge, but we need to find the root.
-            
+
+        self.normalize_params()  # TODO: Temporary solution, for not letting it diverge, but we need to find the root.
+
     def normalize_params(self):
-        """Normalize the alpha and beta parameters."""  
+        """Normalize the alpha and beta parameters."""
         self.alpha /= np.linalg.norm(self.alpha, axis=1, keepdims=True)  # Normalize alpha params
         self.beta /= np.linalg.norm(self.beta, axis=1, keepdims=True)  # Normalize beta params
-        
 
     def get_psi_and_phi(self) -> np.ndarray:
         """Get matrix representation of real (psi) & imaginary (phi) part of the discriminator
@@ -102,8 +101,7 @@ class Discriminator:
                 phi_i += self.beta[i][j] * herm_j
             psi, phi = np.kron(psi, psi_i), np.kron(phi, phi_i)
         return psi, phi
-    
-    
+
     def get_dis_matrices_rep(self) -> tuple:
         """Computes the matrices A and B from the psi and phi matrices, scaled by the inverse of lambda.
 
@@ -137,19 +135,18 @@ class Discriminator:
 
         return A, B, psi, phi
 
-    def update_dis(self, total_target_state: np.ndarray, total_gen_state: np.ndarray):
+    def update_dis(self, final_target_state: np.ndarray, final_gen_state: np.ndarray):
         """Update the discriminator parameters (alpha, beta) using the gradients.
 
         Args:
-            total_target_state (np.ndarray): The total target state of the system.
-            total_gen_state (np.ndarray): The total gen state of the system.
+            final_target_state (np.ndarray): The final target state of the system.
+            final_gen_state (np.ndarray): The final gen state of the system.
         """
         ################################################################
-        # Get the current Generator, Target and Discriminator states:
+        # Get the current Discriminator state:
         ################################################################
-        final_target_state, final_gen_state = get_final_comp_states_for_dis(total_target_state, total_gen_state)
         A, B, _, _ = self.get_dis_matrices_rep()
-        
+
         ####################################################
         # Update alpha
         ####################################################
@@ -226,7 +223,6 @@ class Discriminator:
             # Compute the gradient of psi with respect to alpha
             ##################################################################
             gradpsi_list.append(np.ndarray.item(braket(final_target_state, grad_psi, final_target_state)))
-
             ##################################################################
             # No gradient of phi with respect to alpha, so append 0
             ##################################################################
@@ -235,7 +231,10 @@ class Discriminator:
             ##################################################################
             # Compute the regularization terms:
             ##################################################################
-            term1 = cs * braket(final_gen_state, A, final_gen_state) * braket(final_target_state, grad_psi, B, final_target_state)
+            try:
+                term1 = cs * braket(final_gen_state, A, final_gen_state) * braket(final_target_state, grad_psi, B, final_target_state)
+            except Exception:
+                print("here")
             term2 = cs * braket(final_gen_state, grad_psi, B, final_target_state) * braket(final_target_state, A, final_gen_state)
             term3 = cs * braket(final_gen_state, A, final_target_state) * braket(final_target_state, grad_psi, B, final_gen_state)
             term4 = cs * braket(final_gen_state, grad_psi, B, final_gen_state) * braket(final_target_state, A, final_target_state)
@@ -317,7 +316,6 @@ class Discriminator:
             grad_matrix.append(grad_matrix_I)
         return grad_matrix
 
-    
     def load_model_params(self, file_path: str) -> bool:
         """
         Load discriminator parameters (alpha, beta) from a saved model, if compatible.

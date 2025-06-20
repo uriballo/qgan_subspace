@@ -19,7 +19,7 @@ import numpy as np
 
 from config import CFG
 from qgan.ancilla import get_max_entangled_state_with_ancilla_if_needed
-from qgan.cost_functions import compute_fidelity_and_cost
+from qgan.cost_functions import compute_fidelity_and_cost, get_final_comp_states_for_dis
 from qgan.discriminator import Discriminator
 from qgan.generator import Generator
 from qgan.target import get_total_target_state
@@ -78,20 +78,24 @@ class Training:
             num_epochs += 1
             for epoch_iter in range(CFG.iterations_epoch):
                 ###########################################################
-                # Generator and Discriminator gradient descent
+                # Gen and Dis gradient descent
                 ###########################################################
-                # 1 step for generator
                 for _ in range(CFG.steps_gen):
                     self.gen.update_gen(self.dis, self.total_target_state)
-                # Ratio of steps for discriminator
+
+                # Remove ancilla if needed, with ancilla mode, before discriminator:
+                final_target_state, final_gen_state = get_final_comp_states_for_dis(
+                    self.total_target_state, self.gen.total_gen_state
+                )
+
                 for _ in range(CFG.steps_dis):
-                    self.dis.update_dis(self.total_target_state, self.gen.total_gen_state)
+                    self.dis.update_dis(final_target_state, final_gen_state)
 
                 ###########################################################
                 # Compute fidelity and loss
                 ###########################################################
                 fidelities[epoch_iter], losses[epoch_iter] = compute_fidelity_and_cost(
-                    self.dis, self.total_target_state, self.gen.total_gen_state
+                    self.dis, final_target_state, final_gen_state
                 )
 
                 ###########################################################

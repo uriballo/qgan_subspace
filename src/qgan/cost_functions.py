@@ -20,12 +20,13 @@ from qgan.ancilla import get_final_gen_state_for_discriminator, get_final_target
 
 np.random.seed()
 
+
 def braket(*args) -> float:
     """Calculate the braket (inner product) between two quantum states.
 
     Args:
         args: The arguments can be either two vectors (bra and ket), three (bra, operator, ket) or bigger (bra, operator^N, ket).
-    
+
     Returns:
         float: The inner product of the two vectors.
     """
@@ -42,7 +43,9 @@ def braket(*args) -> float:
             result = np.matmul(op, ket)
         return np.matmul(bra.getH(), result)
     else:
-        raise ValueError("braket function requires at least two arguments (bra and ket) or more than three (bra, operators, ket).")
+        raise ValueError(
+            "braket function requires at least two arguments (bra and ket) or more than three (bra, operators, ket)."
+        )
 
 
 def get_final_comp_states_for_dis(total_target_state: np.ndarray, total_gen_state: np.ndarray) -> tuple:
@@ -113,19 +116,17 @@ def compute_fidelity(final_target_state: np.ndarray, final_gen_state: np.ndarray
     # return np.abs(np.asscalar(np.matmul(target_state.getH(), total_final_state))) ** 2
 
 
-def compute_fidelity_and_cost(dis, total_target_state: np.ndarray, total_gen_state: np.ndarray) -> tuple[float, float]:
+def compute_fidelity_and_cost(dis, final_target_state: np.ndarray, final_gen_state: np.ndarray) -> tuple[float, float]:
     """Calculate the fidelity and cost function
 
     Args:
         dis (Discriminator): the discriminator.
-        total_target_state (np.ndarray): the target state.
-        total_gen_state (np.ndarray): the gen state.
+        final_target_state (np.ndarray): the target state.
+        final_gen_state (np.ndarray): the gen state.
 
     Returns:
         tuple[float, float]: the fidelity and cost function.
     """
-    final_target_state, final_gen_state = get_final_comp_states_for_dis(total_target_state, total_gen_state)
-
     fidelity = compute_fidelity(final_target_state, final_gen_state)
     cost = compute_cost(dis, final_target_state, final_gen_state)
 

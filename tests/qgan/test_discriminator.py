@@ -6,6 +6,7 @@ import numpy as np
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
 
 
+from qgan.cost_functions import get_final_comp_states_for_dis
 from qgan.generator import Generator
 from qgan.discriminator import Discriminator
 from config import CFG
@@ -42,11 +43,12 @@ class TestDiscriminator():
         dis = Discriminator()
         gen = Generator(total_input_state)
         total_gen_state = gen.get_total_gen_state()
+        final_target_state, final_gen_state = get_final_comp_states_for_dis(total_target_state, total_gen_state)
         
         old_alpha = dis.alpha.copy()
         old_beta = dis.beta.copy()
         
-        dis.update_dis(total_target_state, total_gen_state)
+        dis.update_dis(final_target_state, final_gen_state)
         
         # Check that it updates the alpha and beta parameters
         assert dis.alpha.shape == (dis.size, 4)
