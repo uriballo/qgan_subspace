@@ -90,8 +90,7 @@ def compute_cost(dis, final_target_state: np.ndarray, final_gen_state: np.ndarra
     psiterm = np.trace(np.matmul(np.matmul(final_target_state, final_target_state.getH()), psi))
     phiterm = np.trace(np.matmul(np.matmul(final_gen_state, final_gen_state.getH()), phi))
 
-    regterm = np.ndarray.item(CFG.lamb / np.e * (CFG.cst1 * term1 * term2 - CFG.cst2 * term3 * term4 - CFG.cst2 * term5 * term6 + CFG.cst3 * term7 * term8))
-    # regterm = np.asscalar(CFG.lamb / np.e * (CFG.cst1 * term1 * term2 - CFG.cst2 * term3 * term4 - CFG.cst2 * term5 * term6 + CFG.cst3 * term7 * term8))
+    regterm = np.ndarray.item(CFG.lamb / np.e * (CFG.cst1 * term1 * term2 - CFG.cst2 * (term3 * term4 + term5 * term6) + CFG.cst3 * term7 * term8))
     # fmt: on
 
     loss = np.real(psiterm - phiterm - regterm)

@@ -44,9 +44,9 @@ class MomentumOptimizer:
         theta_tmp = _flatten(theta)
 
         if min_or_max == "min":
-            sign = -1
+            sign = -1.0
         elif min_or_max == "max":
-            sign = 1
+            sign = 1.0
         else:
             raise ValueError("min_or_max must be either 'min' or 'max'")
 

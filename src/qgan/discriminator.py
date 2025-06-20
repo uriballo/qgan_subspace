@@ -112,7 +112,7 @@ class Discriminator:
         # Compute the matrix A, with expm:
         ##########################################################
         try:
-            A = expm((-1 / lamb) * phi)
+            A = expm(float(-1 / lamb) * phi)
         except ValueError:
             print_and_train_log(f"Can't exp(phi/lamb), 1/lamb: {(1 / lamb)}, size of phi:{phi.shape}\n", CFG.log_path)
 
@@ -120,7 +120,7 @@ class Discriminator:
         # Compute the matrix B, with expm:
         ##########################################################
         try:
-            B = expm((1 / lamb) * psi)
+            B = expm(float(1 / lamb) * psi)
         except ValueError:
             print_and_train_log(f"Can't exp(psi/lamb), 1/lamb: {(1 / lamb)}, size of psi: {psi.shape}\n", CFG.log_path)
 

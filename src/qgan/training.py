@@ -81,9 +81,10 @@ class Training:
                 # Generator and Discriminator gradient descent
                 ###########################################################
                 # 1 step for generator
-                self.gen.update_gen(self.dis, self.total_target_state)
+                for _ in range(CFG.steps_gen):
+                    self.gen.update_gen(self.dis, self.total_target_state)
                 # Ratio of steps for discriminator
-                for _ in range(CFG.ratio_step_dis_to_gen):
+                for _ in range(CFG.steps_dis):
                     self.dis.update_dis(self.total_target_state, self.gen.total_gen_state)
 
                 ###########################################################
