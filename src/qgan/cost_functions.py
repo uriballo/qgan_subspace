@@ -20,17 +20,29 @@ from qgan.ancilla import get_final_gen_state_for_discriminator, get_final_target
 
 np.random.seed()
 
-def braket(bra: np.ndarray, op:np.ndarray, ket: np.ndarray) -> float:
+def braket(*args) -> float:
     """Calculate the braket (inner product) between two quantum states.
 
     Args:
-        bra (np.ndarray): The bra vector.
-        ket (np.ndarray): The ket vector.
-
+        args: The arguments can be either two vectors (bra and ket), three (bra, operator, ket) or bigger (bra, operator^N, ket).
+    
     Returns:
         float: The inner product of the two vectors.
     """
-    return np.matmul(bra.getH(), np.matmul(op, ket))
+    if len(args) == 2:
+        bra, ket = args
+        return np.matmul(bra.getH(), ket)
+    if len(args) == 3:
+        bra, op, ket = args
+        return np.matmul(bra.getH(), np.matmul(op, ket))
+    elif len(args) > 3:
+        bra, *ops, ket = args
+        result = ket
+        for op in ops:
+            result = np.matmul(op, ket)
+        return np.matmul(bra.getH(), result)
+    else:
+        raise ValueError("braket function requires at least two arguments (bra and ket) or more than three (bra, operators, ket).")
 
 
 def get_final_comp_states_for_dis(total_target_state: np.ndarray, total_gen_state: np.ndarray) -> tuple:
@@ -97,8 +109,8 @@ def compute_fidelity(final_target_state: np.ndarray, final_gen_state: np.ndarray
     Returns:
         float: the fidelity between the target state and the gen state.
     """
-    braket = np.matmul(final_target_state.getH(), final_gen_state)
-    return np.abs(np.ndarray.item(braket)) ** 2
+    braket_result = braket(final_target_state, final_gen_state)
+    return np.abs(np.ndarray.item(braket_result)) ** 2
     # return np.abs(np.asscalar(np.matmul(target_state.getH(), total_final_state))) ** 2
 
 
