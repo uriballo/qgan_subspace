@@ -85,7 +85,7 @@ class Config:
         self.iterations_epoch: int = 100
         self.log_every_x_iter: int = 1
         self.max_fidelity: float = 0.99
-        self.steps_gen: int = 1
+        self.steps_gen: int = 2
         self.steps_dis: int = 1
 
         #############################################################################################
@@ -119,8 +119,8 @@ class Config:
         # |-----|-----------------|-----------------|-----------------|-----------------------|------------------------|
         #
         ###############################################################################################
-        self.system_size: int = 3
-        self.extra_ancilla: bool = False
+        self.system_size: int = 2
+        self.extra_ancilla: bool = True
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "project"
         # TODO: [FUTURE] Implement "project" with norm somewhere, passing unnormalized states, or add penalizer to cost?
         # TODO: [FUTURE] Decide what to do with trace, make all code work with density matrices, instead than sampling?
@@ -138,7 +138,7 @@ class Config:
         #
         #############################################################################################
         self.gen_layers: int = 3  # 2, 3, 5, 10, 20 ...
-        self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "XX_YY_ZZ_Z"
+        self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "ZZ_X_Z"
 
         #############################################################################################
         # ---------------------
