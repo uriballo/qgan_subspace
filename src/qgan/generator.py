@@ -70,32 +70,27 @@ class Generator:
         """
         return np.kron(Identity(CFG.system_size), self.qc.get_mat_rep())
 
-    def update_gen(
-        self,
-        dis: Discriminator,
-        total_target_state: np.ndarray,
-    ):
+    def update_gen(self, dis: Discriminator, total_target_state: np.ndarray):
         """Update the generator parameters (angles) using the optimizer.
 
         Args:
             dis (Discriminator): The discriminator to compute gradients.
             total_target_state (np.ndarray): The target state vector.
-            total_gen_state (np.ndarray): The current generator state vector.
         """
         ###############################################################
         # Compute the gradient
         ###############################################################
-        # Store old angles, needed later for the optimizer:
-        theta = []
-        theta.extend(gate.angle for gate in self.qc.gates)
         grad: np.ndarray = np.asarray(self._grad_theta(dis, total_target_state, self.total_gen_state))
-        new_angle = self.optimizer.move_in_grad(np.asarray(theta), grad, "min")
+        
+        # Get the new thetas from the gradient
+        theta = [gate.angle for gate in self.qc.gates]
+        new_theta = self.optimizer.move_in_grad(np.asarray(theta), grad, "min")
 
         ###############################################################
         # Update the angles in the quantum circuit
         ###############################################################
         for i in range(self.qc.depth):
-            self.qc.gates[i].angle = new_angle[i]
+            self.qc.gates[i].angle = new_theta[i]
 
         ###############################################################
         # Update the total generator state with the new angles
