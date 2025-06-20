@@ -118,7 +118,7 @@ class Generator:
             np.ndarray: The gradient of the generator parameters.
         """
         #######################################################################
-        # Get the current Generator and Discriminator states:
+        # Get the current Generator, Target and Discriminator states:
         #######################################################################
         final_target_state, final_gen_state = get_final_comp_states_for_dis(total_target_state, total_gen_state)
         A, B, _, phi = dis.get_dis_matrices_rep()
@@ -133,7 +133,7 @@ class Generator:
             # For phi term
             total_gen_grad = self.get_total_gen_grad(i)
             final_gen_grad = get_final_gen_state_for_discriminator(total_gen_grad)
-            tmp_grad = np.matmul(final_gen_grad.getH(), np.matmul(phi, final_gen_state)) + np.matmul(final_gen_state.getH(), np.matmul(phi, final_gen_grad))
+            tmp_grad = braket(final_gen_grad, phi, final_gen_state) + braket(final_gen_state, phi, final_gen_grad)
 
             grad_g_phi.append(np.ndarray.item(tmp_grad))
             # grad_g_phi.append(np.asscalar(tmp_grad))
