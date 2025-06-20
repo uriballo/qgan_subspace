@@ -145,7 +145,7 @@ class Generator:
             term6 = braket(final_gen_state, A, final_target_state) * braket(final_target_state, B, final_gen_grad)
             term7 = braket(final_gen_grad, B, final_gen_state) * braket(final_target_state, A, final_target_state)
             term8 = braket(final_gen_state, B, final_gen_grad) * braket(final_target_state, A, final_target_state)
-            tmp_reg_grad = CFG.lamb / np.e * (CFG.cst1 * (term1 + term2) - CFG.cst2 * (term3 + term4) - CFG.cst2 * (term5 + term6) + CFG.cst3 * (term7 + term8))
+            tmp_reg_grad = CFG.lamb / np.e * (CFG.cst1 * (term1 + term2) - CFG.cst2 * (term3 + term4 + term5 + term6) + CFG.cst3 * (term7 + term8))
 
             grad_g_reg.append(np.ndarray.item(tmp_reg_grad))
             # grad_g_reg.append(np.asscalar(tmp_reg_grad))
