@@ -164,8 +164,8 @@ class Discriminator:
         Args:
             final_target_state (np.ndarray): The final target state of the system.
             final_gen_state (np.ndarray): The final gen state of the system.
-            A (np.ndarray): The matrix representation of the real part of the discriminator.
-            B (np.ndarray): The matrix representation of the imaginary part of the discriminator.
+            A (np.ndarray): expm(-1/lamb * phi), with phi being the matrix repr. of the imag part of the dis.
+            B (np.ndarray): expm(1/lamb * psi), with psi being the matrix repr. of the real part of the dis.
             param (str): The parameter to compute the gradient for ("alpha" or "beta").
 
         Returns:
@@ -201,8 +201,8 @@ class Discriminator:
         Args:
             final_target_state (np.ndarray): The final target state of the system.
             final_gen_state (np.ndarray): The final gen state of the system.
-            A (np.ndarray): The matrix representation of the real part of the discriminator.
-            B (np.ndarray): The matrix representation of the imaginary part of the discriminator.
+            A (np.ndarray): expm(-1/lamb * phi), with phi being the matrix repr. of the imag part of the dis.
+            B (np.ndarray): expm(1/lamb * psi), with psi being the matrix repr. of the real part of the dis.
             type (str): The type of hermitian operator (0: I, 1: X, 2: Y, 3: Z).
 
         Returns:
@@ -217,7 +217,6 @@ class Discriminator:
             # Compute the gradient of psi with respect to alpha
             ##################################################################
             gradpsi_list.append(np.ndarray.item(braket(final_target_state, grad_psi, final_target_state)))
-            # gradpsi_list.append(np.asscalar(np.matmul(target_state.getH(), np.matmul(grad_psi, target_state))))
 
             ##################################################################
             # No gradient of phi with respect to alpha, so append 0
@@ -232,7 +231,6 @@ class Discriminator:
             term3 = cs * braket(final_gen_state, A, final_target_state) * braket(final_target_state, grad_psi, B, final_gen_state)
             term4 = cs * braket(final_gen_state, grad_psi, B, final_gen_state) * braket(final_target_state, A, final_target_state)
             gradreg_list.append(np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * (term2 + term3) + cst3 * term4)))
-            # gradreg_list.append(np.asscalar(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4)))
         # fmt: on
 
         return gradpsi_list, gradphi_list, gradreg_list
@@ -243,8 +241,8 @@ class Discriminator:
         Args:
             final_target_state (np.ndarray): The final target state of the system.
             final_gen_state (np.ndarray): The final gen state of the system.
-            A (np.ndarray): The matrix representation of the real part of the discriminator.
-            B (np.ndarray): The matrix representation of the imaginary part of the discriminator..
+            A (np.ndarray): expm(-1/lamb * phi), with phi being the matrix repr. of the imag part of the dis.
+            B (np.ndarray): expm(1/lamb * psi), with psi being the matrix repr. of the real part of the dis.
             type (str): The type of hermitian operator (0: I, 1: X, 2: Y, 3: Z).
 
         Returns:
@@ -264,7 +262,6 @@ class Discriminator:
             # Compute the gradient of phi with respect to beta
             ##################################################################
             gradphi_list.append(np.ndarray.item(braket(final_gen_state, grad_phi, final_gen_state)))
-            # gradphi_list.append(np.asscalar(np.matmul(total_gen_state.getH(), np.matmul(grad_phi, total_gen_state))))
 
             ##################################################################
             # Compute the regularization terms:
@@ -274,7 +271,6 @@ class Discriminator:
             term3 = cs * braket(final_gen_state, grad_phi, A, final_target_state) * braket(final_target_state, B, final_gen_state)
             term4 = cs * braket(final_gen_state, B, final_gen_state) * braket(final_target_state, grad_phi, A, final_target_state)
             gradreg_list.append(np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * (term2 + term3) + cst3 * term4)))
-            # gradreg_list.append(np.asscalar(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4)))
         # fmt: on
 
         return gradpsi_list, gradphi_list, gradreg_list

@@ -134,9 +134,7 @@ class Generator:
             total_gen_grad = self.get_total_gen_grad(i)
             final_gen_grad = get_final_gen_state_for_discriminator(total_gen_grad)
             tmp_grad = braket(final_gen_grad, phi, final_gen_state) + braket(final_gen_state, phi, final_gen_grad)
-
             grad_g_phi.append(np.ndarray.item(tmp_grad))
-            # grad_g_phi.append(np.asscalar(tmp_grad))
 
             # For reg term
             term1 = braket(final_gen_grad, A, final_gen_state) * braket(final_target_state, B, final_target_state)
@@ -150,7 +148,6 @@ class Generator:
             tmp_reg_grad = CFG.lamb / np.e * (CFG.cst1 * (term1 + term2) - CFG.cst2 * (term3 + term4 + term5 + term6) + CFG.cst3 * (term7 + term8))
 
             grad_g_reg.append(np.ndarray.item(tmp_reg_grad))
-            # grad_g_reg.append(np.asscalar(tmp_reg_grad))
             # fmt: on
 
         g_psi = np.asarray(grad_g_psi)
