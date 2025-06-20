@@ -61,37 +61,77 @@ def run_single_training():
 ##################################################################
 def run_multiple_trainings():
     """
-    Runs multiple trainings instances, with a change in the middle.
+    Runs multiple training instances, with a change in the middle.
 
-    Loops twice, first for `CFG.N_initial_exp`, second for `CFG.N_reps_each_init_exp`,
-    starting from the last runs, changing what is specified in `CFG.reps_new_config`.
-
-    Also automatically makes graphs to analyze the training success probability increase,
-    respect the controls, where no changes happened, and plots them in folder.
+    Loops twice, first for `CFG.N_initial_exp`, then for `CFG.N_reps_each_init_exp`,
+    starting from each of the last runs, changing what is specified in `CFG.reps_new_config`.
+    Saves and loads results using the generated_data folder structure.
     """
-    try:
-        ##############################################################
-        # Run single training instance with specified configuration
-        ##############################################################
-        training_instance = Training()
-        training_instance.run()
-        success_msg = "\nDefault configuration run COMPLETED SUCCESSFULLY.\n"
-        print_and_train_log(success_msg, CFG.log_path)  # Log to file
+    # Change results directory to MULTIPLE RUNS:
+    base_path = f"./generated_data/MULTIPLE_RUNS/{CFG.run_timestamp}"
+    CFG.base_data_path = base_path
+    CFG.set_results_paths()
 
-    except Exception as e:  # noqa: BLE001
-        ##############################################################
-        # Handle exceptions during the training run
-        ##############################################################
+    try:
+        # Run initial experiments
+        for i in range(getattr(CFG, "N_initial_exp", 1)):
+            # Set path for initial experiment
+            CFG.base_data_path = f"{base_path}/initial_exp_{i+1}"
+            CFG.set_results_paths()
+
+            msg = f"\n{'='*60}\nInitial Experiment {i+1}/{CFG.N_initial_exp}\n{'-'*60}"
+            print_and_train_log(msg, CFG.log_path)
+            training_instance = Training()
+            training_instance.run()
+            print_and_train_log(f"Initial Experiment {i+1} completed.\n", CFG.log_path)
+
+        # Run repeated experiments, before changes, for controls.
+        for i in range(getattr(CFG, "N_initial_exp", 1)):
+            for rep in range(getattr(CFG, "N_reps_each_init_exp", 1)):
+                msg = f"\n{'='*60}\nRepeated Experiments controls {rep+1}/{CFG.N_reps_each_init_exp} for Initial Exp {i+1}\n{'-'*60}"
+                print_and_train_log(msg, CFG.log_path)
+                # Set CFG.load_timestamp to the initial experiment's timestamp
+                CFG.load_timestamp = f"MULTIPLE_RUNS/{CFG.run_timestamp}/initial_exp_{i+1}"
+                CFG.base_data_path = f"{base_path}/initial_exp_{i+1}/repeated_control_{rep+1}"
+                training_instance = Training()
+                training_instance.run()
+                print_and_train_log(
+                    f"Repeated Experiment control {rep+1} for Initial Exp {i+1} completed.\n", CFG.log_path
+                )
+
+        # Change config for repeated experiments
+        for key, value in getattr(CFG, "reps_new_config", {}).items():
+            setattr(CFG, key, value)
+        print_and_train_log(
+            f"\n{'='*60}\nChanged config for repeated experiments: {CFG.reps_new_config}\n{'='*60}", CFG.log_path
+        )
+
+        # Run repeated experiments, loading from each initial experiment's results
+        for i in range(getattr(CFG, "N_initial_exp", 1)):
+            for rep in range(getattr(CFG, "N_reps_each_init_exp", 1)):
+                msg = f"\n{'='*60}\nRepeated Experiment {rep+1}/{CFG.N_reps_each_init_exp} for Initial Exp {i+1}\n{'-'*60}"
+                print_and_train_log(msg, CFG.log_path)
+                # Set CFG.load_timestamp to the initial experiment's timestamp
+                CFG.load_timestamp = f"MULTIPLE_RUNS/{CFG.run_timestamp}/initial_exp_{i+1}"
+                CFG.base_data_path = f"{base_path}/initial_exp_{i+1}/repeated_changed_{rep+1}"
+                training_instance = Training()
+                training_instance.run()
+                print_and_train_log(f"Repeated Experiment {rep+1} for Initial Exp {i+1} completed.\n", CFG.log_path)
+
+        # TODO: Add analysis/plotting of results if needed
+        print_and_train_log("\nAll multiple training runs completed.\n", CFG.log_path)
+
+    except Exception as e:
         tb_str = traceback.format_exc()
         error_msg = (
             f"\n{'-' * 60}\n"
-            f"FAILED: Default configuration run!\n"
+            f"FAILED: Multiple training runs!\n"
             f"Error Type: {type(e).__name__}\n"
             f"Error Message: {e!s}\n"
             f"Traceback:\n{tb_str}"
             f"{'=' * 60}\n"
         )
-        print_and_train_log(error_msg, CFG.log_path)  # Log to file
+        print_and_train_log(error_msg, CFG.log_path)
 
 
 ###################################################################
@@ -101,6 +141,9 @@ def run_test_configurations():
     """
     Runs a suite of test configurations.
     """
+    # Change results directory to TESTING:
+    CFG.base_data_path = f"./generated_data/TESTING/{CFG.run_timestamp}"
+    CFG.set_results_paths()
 
     all_passed = True
     for i, config_params in enumerate(test_configurations):
