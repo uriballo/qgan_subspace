@@ -43,16 +43,14 @@ class Config:
         #
         #############################################################################################
         self.run_multiple_experiments: bool = True
-        self.N_initial_exp: int = 20
-        self.N_reps_each_init_exp: int = 5
-        self.reps_new_config: dict[str, Any] = (
-            {
-                "extra_ancilla": True,
-                "ancilla_mode": "project",
-                "ancilla_topology": "bridge",
-                "type_of_warm_star": "none",
-            },
-        )
+        self.N_initial_exp: int = 5
+        self.N_reps_each_init_exp: int = 10
+        self.reps_new_config: dict[str, Any] = {
+            "extra_ancilla": True,
+            "ancilla_mode": "project",
+            "ancilla_topology": "bridge",
+            "type_of_warm_star": "none",
+        }
 
         #############################################################################################
         # ---------------------
@@ -87,8 +85,8 @@ class Config:
         #   - steps_gen/dis: Discriminator and Generator update steps in each iter (1~5).
         #
         #############################################################################################
-        self.epochs: int = 10
-        self.iterations_epoch: int = 100
+        self.epochs: int = 3
+        self.iterations_epoch: int = 10
         self.log_every_x_iter: int = 1
         self.max_fidelity: float = 0.99
         self.steps_gen: int = 1
@@ -125,7 +123,7 @@ class Config:
         # |-----|-----------------|-----------------|-----------------|-----------------------|------------------------|
         #
         ###############################################################################################
-        self.system_size: int = 3
+        self.system_size: int = 2
         self.extra_ancilla: bool = True
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "project"
         # TODO: [FUTURE] Implement "project" with norm somewhere, passing unnormalized states, or add penalizer to cost?

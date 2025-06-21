@@ -72,6 +72,8 @@ def run_multiple_trainings():
     CFG.base_data_path = base_path
     CFG.set_results_paths()
 
+    print_and_train_log("Running in MULTIPLE RUNS mode with a change in the middle.\n", CFG.log_path)
+
     try:
         # Run initial experiments
         for i in range(getattr(CFG, "N_initial_exp", 1)):
@@ -93,6 +95,7 @@ def run_multiple_trainings():
                 # Set CFG.load_timestamp to the initial experiment's timestamp
                 CFG.load_timestamp = f"MULTIPLE_RUNS/{CFG.run_timestamp}/initial_exp_{i+1}"
                 CFG.base_data_path = f"{base_path}/initial_exp_{i+1}/repeated_control_{rep+1}"
+                CFG.set_results_paths()
                 training_instance = Training()
                 training_instance.run()
                 print_and_train_log(
@@ -114,11 +117,17 @@ def run_multiple_trainings():
                 # Set CFG.load_timestamp to the initial experiment's timestamp
                 CFG.load_timestamp = f"MULTIPLE_RUNS/{CFG.run_timestamp}/initial_exp_{i+1}"
                 CFG.base_data_path = f"{base_path}/initial_exp_{i+1}/repeated_changed_{rep+1}"
+                CFG.set_results_paths()
                 training_instance = Training()
                 training_instance.run()
                 print_and_train_log(f"Repeated Experiment {rep+1} for Initial Exp {i+1} completed.\n", CFG.log_path)
 
-        # TODO: Add analysis/plotting of results if needed
+        # Analysis/plotting of results: recurrence vs max fidelity for controls and changed
+        from tools.plot_recurrence_vs_fidelity import plot_recurrence_vs_fidelity
+
+        plot_recurrence_vs_fidelity(base_path)
+        print_and_train_log("\nAnalysis plot (recurrence vs max fidelity) generated.\n", CFG.log_path)
+
         print_and_train_log("\nAll multiple training runs completed.\n", CFG.log_path)
 
     except Exception as e:

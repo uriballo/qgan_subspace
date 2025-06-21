@@ -23,7 +23,6 @@ from tools.training_init import run_multiple_trainings, run_single_training
 ##############################################################
 def main():
     if CFG.run_multiple_experiments:
-        print_and_train_log("Running in MULTIPLE RUNS mode with a change in the middle.\n", CFG.log_path)
         run_multiple_trainings()
     else:
         print_and_train_log("Running in SINGLE RUN mode.\n", CFG.log_path)
