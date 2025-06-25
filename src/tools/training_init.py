@@ -13,14 +13,16 @@
 # limitations under the License.
 
 """Training initialization module for running training instances"""
-# ruff: noqa: E226
 
+import itertools
 import traceback
 
 from config import CFG, test_configurations
 from qgan.training import Training
 from tools.data.data_managers import print_and_log, print_and_log_with_headers
 from tools.plot_hub import plot_recurrence_vs_fidelity
+
+# ruff: noqa: E226
 
 
 ##################################################################
@@ -64,6 +66,7 @@ def run_multiple_trainings():
 
     Loops twice, first for `CFG.N_initial_exp`, then for `CFG.N_reps_each_init_exp`,
     starting from each of the last runs, changing what is specified in `CFG.reps_new_config`.
+
     Saves and loads results using the generated_data folder structure.
     """
     ##############################################################
@@ -83,55 +86,18 @@ def run_multiple_trainings():
         ##############################################################
         # Run initial experiments
         ##############################################################
-        for i in range(n_initial_exp):
-            # Set path for initial experiment
-            CFG.base_data_path = f"{base_path}/initial_exp_{i+1}"
-            CFG.set_results_paths()
+        _run_initial_experiments(n_initial_exp, base_path)
 
-            print_and_log_with_headers(f"\nInitial Experiment {i+1}/{n_initial_exp}", CFG.log_path)
-            Training().run()
-            print_and_log(f"\nInitial Experiment {i+1} completed.\n", CFG.log_path)
-
+        #############################################################
+        # Run repeated (control and changed), from each initial experiment
         ##############################################################
-        # Run control without changes, from each initial experiment
-        ##############################################################
-        for i in range(n_initial_exp):
-            for rep in range(n_reps_each_init_exp):
-                # Set load_timestamp to the initial experiment's timestamp, and base_data_path for controls
-                CFG.load_timestamp = f"MULTIPLE_RUNS/{CFG.run_timestamp}/initial_exp_{i+1}"
-                CFG.base_data_path = f"{base_path}/initial_exp_{i+1}/repeated_control_{rep+1}"
-                CFG.set_results_paths()
-
-                print_and_log_with_headers(
-                    f"\nRepeated Experiments controls {rep+1}/{n_reps_each_init_exp} for Initial Exp {i+1}/{n_initial_exp}",
-                    CFG.log_path,
-                )
-                Training().run()
-                print_and_log(f"\nRepeated Experiment control {rep+1} for Initial Exp {i+1} completed.\n", CFG.log_path)
-
-        ##############################################################
-        # Change config for repeated experiments
-        ##############################################################
+        # Run controls first, from each initial experiment:
+        _run_repeated_experiments(n_initial_exp, n_reps_each_init_exp, base_path, "control")
+        # Change config for changed experiments:
         for key, value in getattr(CFG, "reps_new_config", {}).items():
             setattr(CFG, key, value)
-        print_and_log_with_headers(f"\nChanged config for repeated experiments: {CFG.reps_new_config}", CFG.log_path)
-
-        ##############################################################
-        # Run changed experiments, from each initial experiment
-        ##############################################################
-        for i in range(n_initial_exp):
-            for rep in range(n_reps_each_init_exp):
-                # Set load_timestamp to the initial experiment's timestamp, and base_data_path for changed experiments
-                CFG.load_timestamp = f"MULTIPLE_RUNS/{CFG.run_timestamp}/initial_exp_{i+1}"
-                CFG.base_data_path = f"{base_path}/initial_exp_{i+1}/repeated_changed_{rep+1}"
-                CFG.set_results_paths()
-
-                print_and_log_with_headers(
-                    f"\nRepeated Experiment {rep+1}/{n_reps_each_init_exp} for Initial Exp {i+1}/{n_initial_exp}",
-                    CFG.log_path,
-                )
-                Training().run()
-                print_and_log(f"\nRepeated Experiment {rep+1} for Initial Exp {i+1} completed.\n", CFG.log_path)
+        # Run changed experiments, from each initial experiment:
+        _run_repeated_experiments(n_initial_exp, n_reps_each_init_exp, base_path, "changed")
 
         ##############################################################
         # Plot results: recurrence vs max fidelity for controls and changed
@@ -151,6 +117,34 @@ def run_multiple_trainings():
             f"{'=' * 60}\n"
         )
         print_and_log(error_msg, CFG.log_path)
+
+
+def _run_initial_experiments(n_initial_exp: int, base_path: str):
+    for i in range(n_initial_exp):
+        # Set path for initial experiment
+        CFG.base_data_path = f"{base_path}/initial_exp_{i+1}"
+        CFG.set_results_paths()
+
+        print_and_log_with_headers(f"\nInitial Experiment {i+1}/{n_initial_exp}", CFG.log_path)
+        Training().run()
+        print_and_log(f"\nInitial Experiment {i+1} completed.\n", CFG.log_path)
+
+
+def _run_repeated_experiments(n_initial_exp: int, n_reps_each_init_exp: int, base_path: str, changed_or_control: str):
+    for i, rep in itertools.product(range(n_initial_exp), range(n_reps_each_init_exp)):
+        # Set load_timestamp to the initial experiment's timestamp, and base_data_path for controls/changed
+        CFG.load_timestamp = f"MULTIPLE_RUNS/{CFG.run_timestamp}/initial_exp_{i+1}"
+        CFG.base_data_path = f"{base_path}/initial_exp_{i+1}/repeated_{changed_or_control}_{rep+1}"
+        CFG.set_results_paths()
+
+        print_and_log_with_headers(
+            f"\nRepeated Experiments {changed_or_control} {rep+1}/{n_reps_each_init_exp} for Initial Exp {i+1}/{n_initial_exp}",
+            CFG.log_path,
+        )
+        Training().run()
+        print_and_log(
+            f"\nRepeated Experiment {changed_or_control} {rep+1} for Initial Exp {i+1} completed.\n", CFG.log_path
+        )
 
 
 ###################################################################
