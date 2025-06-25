@@ -96,12 +96,7 @@ def compute_cost(dis, final_target_state: np.ndarray, final_gen_state: np.ndarra
     regterm = np.ndarray.item(CFG.lamb / np.e * (CFG.cst1 * term1 * term2 - CFG.cst2 * (term3 * term4 + term5 * term6) + CFG.cst3 * term7 * term8))
     # fmt: on
 
-    # Penalization for ancilla qubit norm, if needed
-    penalization = 0
-    if CFG.extra_ancilla and CFG.ancilla_mode == "project" and CFG.ancilla_project_norm == "penalize":
-        penalization = CFG.ancilla_norm_penalization * (1 - np.linalg.norm(final_gen_state)) ** 2
-
-    loss = np.real(psiterm - phiterm - regterm) + penalization
+    loss = np.real(psiterm - phiterm - regterm)
 
     return loss
 
