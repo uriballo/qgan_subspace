@@ -18,12 +18,13 @@ from datetime import datetime
 import numpy as np
 
 from config import CFG
-from qgan.cost_functions import compute_cost, compute_fidelity
+from qgan.ancilla import get_max_entangled_state_with_ancilla_if_needed
+from qgan.cost_functions import compute_fidelity_and_cost, get_final_comp_states_for_dis
 from qgan.discriminator import Discriminator
 from qgan.generator import Generator
-from qgan.target import get_maximally_entangled_state, initialize_target_state
+from qgan.target import get_total_target_state
 from tools.data.data_managers import (
-    print_and_train_log,
+    print_and_log,
     save_fidelity_loss,
     save_gen_final_params,
     save_model,
@@ -38,13 +39,13 @@ class Training:
     def __init__(self):
         """Builds the configuration for the Training. You might wanna comment/discomment lines, for changing the model."""
 
-        self.total_input_state: np.ndarray = get_maximally_entangled_state(CFG.system_size)
+        self.total_input_state: np.matrix = get_max_entangled_state_with_ancilla_if_needed(CFG.system_size)
         """Preparation of max. entgl. state with ancilla qubit if needed."""
 
-        self.total_target_state: np.ndarray = initialize_target_state(self.total_input_state)
+        self.total_target_state: np.matrix = get_total_target_state(self.total_input_state)
         """Prepare the target state, with the size and Target unitary defined in config."""
 
-        self.gen: Generator = Generator()
+        self.gen: Generator = Generator(self.total_input_state)
         """Prepares the Generator with the size, ansatz, layers and ancilla, defined in config."""
 
         self.dis: Discriminator = Discriminator()
@@ -56,7 +57,7 @@ class Training:
         ###########################################################
         # Initialize training
         ###########################################################
-        print_and_train_log("\n" + CFG.show_data(), CFG.log_path)
+        print_and_log("\n" + CFG.show_data(), CFG.log_path)
 
         # Load models if specified (only the params, and only if compatible)
         load_models_if_specified(self)
@@ -77,19 +78,25 @@ class Training:
             num_epochs += 1
             for epoch_iter in range(CFG.iterations_epoch):
                 ###########################################################
-                # Generator and Discriminator gradient descent
+                # Gen and Dis gradient descent
                 ###########################################################
-                # 1 step for generator
-                self.gen.update_gen(self.dis, self.total_target_state, self.total_input_state)
-                # Ratio of steps for discriminator
-                for _ in range(CFG.ratio_step_dis_to_gen):
-                    self.dis.update_dis(self.gen, self.total_target_state, self.total_input_state)
+                for _ in range(CFG.steps_gen):
+                    self.gen.update_gen(self.dis, self.total_target_state)
+
+                # Remove ancilla if needed, with ancilla mode, before discriminator:
+                final_target_state, final_gen_state = get_final_comp_states_for_dis(
+                    self.total_target_state, self.gen.total_gen_state
+                )
+
+                for _ in range(CFG.steps_dis):
+                    self.dis.update_dis(final_target_state, final_gen_state)
 
                 ###########################################################
                 # Compute fidelity and loss
                 ###########################################################
-                fidelities[epoch_iter] = compute_fidelity(self.gen, self.total_target_state, self.total_input_state)
-                losses[epoch_iter] = compute_cost(self.gen, self.dis, self.total_target_state, self.total_input_state)
+                fidelities[epoch_iter], losses[epoch_iter] = compute_fidelity_and_cost(
+                    self.dis, final_target_state, final_gen_state
+                )
 
                 ###########################################################
                 # Every X iterations, log data
@@ -98,7 +105,7 @@ class Training:
                     info = "\nepoch:{:4d} | iters:{:4d} | fidelity:{:8f} | loss:{:8f}".format(
                         num_epochs, epoch_iter + 1, round(fidelities[epoch_iter], 6), round(losses[epoch_iter], 6)
                     )
-                    print_and_train_log(info, CFG.log_path)
+                    print_and_log(info, CFG.log_path)
 
             ###########################################################
             # End of epoch, store data and plot
@@ -111,13 +118,13 @@ class Training:
             # Stopping conditions
             #############################################################
             if num_epochs >= CFG.epochs:
-                print_and_train_log("\n==================================================\n", CFG.log_path)
-                print_and_train_log(f"\nThe number of epochs exceeds {CFG.epochs}.", CFG.log_path)
+                print_and_log("\n==================================================\n", CFG.log_path)
+                print_and_log(f"\nThe number of epochs exceeds {CFG.epochs}.", CFG.log_path)
                 break
 
             if fidelities[-1] > CFG.max_fidelity:  # TODO: Maybe change this cond, to use max(fidelities)?
-                print_and_train_log("\n==================================================\n", CFG.log_path)
-                print_and_train_log(
+                print_and_log("\n==================================================\n", CFG.log_path)
+                print_and_log(
                     f"\nThe fidelity {fidelities[-1]} exceeds the maximum {CFG.max_fidelity}.",
                     CFG.log_path,
                 )
@@ -137,4 +144,4 @@ class Training:
         save_gen_final_params(self.gen, CFG.gen_final_params_path)
 
         endtime = datetime.now()
-        print_and_train_log("\nRun took: {} time.".format((endtime - starttime)), CFG.log_path)
+        print_and_log(f"\nRun took: {endtime - starttime} time.", CFG.log_path)

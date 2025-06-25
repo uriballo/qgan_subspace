@@ -14,23 +14,18 @@
 """Main module for running the quantum GAN training and testing."""
 
 from config import CFG
-from tools.data.data_managers import print_and_train_log
-from tools.training_init import run_single_training, run_test_configurations
+from tools.data.data_managers import print_and_log
+from tools.training_init import run_multiple_trainings, run_single_training
 
 
+##############################################################
+# SINGLE RUN mode
+##############################################################
 def main():
-    ##############################################################
-    # TESTING mode
-    ##############################################################
-    if CFG.testing:
-        print_and_train_log("Running in TESTING mode.\n", CFG.log_path)
-        run_test_configurations()
-
-    ##############################################################
-    # SINGLE RUN mode
-    ##############################################################
+    if CFG.run_multiple_experiments:
+        run_multiple_trainings()
     else:
-        print_and_train_log("Running in SINGLE RUN mode.\n", CFG.log_path)
+        print_and_log("Running in SINGLE RUN mode.\n", CFG.log_path)
         run_single_training()
 
 

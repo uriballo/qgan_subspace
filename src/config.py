@@ -26,55 +26,53 @@ class Config:
     def __init__(self):
         """Configuration for the QGAN experiment, which sets up all parameters required for training it."""
 
-        ########################################################################
-        # ---------------------
-        # TESTING CONFIGURATION
-        # ---------------------
-        #   - testing: bool: Enables testing mode for running several different quick configurations.
-        #
-        ########################################################################
-        self.testing: bool = False
-
-        ########################################################################
+        ############################################################################################
         # ---------------------
         # RUNS CONFIGURATION
         # ---------------------
-        #   - N_initial_exp: Number of initial experiments to run (without change), (default: 20).
-        #   - N_reps_each_init_exp: Number of repetitions for each initial experiment afterwards (with changes), (default: 5).
+        #       If activated, you will first run `N_initial_exp` initial experiments. And then for each of
+        #       those you would continue them `N_reps_each_init_exp` times, adding the specified changes
+        #       and not adding the changes (controls), for then comparing the effects of the changes.
+        #       Each individual experiment lasting the specified number of epochs and iterations in CFG.
         #
-        ########################################################################
-        self.N_initial_exp: int = 20  # TODO: For loop twice, first for initial experiments, second for repetitions.
-        self.N_reps_each_init_exp: int = 5  # TODO: Change the ancilla mode and topology after the initial experiments.
-        self.reps_new_config: dict[str, Any] = (
-            {
-                "extra_ancilla": True,
-                "ancilla_mode": "pass",
-                "ancilla_topology": "trivial",
-                "type_of_warm_star": "all",
-                "warm_start_strength": 0.1,
-            },
-        )
-        # TODO: Also add so that automatically makes the analysis graphs of the improvements, and plots them in folder.
+        #   - run_multiple_experiments: Whether to run multiple experiments with a change in the middle.
+        #
+        #   - N_initial_exp: Number of initial experiments to run, without change (default: 5).
+        #
+        #   - N_reps_each_init_exp: Num of reps for each initial experiment afterwards, with changes (default: 20).
+        #
+        #   - reps_new_config: The configuration changes to run, after the initial experiments.
+        #
+        #############################################################################################
+        self.run_multiple_experiments: bool = True
+        self.N_initial_exp: int = 10
+        self.N_reps_each_init_exp: int = 20
+        self.reps_new_config: dict[str, Any] = {
+            "extra_ancilla": True,
+            "ancilla_mode": "project",
+            "ancilla_topology": "bridge",
+            "type_of_warm_start": "none",
+        }
 
-        #######################################################################
+        #############################################################################################
         # ---------------------
         # LOADING CONFIGURATION
         # ---------------------
         #   - load_timestamp: Timestamp to load a previous run (ex. None, 2025-06-06__02-05-10").
         #
-        #   - type_of_warm_start: Warm start type for loading models (only if loading).
+        #   - type_of_warm_start: Warm start type for loading models (only if load_timestamp != None).
         #       + "none": No warm start.
         #       + "all": Warm start all parameters, by a bit (strength).
         #       + "some": Warm start some parameters (strength), to completely random.
         #
         #   - warm_start_strength: Strength of warm start for generator (only if loading).
         #
-        ########################################################################
+        #############################################################################################
         self.load_timestamp: Optional[str] = None  # "2025-06-06__02-05-10"
-        self.type_of_warm_start: Literal["none", "all", "some"] = "all"
+        self.type_of_warm_start: Literal["none", "all", "some"] = "none"
         self.warm_start_strength: Optional[float] = 0.1
 
-        #######################################################################
+        #############################################################################################
         # ----------------------
         # TRAINING CONFIGURATION
         # ----------------------
@@ -86,16 +84,17 @@ class Config:
         #
         #   - max_fidelity: Stopping criterion for fidelity (default: ~0.99)
         #
-        #   - ratio_step_dis_to_gen: Discriminator to generator training steps, ratio (dis > gen), (default: 1-5).
+        #   - steps_gen/dis: Discriminator and Generator update steps in each iter (1~5).
         #
-        #######################################################################
-        self.epochs: int = 2
-        self.iterations_epoch: int = 20
-        self.log_every_x_iter: int = 10
+        #############################################################################################
+        self.epochs: int = 20
+        self.iterations_epoch: int = 100
+        self.log_every_x_iter: int = 1
         self.max_fidelity: float = 0.99
-        self.ratio_step_dis_to_gen: int = 1
+        self.steps_gen: int = 1
+        self.steps_dis: int = 1
 
-        #######################################################################
+        #############################################################################################
         # ---------------------
         # QUBITS CONFIGURATION
         # ---------------------
@@ -125,17 +124,16 @@ class Config:
         # |  P  |                 |                 |                 |      A────────        |      A────────         |
         # |-----|-----------------|-----------------|-----------------|-----------------------|------------------------|
         #
-        #######################################################################
-        self.system_size: int = 2
-        self.extra_ancilla: bool = True
+        ###############################################################################################
+        self.system_size: int = 3
+        self.extra_ancilla: bool = False
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "project"
         self.ancilla_project_norm: Optional[Literal["remove", "penalize", "pass"]] = "remove"  # TODO: Document this.
         self.ancilla_norm_penalization: float = 0.01  # TODO: Document this, and add it to where needed in config.
-        # TODO: [FUTURE] Decide what to do with trace (work with rho, instead than sampling? Keep both?).
-        self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "total"
-        # TODO: [URGENT] Try "project" and "total" and see if you observe any difference in the results, to Ayaka.
+        self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "bridge"
+        # TODO: [FUTURE] Decide what to do with trace, make all code work with density matrices, instead than sampling?
 
-        #######################################################################
+        #############################################################################################
         # -----------------------
         # GENERATOR CONFIGURATION
         # -----------------------
@@ -145,11 +143,11 @@ class Config:
         #       + "XX_YY_ZZ_Z": 2 body X, 2 body Y, 2 body Z and 1 body Z terms.
         #       + "ZZ_X_Z": 2 body Z, 1 body X and 1 body Z terms.
         #
-        #######################################################################
-        self.gen_layers: int = 1  # 20 #15 #10 #4 #3 #2 ...
+        #############################################################################################
+        self.gen_layers: int = 3  # 2, 3, 5, 10, 20 ...
         self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "XX_YY_ZZ_Z"
 
-        #######################################################################
+        #############################################################################################
         # ---------------------
         # TARGET CONFIGURATION
         # ---------------------
@@ -164,46 +162,49 @@ class Config:
         #       + "Z": Adds a 1 body Z term.
         #       + "I": Adds a 1 body identity term.
         #
-        #######################################################################
+        #############################################################################################
         self.target_hamiltonian: Literal["cluster_h", "rotated_surface_h", "custom_h"] = "cluster_h"
-        self.custom_hamiltonian_terms: Optional[list[str]] = ["ZZZ"]  # Custom Terms: ["ZZZ", "ZZ", "Z", "I"]
+        self.custom_hamiltonian_terms: Optional[list[str]] = ["ZZ"]  # Custom Terms: ["ZZZ", "ZZ", "Z", "I"]
 
-        #######################################################################
+        #############################################################################################
         # -----------------------------------
         # MOMENTUM OPTIMIZATION CONFIGURATION
         # -----------------------------------
         #   - l_rate: Learning rate for optimizers (default: 0.01)
         #   - momentum_coeff: Momentum coefficient for optimizers (default: 0.9)
         #
-        #######################################################################
+        #############################################################################################
         self.l_rate: float = 0.01
         self.momentum_coeff: float = 0.9
 
-        #####################################################################
+        #############################################################################################
         # ------------------------------------
         # HYPERPARAMETERS for Wasserstein Cost
         # ------------------------------------
         #  - lamb, s, cst1, cst2, cst3: Constants for Wasserstein cost and gradient.
         #
-        #####################################################################
+        #############################################################################################
         self.lamb = float(10)
         self.s = np.exp(-1 / (2 * self.lamb)) - 1
         self.cst1 = (self.s / 2 + 1) ** 2
         self.cst2 = (self.s / 2) * (self.s / 2 + 1)
         self.cst3 = (self.s / 2) ** 2
 
-        #####################################################################
+        #############################################################################################
         # ----------------------------------
         # SAVING AND LOGGING CONFIGURATION
         # ---------------------------------
         #   - several paths for saving outputs.
         #
-        #####################################################################
+        #############################################################################################
         # Datetime for current run - initialized once
         self.run_timestamp: str = datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
-        self.base_data_path: str = f"./generated_data/{'TESTING/' if self.testing else ''}{self.run_timestamp}"
-
+        self.base_data_path: str = f"./generated_data/{self.run_timestamp}"
         # File path settings (dynamic based on run_timestamp and system_size)
+        self.set_results_paths()
+
+    def set_results_paths(self) -> None:
+        """Set the paths for saving results based on the base data path."""
         self.figure_path: str = f"{self.base_data_path}/figures"
         self.model_gen_path: str = f"{self.base_data_path}/saved_model/model-gen(hs).pkl"
         self.model_dis_path: str = f"{self.base_data_path}/saved_model/model-dis(hs).pkl"
@@ -216,23 +217,31 @@ class Config:
         return (
             "================================================== \n"
             f"run_timestamp: {self.run_timestamp},\n"
+            "----------------------------------------------\n"
             f"load_timestamp: {self.load_timestamp},\n"
             f"type_of_warm_start: {self.type_of_warm_start},\n"
             f"warm_start_strength: {self.warm_start_strength},\n"
+            "----------------------------------------------\n"
             f"system_size: {self.system_size},\n"
             f"extra_ancilla: {self.extra_ancilla},\n"
             f"ancilla_mode: {self.ancilla_mode},\n"
             f"ancilla_topology: {self.ancilla_topology},\n"
+            "----------------------------------------------\n"
             f"gen_layers: {self.gen_layers},\n"
             f"gen_ansatz: {self.gen_ansatz},\n"
+            "----------------------------------------------\n"
             f"target_hamiltonian: {self.target_hamiltonian},\n"
             f"custom_hamiltonian_terms: {self.custom_hamiltonian_terms},\n"
+            "----------------------------------------------\n"
             f"epochs: {self.epochs},\n"
             f"iterations_epoch: {self.iterations_epoch},\n"
             f"log_every_x_iter: {self.log_every_x_iter},\n"
             f"max_fidelity: {self.max_fidelity},\n"
+            f"steps_gen: {self.steps_gen},\n"
+            f"steps_dis: {self.steps_dis},\n"
+            "----------------------------------------------\n"
             f"l_rate: {self.l_rate},\n"
-            f"ratio_step_dis_to_gen: {self.ratio_step_dis_to_gen},\n"
+            f"momentum_coeff: {self.momentum_coeff},\n"
             "================================================== \n"
         )
 
@@ -243,9 +252,14 @@ class Config:
 CFG = Config()
 
 
-#####################################################################
-# Test Configurations
-#####################################################################
+#############################################################################################
+# -----------------------------------
+# TEST CONFIGURATIONS
+# -----------------------------------
+#   Contains a list of dictionaries with different configurations
+#   to run in a row, executing while executing the tests with pytest.
+#
+#############################################################################################
 test_configurations = [
     # Testing Custom Hamiltonian ZZZ
     {

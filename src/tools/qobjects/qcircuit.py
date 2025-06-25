@@ -27,14 +27,14 @@ class QuantumCircuit:
         self.gates = []
         self.name = name
 
-    def check_ciruit(self):
-        for j, gate in zip(range(len(self.gates)), self.gates):
-            if gate.qubit1 is not None and gate.qubit2 is not None:
-                if gate.qubit1 > self.size - 1:
-                    print("Error: #{} gate:{} 1qubit is out of range".format(j, gate.name))
+    def check_circuit(self):
+        for j, gate_j in enumerate(self.gates):
+            if gate_j.qubit1 is not None and gate_j.qubit2 is not None:
+                if gate_j.qubit1 > self.size - 1:
+                    print(f"Error: #{j} gate:{gate_j.name} 1qubit is out of range")
                     os._exit(0)
-                elif gate.qubit2 > self.size - 1:
-                    print("Error: #{} gate:{} 2qubit is out of range".format(j, gate.name))
+                elif gate_j.qubit2 > self.size - 1:
+                    print(f"Error: #{j} gate:{gate_j.name} 2qubit is out of range")
                     os._exit(0)
 
     def get_mat_rep(self):
@@ -52,43 +52,41 @@ class QuantumCircuit:
         """
         if type == "shift_phase":
             matrix = Identity(self.size)
-            for j, gate in zip(range(len(self.gates)), self.gates):
+            for j, gate_j in enumerate(self.gates):
                 if index == j:
-                    g = gate.matrix_representation_shift_phase(self.size, True, signal)
-                    matrix = np.matmul(g, matrix)
+                    g = gate_j.matrix_representation_shift_phase(self.size, True, signal)
                 else:
-                    g = gate.matrix_representation_shift_phase(self.size, False, signal)
-                    matrix = np.matmul(g, matrix)
+                    g = gate_j.matrix_representation_shift_phase(self.size, False, signal)
+                matrix = np.matmul(g, matrix)
             return np.asmatrix(matrix)
 
         if type == "matrix_multiplication":
             matrix = Identity(self.size)
-            for j, gate in zip(range(len(self.gates)), self.gates):
+            for j, gate_j in enumerate(self.gates):
                 if index == j:
-                    g = gate.matrix_representation(self.size, True)
-                    matrix = np.matmul(g, matrix)
+                    g = gate_j.matrix_representation(self.size, True)
                 else:
-                    g = gate.matrix_representation(self.size, False)
-                    matrix = np.matmul(g, matrix)
+                    g = gate_j.matrix_representation(self.size, False)
+                matrix = np.matmul(g, matrix)
             return np.asmatrix(matrix)
 
         return None
 
     def get_grad_qc(self, indx, type="0"):
         qc_list = []
-        for j, gate in zip(range(len(self.gates)), self.gates):
+        for j, gate_j in enumerate(self.gates):
             tmp = QuantumGate(" ", qubit1=None, qubit2=None, angle=None)
-            tmp.name = gate.name
-            tmp.qubit1 = gate.qubit1
-            tmp.qubit2 = gate.qubit2
-            tmp.angle = gate.angle
+            tmp.name = gate_j.name
+            tmp.qubit1 = gate_j.qubit1
+            tmp.qubit2 = gate_j.qubit2
+            tmp.angle = gate_j.angle
             if j == indx:
                 try:
-                    if self.gates[j].name != "G" or self.gates[j].name != "CNOT":
+                    if gate_j.name != "G" or gate_j.name != "CNOT":
                         if type == "+":
-                            tmp.angle = gate.angle + gate.s
+                            tmp.angle = gate_j.angle + gate_j.s
                         elif type == "-":
-                            tmp.angle = gate.angle - gate.s
+                            tmp.angle = gate_j.angle - gate_j.s
                 except:
                     print("param value error")
                 qc_list.append(tmp)

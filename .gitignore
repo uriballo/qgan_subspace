@@ -1,5 +1,4 @@
-# Virtual enviorments
-.qodo
+# Virtual environments
 .venv
 
 # Generated files
@@ -7,3 +6,4 @@ generated_data/
 *log*
 *cache*
 .DS_Store
+tests/qgan/data/
