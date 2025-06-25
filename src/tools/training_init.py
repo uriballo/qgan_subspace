@@ -11,21 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """Training initialization module for running training instances"""
+# ruff: noqa: E226
 
 import traceback
 
 from config import CFG, test_configurations
 from qgan.training import Training
 from tools.data.data_managers import print_and_train_log
-
-# Assuming Training class is in src.training (adjust if different)
-# from ..training import Training # This relative import might need adjustment based on how you run the script
-# For now, let's assume Training will be passed or imported directly in main
+from tools.plot_hub import plot_recurrence_vs_fidelity
 
 
 ##################################################################
-# SINGLE RUN mode
+# SINGLE RUN MODE:
 ##################################################################
 def run_single_training():
     """
@@ -57,7 +56,7 @@ def run_single_training():
 
 
 ##################################################################
-# MULTIPLE RUNS mode
+# MULTIPLE RUNS MODE:
 ##################################################################
 def run_multiple_trainings():
     """
@@ -67,7 +66,9 @@ def run_multiple_trainings():
     starting from each of the last runs, changing what is specified in `CFG.reps_new_config`.
     Saves and loads results using the generated_data folder structure.
     """
+    ##############################################################
     # Change results directory to MULTIPLE RUNS:
+    ##############################################################
     base_path = f"./generated_data/MULTIPLE_RUNS/{CFG.run_timestamp}"
     CFG.base_data_path = base_path
     CFG.set_results_paths()
@@ -75,7 +76,9 @@ def run_multiple_trainings():
     print_and_train_log("Running in MULTIPLE RUNS mode with a change in the middle.\n", CFG.log_path)
 
     try:
+        ##############################################################
         # Run initial experiments
+        ##############################################################
         for i in range(getattr(CFG, "N_initial_exp", 1)):
             # Set path for initial experiment
             CFG.base_data_path = f"{base_path}/initial_exp_{i+1}"
@@ -85,9 +88,11 @@ def run_multiple_trainings():
             print_and_train_log(msg, CFG.log_path)
             training_instance = Training()
             training_instance.run()
-            print_and_train_log(f"Initial Experiment {i+1} completed.\n", CFG.log_path)
+            print_and_train_log(f"\nInitial Experiment {i+1} completed.\n", CFG.log_path)
 
-        # Run repeated experiments, before changes, for controls.
+        ##############################################################
+        # Run control without changes, from each initial experiment
+        ##############################################################
         for i in range(getattr(CFG, "N_initial_exp", 1)):
             for rep in range(getattr(CFG, "N_reps_each_init_exp", 1)):
                 msg = f"\n{'='*60}\nRepeated Experiments controls {rep+1}/{CFG.N_reps_each_init_exp} for Initial Exp {i+1}\n{'-'*60}"
@@ -99,17 +104,21 @@ def run_multiple_trainings():
                 training_instance = Training()
                 training_instance.run()
                 print_and_train_log(
-                    f"Repeated Experiment control {rep+1} for Initial Exp {i+1} completed.\n", CFG.log_path
+                    f"\nRepeated Experiment control {rep+1} for Initial Exp {i+1} completed.\n", CFG.log_path
                 )
 
+        ##############################################################
         # Change config for repeated experiments
+        ##############################################################
         for key, value in getattr(CFG, "reps_new_config", {}).items():
             setattr(CFG, key, value)
         print_and_train_log(
             f"\n{'='*60}\nChanged config for repeated experiments: {CFG.reps_new_config}\n{'='*60}", CFG.log_path
         )
 
-        # Run repeated experiments, loading from each initial experiment's results
+        ##############################################################
+        # Run changed experiments, from each initial experiment
+        ##############################################################
         for i in range(getattr(CFG, "N_initial_exp", 1)):
             for rep in range(getattr(CFG, "N_reps_each_init_exp", 1)):
                 msg = f"\n{'='*60}\nRepeated Experiment {rep+1}/{CFG.N_reps_each_init_exp} for Initial Exp {i+1}\n{'-'*60}"
@@ -120,11 +129,11 @@ def run_multiple_trainings():
                 CFG.set_results_paths()
                 training_instance = Training()
                 training_instance.run()
-                print_and_train_log(f"Repeated Experiment {rep+1} for Initial Exp {i+1} completed.\n", CFG.log_path)
+                print_and_train_log(f"\nRepeated Experiment {rep+1} for Initial Exp {i+1} completed.\n", CFG.log_path)
 
-        # Analysis/plotting of results: recurrence vs max fidelity for controls and changed
-        from tools.plot_recurrence_vs_fidelity import plot_recurrence_vs_fidelity
-
+        ##############################################################
+        # Plot results: recurrence vs max fidelity for controls and changed
+        ##############################################################
         plot_recurrence_vs_fidelity(base_path)
         print_and_train_log("\nAnalysis plot (recurrence vs max fidelity) generated.\n", CFG.log_path)
 
@@ -144,7 +153,7 @@ def run_multiple_trainings():
 
 
 ###################################################################
-# TESTING mode
+# TESTING MODE:
 ###################################################################
 def run_test_configurations():
     """
