@@ -89,7 +89,7 @@ class Config:
         #############################################################################################
         self.epochs: int = 20
         self.iterations_epoch: int = 100
-        self.log_every_x_iter: int = 10
+        self.log_every_x_iter: int = 1
         self.max_fidelity: float = 0.99
         self.steps_gen: int = 1
         self.steps_dis: int = 1
@@ -216,24 +216,31 @@ class Config:
         return (
             "================================================== \n"
             f"run_timestamp: {self.run_timestamp},\n"
+            "----------------------------------------------\n"
             f"load_timestamp: {self.load_timestamp},\n"
             f"type_of_warm_start: {self.type_of_warm_start},\n"
             f"warm_start_strength: {self.warm_start_strength},\n"
+            "----------------------------------------------\n"
             f"system_size: {self.system_size},\n"
             f"extra_ancilla: {self.extra_ancilla},\n"
             f"ancilla_mode: {self.ancilla_mode},\n"
             f"ancilla_topology: {self.ancilla_topology},\n"
+            "----------------------------------------------\n"
             f"gen_layers: {self.gen_layers},\n"
             f"gen_ansatz: {self.gen_ansatz},\n"
+            "----------------------------------------------\n"
             f"target_hamiltonian: {self.target_hamiltonian},\n"
             f"custom_hamiltonian_terms: {self.custom_hamiltonian_terms},\n"
+            "----------------------------------------------\n"
             f"epochs: {self.epochs},\n"
             f"iterations_epoch: {self.iterations_epoch},\n"
             f"log_every_x_iter: {self.log_every_x_iter},\n"
             f"max_fidelity: {self.max_fidelity},\n"
-            f"l_rate: {self.l_rate},\n"
             f"steps_gen: {self.steps_gen},\n"
             f"steps_dis: {self.steps_dis},\n"
+            "----------------------------------------------\n"
+            f"l_rate: {self.l_rate},\n"
+            f"momentum_coeff: {self.momentum_coeff},\n"
             "================================================== \n"
         )
 
