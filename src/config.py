@@ -43,8 +43,8 @@ class Config:
         #
         #############################################################################################
         self.run_multiple_experiments: bool = True
-        self.N_initial_exp: int = 5
-        self.N_reps_each_init_exp: int = 10
+        self.N_initial_exp: int = 10
+        self.N_reps_each_init_exp: int = 20
         self.reps_new_config: dict[str, Any] = {
             "extra_ancilla": True,
             "ancilla_mode": "project",
@@ -85,8 +85,8 @@ class Config:
         #   - steps_gen/dis: Discriminator and Generator update steps in each iter (1~5).
         #
         #############################################################################################
-        self.epochs: int = 3
-        self.iterations_epoch: int = 10
+        self.epochs: int = 20
+        self.iterations_epoch: int = 100
         self.log_every_x_iter: int = 1
         self.max_fidelity: float = 0.99
         self.steps_gen: int = 1
@@ -123,8 +123,8 @@ class Config:
         # |-----|-----------------|-----------------|-----------------|-----------------------|------------------------|
         #
         ###############################################################################################
-        self.system_size: int = 2
-        self.extra_ancilla: bool = True
+        self.system_size: int = 3
+        self.extra_ancilla: bool = False
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "project"
         # TODO: [FUTURE] Implement "project" with norm somewhere, passing unnormalized states, or add penalizer to cost?
         # TODO: [FUTURE] Decide what to do with trace, make all code work with density matrices, instead than sampling?
@@ -142,7 +142,7 @@ class Config:
         #
         #############################################################################################
         self.gen_layers: int = 3  # 2, 3, 5, 10, 20 ...
-        self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "ZZ_X_Z"
+        self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "XX_YY_ZZ_Z"
 
         #############################################################################################
         # ---------------------
@@ -160,7 +160,7 @@ class Config:
         #       + "I": Adds a 1 body identity term.
         #
         #############################################################################################
-        self.target_hamiltonian: Literal["cluster_h", "rotated_surface_h", "custom_h"] = "custom_h"
+        self.target_hamiltonian: Literal["cluster_h", "rotated_surface_h", "custom_h"] = "cluster_h"
         self.custom_hamiltonian_terms: Optional[list[str]] = ["ZZ"]  # Custom Terms: ["ZZZ", "ZZ", "Z", "I"]
 
         #############################################################################################
