@@ -228,6 +228,7 @@ class Config:
             f"system_size: {self.system_size},\n"
             f"extra_ancilla: {self.extra_ancilla},\n"
             f"ancilla_mode: {self.ancilla_mode},\n"
+            f"ancilla_project_norm: {self.ancilla_project_norm},\n"
             f"ancilla_topology: {self.ancilla_topology},\n"
             "----------------------------------------------\n"
             f"gen_layers: {self.gen_layers},\n"
