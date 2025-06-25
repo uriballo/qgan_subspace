@@ -69,11 +69,9 @@ def project_ancilla_zero(state: np.ndarray, renormalize: bool = True) -> tuple[n
 
     # Renormalize if needed:
     if renormalize:
-        if CFG.ancilla_project_norm in ["remove", "penalize"]:
+        if CFG.ancilla_project_norm == "remove":
             projected = projected / norm
-        elif CFG.ancilla_project_norm == "pass":
-            pass
-        else:
+        elif CFG.ancilla_project_norm != "pass":
             raise ValueError(f"Unknown ancilla_project_norm: {CFG.ancilla_project_norm}")
 
     return np.asmatrix(projected.reshape(-1, 1)), norm**2
@@ -123,12 +121,12 @@ def get_final_gen_state_for_discriminator(total_output_state: np.ndarray) -> np.
             # Pass ancilla to discriminator (current behavior)
             return total_final_state
         if CFG.ancilla_mode == "project":
-            projected, norm = project_ancilla_zero(total_final_state)
+            projected, _ = project_ancilla_zero(total_final_state)
             return projected
         if CFG.ancilla_mode == "trace":
             return trace_out_ancilla(total_final_state)
         raise ValueError(f"Unknown ancilla_mode: {CFG.ancilla_mode}")
-    return total_final_state, norm
+    return total_final_state
 
 
 def get_final_target_state_for_discriminator(total_output_state: np.ndarray) -> np.ndarray:
@@ -146,7 +144,7 @@ def get_final_target_state_for_discriminator(total_output_state: np.ndarray) -> 
             # Pass ancilla to discriminator (current behavior)
             return total_final_state
         if CFG.ancilla_mode in ["project", "trace"]:
-            state, prob = project_ancilla_zero(total_final_state, renormalize=False)
+            state, _ = project_ancilla_zero(total_final_state, renormalize=False)
             return state
             # Return only the system part (project ancilla to zero)
             # No need to renorm or trace, as Ancilla is not used in Target, and total state should be T x |0>.

@@ -107,6 +107,10 @@ class Config:
         #       + "project": Project the ancilla qubit to the |0> state after gen (doesn't arrive to dis).
         #       + "trace": Trace out the ancilla qubit after gen (doesn't arrive to dis).
         #
+        #   - ancilla_project_norm: How to handle the ancilla norm after projection:
+        #       + "remove": Pass the ancilla qubit re-normalized to 1, after projection.
+        #       + "pass": Pass the ancilla qubit with its norm, to the discriminator, after projection
+        #
         #   - ancilla_topology: Topology for the ancilla connections:
         #       |-----------------|-----------------|-----------------|-----------------------|------------------------|
         #       |    "trivial"    |  "disconnected" |     "ansatz"    |        "bridge"       |         "total"        |
@@ -128,8 +132,7 @@ class Config:
         self.system_size: int = 3
         self.extra_ancilla: bool = False
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "project"
-        self.ancilla_project_norm: Optional[Literal["remove", "penalize", "pass"]] = "remove"  # TODO: Document this.
-        self.ancilla_norm_penalization: float = 0.01  # TODO: Document this, and add it to where needed in config.
+        self.ancilla_project_norm: Optional[Literal["remove", "pass"]] = "remove"
         self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "bridge"
         # TODO: [FUTURE] Decide what to do with trace, make all code work with density matrices, instead than sampling?
 
