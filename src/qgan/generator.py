@@ -20,9 +20,9 @@ import numpy as np
 
 from config import CFG
 from qgan.ancilla import get_final_gen_state_for_discriminator
-from qgan.cost_functions import get_final_comp_states_for_dis, braket
+from qgan.cost_functions import braket, get_final_comp_states_for_dis
 from qgan.discriminator import Discriminator
-from tools.data.data_managers import print_and_train_log
+from tools.data.data_managers import print_and_log
 from tools.optimizer import MomentumOptimizer
 from tools.qobjects import Identity, QuantumCircuit, QuantumGate
 
@@ -61,13 +61,13 @@ class Generator:
         Untouched_x_G: np.ndarray = np.kron(Identity(CFG.system_size), self.qc.get_mat_rep())
 
         return np.matmul(Untouched_x_G, self.total_input_state)
-    
+
     def get_total_gen_grad(self, index) -> np.ndarray:
         """Get the total generator gradient for a specific gate index.
-        
+
         Args:
             index (int): The index of the gate for which to compute the gradient.
-        
+
         Returns:
             np.ndarray: The total generator gradient vector for the specified gate.
         """
@@ -85,7 +85,7 @@ class Generator:
         # Compute the gradient
         ###############################################################
         grad: np.ndarray = self._grad_theta(dis, total_target_state, self.total_gen_state)
-        
+
         # Get the new thetas from the gradient
         theta = np.asarray([gate.angle for gate in self.qc.gates])
         new_theta = self.optimizer.move_in_grad(theta, grad, "min")
@@ -176,13 +176,13 @@ class Generator:
         # Check if the file exists and is a valid pickle file
         ##################################################################
         if not os.path.exists(file_path):
-            print_and_train_log("ERROR: Generator model file not found\n", CFG.log_path)
+            print_and_log("ERROR: Generator model file not found\n", CFG.log_path)
             return False
         try:
             with open(file_path, "rb") as f:
                 saved_gen: Generator = pickle.load(f)
         except (OSError, pickle.UnpicklingError) as e:
-            print_and_train_log(f"ERROR: Could not load generator model: {e}\n", CFG.log_path)
+            print_and_log(f"ERROR: Could not load generator model: {e}\n", CFG.log_path)
             return False
 
         ##################################################################
@@ -191,26 +191,24 @@ class Generator:
         cant_load = False
 
         if saved_gen.target_size != self.target_size:
-            print_and_train_log("ERROR: Saved generator model is incompatible (target size mismatch).\n", CFG.log_path)
+            print_and_log("ERROR: Saved generator model is incompatible (target size mismatch).\n", CFG.log_path)
             cant_load = True
 
         # This one could work, but it wouldn't make sense, since the generator would be useless, better to stop:
         if saved_gen.target_hamiltonian != self.target_hamiltonian:
-            print_and_train_log(
-                "ERROR: Saved generator model is incompatible (target hamiltonian mismatch).\n", CFG.log_path
-            )
+            print_and_log("ERROR: Saved generator model is incompatible (target hamiltonian mismatch).\n", CFG.log_path)
             cant_load = True
 
         if saved_gen.ansatz != self.ansatz:
-            print_and_train_log("ERROR: Can't load due to different ansatz in gen.\n", CFG.log_path)
+            print_and_log("ERROR: Can't load due to different ansatz in gen.\n", CFG.log_path)
             cant_load = True
 
         if saved_gen.layers != self.layers:
-            print_and_train_log("ERROR: Can't load due to different number of layers in gen.\n", CFG.log_path)
+            print_and_log("ERROR: Can't load due to different number of layers in gen.\n", CFG.log_path)
             cant_load = True
 
         if saved_gen.ancilla and self.ancilla and saved_gen.ancilla_topology != self.ancilla_topology:
-            print_and_train_log(
+            print_and_log(
                 "ERROR: Can't load gen with ancilla into another one with ancilla too, but in a different topology.\n",
                 CFG.log_path,
             )
@@ -224,25 +222,25 @@ class Generator:
         # Case of exact match
         ##################################################################
         if saved_gen.size == self.size and saved_gen.ancilla == self.ancilla:  # Redundant size check, kept for clarity
-            print_and_train_log("Gen match in size and ancilla.\n", CFG.log_path)
+            print_and_log("Gen match in size and ancilla.\n", CFG.log_path)
 
             # Corner case, when ancilla number of gates has changed:
             if len(saved_gen.qc.gates) != len(self.qc.gates):
-                print_and_train_log("Gen number of gates don't match (change in code implementation?).\n", CFG.log_path)
+                print_and_log("Gen number of gates don't match (change in code implementation?).\n", CFG.log_path)
                 return False
 
             # Normal case, when all gates match:
             for i, gate in enumerate(self.qc.gates):
                 gate.angle = saved_gen.qc.gates[i].angle
 
-            print_and_train_log("Generator parameters loaded\n", CFG.log_path)
+            print_and_log("Generator parameters loaded\n", CFG.log_path)
             return True
 
         ##################################################################
         # Case of adding or removing an ancilla (one qubit difference)
         ###################################################################
         if saved_gen.ancilla != self.ancilla and abs(saved_gen.size - self.size) == 1:  # Rdundt size check, but clarity
-            print_and_train_log("Gen match in size, but with diff in ancilla.\n", CFG.log_path)
+            print_and_log("Gen match in size, but with diff in ancilla.\n", CFG.log_path)
 
             # Determine the minimum number of qubits (the overlap):
             min_size = min(saved_gen.size, self.qc.size)
@@ -258,13 +256,13 @@ class Generator:
                         gate.angle = saved_gate.angle
                         break
 
-            print_and_train_log("Generator parameters partially loaded (excluding ancilla difference)\n", CFG.log_path)
+            print_and_log("Generator parameters partially loaded (excluding ancilla difference)\n", CFG.log_path)
             return True
 
         ##################################################################
         # For other cases, error the loading
         ###################################################################
-        print_and_train_log("ERROR: Saved generator model is incompatible (size or depth mismatch).\n", CFG.log_path)
+        print_and_log("ERROR: Saved generator model is incompatible (size or depth mismatch).\n", CFG.log_path)
         return False
 
 

@@ -19,7 +19,7 @@ import os
 import matplotlib as mpl
 import numpy as np
 
-from tools.data.data_managers import print_and_train_log
+from tools.data.data_managers import print_and_log
 
 mpl.use("Agg")
 import matplotlib.pyplot as plt
@@ -92,4 +92,4 @@ def plot_recurrence_vs_fidelity(base_path, save_path=None):
         save_path = os.path.join(base_path, "recurrence_vs_fidelity.png")
     plt.tight_layout()
     plt.savefig(save_path)
-    print_and_train_log(f"Saved plot to {save_path}")
+    print_and_log(f"Saved plot to {save_path}")

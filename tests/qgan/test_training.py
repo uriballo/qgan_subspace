@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 
 from config import CFG
 from qgan.training import Training
-from tools.data.data_managers import print_and_train_log
+from tools.data.data_managers import print_and_log
 from tools.training_init import run_test_configurations
 
 class TestTraining():
@@ -19,5 +19,5 @@ class TestTraining():
 
     def test_training_run(self):
         # Run the test configurations:
-        print_and_train_log("Running in TESTING mode.\n", CFG.log_path)
+        print_and_log("Running in TESTING mode.\n", CFG.log_path)
         run_test_configurations()
