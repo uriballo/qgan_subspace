@@ -78,7 +78,6 @@ def project_ancilla_zero(state: np.ndarray, renormalize: bool = True) -> tuple[n
 
 
 # TODO: Think better what to do with this function... (how to use it)
-# Right now, maybe its a cool way to codify if passing the "norm" or not.
 def trace_out_ancilla(state: np.ndarray) -> np.ndarray:
     """Trace out the last qubit and return a sampled pure state from the reduced density matrix.
 
