@@ -102,7 +102,7 @@ def run_multiple_trainings():
         ##############################################################
         # Plot results: recurrence vs max fidelity for controls and changed
         ##############################################################
-        plot_recurrence_vs_fidelity(base_path)
+        plot_recurrence_vs_fidelity(base_path, CFG.log_path)
         print_and_log("\nAll multiple training runs completed.\n", CFG.log_path)
         print_and_log("\nAnalysis plot (recurrence vs max fidelity) generated.\n", CFG.log_path)
 

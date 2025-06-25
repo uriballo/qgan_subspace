@@ -19,6 +19,7 @@ import os
 import matplotlib as mpl
 import numpy as np
 
+from config import CFG
 from tools.data.data_managers import print_and_log
 
 mpl.use("Agg")
@@ -68,7 +69,7 @@ def collect_max_fidelities(base_path, pattern):
     return max_fids
 
 
-def plot_recurrence_vs_fidelity(base_path, save_path=None):
+def plot_recurrence_vs_fidelity(base_path, log_path, save_path=None):
     control_fids = collect_max_fidelities(base_path, "repeated_control_")
     changed_fids = collect_max_fidelities(base_path, "repeated_changed_")
 
@@ -92,4 +93,4 @@ def plot_recurrence_vs_fidelity(base_path, save_path=None):
         save_path = os.path.join(base_path, "recurrence_vs_fidelity.png")
     plt.tight_layout()
     plt.savefig(save_path)
-    print_and_log(f"Saved plot to {save_path}")
+    print_and_log(f"Saved plot to {save_path}", log_path)

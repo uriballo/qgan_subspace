@@ -51,7 +51,7 @@ class Config:
             "extra_ancilla": True,
             "ancilla_mode": "project",
             "ancilla_topology": "bridge",
-            "type_of_warm_star": "none",
+            "type_of_warm_start": "none",
         }
 
         #############################################################################################
