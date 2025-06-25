@@ -114,7 +114,6 @@ def get_final_gen_state_for_discriminator(total_output_state: np.ndarray) -> np.
     Returns:
         np.ndarray: The final state to be passed to the discriminator.
     """
-    norm = None
     total_final_state = total_output_state
     if CFG.extra_ancilla:
         if CFG.ancilla_mode == "pass":
