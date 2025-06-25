@@ -30,16 +30,18 @@ class Config:
         # ---------------------
         # RUNS CONFIGURATION
         # ---------------------
+        #       If activated, you will first run `N_initial_exp` initial experiments. And then for each of
+        #       those you would continue them `N_reps_each_init_exp` times, adding the specified changes
+        #       and not adding the changes (controls), for then comparing the effects of the changes.
+        #       Each individual experiment lasting the specified number of epochs and iterations in CFG.
         #
         #   - run_multiple_experiments: Whether to run multiple experiments with a change in the middle.
-        #           If so you will run initial experiments, and then repetitions with changes + controls.
-        #           Each individual experiment lasting the specified number of epochs and iterations in CFG.
         #
         #   - N_initial_exp: Number of initial experiments to run, without change (default: 5).
         #
-        #   - N_reps_each_init_exp: Num of reps for each initial experiment afterwards, with changes (default: 100).
+        #   - N_reps_each_init_exp: Num of reps for each initial experiment afterwards, with changes (default: 20).
         #
-        #   - reps_new_config: New configurations to run after the initial experiments.
+        #   - reps_new_config: The configuration changes to run, after the initial experiments.
         #
         #############################################################################################
         self.run_multiple_experiments: bool = True
@@ -126,9 +128,9 @@ class Config:
         self.system_size: int = 3
         self.extra_ancilla: bool = False
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "project"
+        self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "bridge"
         # TODO: [FUTURE] Implement "project" with norm somewhere, passing unnormalized states, or add penalizer to cost?
         # TODO: [FUTURE] Decide what to do with trace, make all code work with density matrices, instead than sampling?
-        self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "bridge"
 
         #############################################################################################
         # -----------------------
