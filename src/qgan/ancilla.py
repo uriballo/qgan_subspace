@@ -69,7 +69,7 @@ def project_ancilla_zero(state: np.ndarray, renormalize: bool = True) -> tuple[n
 
     # Renormalize if needed:
     if renormalize:
-        if CFG.ancilla_project_norm == "remove":
+        if CFG.ancilla_project_norm == "renorm":
             projected = projected / norm
         elif CFG.ancilla_project_norm != "pass":
             raise ValueError(f"Unknown ancilla_project_norm: {CFG.ancilla_project_norm}")
