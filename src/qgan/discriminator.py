@@ -102,71 +102,6 @@ class Discriminator:
             psi, phi = np.kron(psi, psi_i), np.kron(phi, phi_i)
         return psi, phi
 
-    def update_dis(self, gen, total_real_state: np.ndarray, total_input_state: np.ndarray):
-        """Update the discriminator parameters (alpha, beta) using the gradients.
-
-        Args:
-            gen (Generator): The generator object.
-            total_real_state (np.ndarray): The total real state of the system.
-            total_input_state (np.ndarray): The total input state of the system.
-        """
-        ####################################################
-        # Update alpha
-        ####################################################
-        grad_alpha = self._compute_grad(gen, total_real_state, total_input_state, "alpha")
-        new_alpha = self.optimizer_psi.move_in_grad(self.alpha, grad_alpha, "max")
-
-        ####################################################
-        # Update beta
-        ####################################################
-        grad_beta = self._compute_grad(gen, total_real_state, total_input_state, "beta")
-        new_beta = self.optimizer_phi.move_in_grad(self.beta, grad_beta, "max")
-
-        # Update the parameters later, to avoid affecting gradient computations:
-        self.alpha = new_alpha
-        self.beta = new_beta
-
-    def _compute_grad(self, gen, total_real_state: np.ndarray, total_input_state: np.ndarray, param: str) -> np.ndarray:
-        """Calculate the gradient of the discriminator with respect to the param (alpha or beta).
-
-        Args:
-            gen (Generator): The generator object.
-            total_real_state (np.ndarray): The total real state of the system.
-            total_input_state (np.ndarray): The total input state of the system.
-            param (str): The parameter to compute the gradient for ("alpha" or "beta").
-
-        Returns:
-            np.ndarray: The gradient of the discriminator with respect to beta.
-        """
-        ################################################################
-        # Get the current Generator and Discriminator states:
-        ################################################################
-        final_fake_state, final_real_state, _ = get_final_comp_states_for_dis(gen, total_input_state, total_real_state)
-        A, B, _, _ = self.get_dis_matrices_rep()
-
-        ################################################################
-        # Initialize gradients on 0:
-        #################################################################
-        grad_psi_term = np.zeros_like(self.beta, dtype=complex)
-        grad_phi_term = np.zeros_like(self.beta, dtype=complex)
-        grad_reg_term = np.zeros_like(self.beta, dtype=complex)
-
-        for type in range(len(self.herm)):
-            ###########################################################
-            # Compute the alpha or beta gradient step:
-            ############################################################
-            grad_step = DiscriminatorGradientStep(self).grad_step(param)
-            gradpsi_list, gradphi_list, gradreg_list = grad_step(final_fake_state, final_real_state, A, B, type)
-
-            # Add grad of psi, phi and reg terms
-            grad_psi_term[:, type] = np.asarray(gradpsi_list)
-            grad_phi_term[:, type] = np.asarray(gradphi_list)
-            grad_reg_term[:, type] = np.asarray(gradreg_list)
-
-        grad = np.real(grad_psi_term - grad_phi_term - grad_reg_term)
-
-        return grad
-
     def get_dis_matrices_rep(self) -> tuple:
         """Computes the matrices A and B from the psi and phi matrices, scaled by the inverse of lambda.
 
@@ -199,6 +134,72 @@ class Discriminator:
             raise ValueError("Invalid lambda, phi, or psi parameters for computing gradients.")
 
         return A, B, psi, phi
+
+    def update_dis(self, final_target_state: np.ndarray, final_gen_state: np.ndarray):
+        """Update the discriminator parameters (alpha, beta) using the gradients.
+
+        Args:
+            final_target_state (np.ndarray): The final target state of the system.
+            final_gen_state (np.ndarray): The final gen state of the system.
+        """
+        ################################################################
+        # Get the current Discriminator state:
+        ################################################################
+        A, B, _, _ = self.get_dis_matrices_rep()
+
+        ####################################################
+        # Update alpha
+        ####################################################
+        grad_alpha = self._compute_grad(final_target_state, final_gen_state, A, B, "alpha")
+        new_alpha = self.optimizer_psi.move_in_grad(self.alpha, grad_alpha, "max")
+
+        ####################################################
+        # Update beta
+        ####################################################
+        grad_beta = self._compute_grad(final_target_state, final_gen_state, A, B, "beta")
+        new_beta = self.optimizer_phi.move_in_grad(self.beta, grad_beta, "max")
+
+        # Update the parameters later, to avoid affecting gradient computations:
+        self.alpha = new_alpha
+        self.beta = new_beta
+        self.normalize_params()  # FIXME: Temporary solution, for not letting it diverge, but we need to find the root.
+
+    def _compute_grad(self, final_target_state, final_gen_state, A, B, param: str) -> np.ndarray:
+        """Calculate the gradient of the discriminator with respect to the param (alpha or beta).
+
+        Args:
+            final_target_state (np.ndarray): The final target state of the system.
+            final_gen_state (np.ndarray): The final gen state of the system.
+            A (np.ndarray): expm(-1/lamb * phi), with phi being the matrix repr. of the imag part of the dis.
+            B (np.ndarray): expm(1/lamb * psi), with psi being the matrix repr. of the real part of the dis.
+            param (str): The parameter to compute the gradient for ("alpha" or "beta").
+
+        Returns:
+            np.ndarray: The gradient of the discriminator with respect to beta.
+        """
+        ################################################################
+        # Initialize gradients on 0:
+        #################################################################
+        zero_param = self.alpha if param == "alpha" else self.beta
+        grad_psi_term = np.zeros_like(zero_param, dtype=complex)
+        grad_phi_term = np.zeros_like(zero_param, dtype=complex)
+        grad_reg_term = np.zeros_like(zero_param, dtype=complex)
+
+        for type in range(len(self.herm)):
+            ###########################################################
+            # Compute the alpha or beta gradient step:
+            ############################################################
+            grad_step = self._grad_alpha if param == "alpha" else self._grad_beta if param == "beta" else None
+            gradpsi_list, gradphi_list, gradreg_list = grad_step(final_target_state, final_gen_state, A, B, type)
+
+            # Add grad of psi, phi and reg terms
+            grad_psi_term[:, type] = np.asarray(gradpsi_list)
+            grad_phi_term[:, type] = np.asarray(gradphi_list)
+            grad_reg_term[:, type] = np.asarray(gradreg_list)
+
+        grad = np.real(grad_psi_term - grad_phi_term - grad_reg_term)
+
+        return np.asarray(grad)
 
     def _grad_alpha(self, final_target_state, final_gen_state, A: np.ndarray, B: np.ndarray, type: str) -> np.ndarray:
         """Calculate a step of the gradient of the discriminator with respect to alpha.
