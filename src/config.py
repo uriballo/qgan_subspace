@@ -89,7 +89,7 @@ class Config:
         #############################################################################################
         self.epochs: int = 20
         self.iterations_epoch: int = 100
-        self.log_every_x_iter: int = 1
+        self.log_every_x_iter: int = 10
         self.max_fidelity: float = 0.99
         self.steps_gen: int = 1
         self.steps_dis: int = 1

@@ -19,7 +19,7 @@ import traceback
 
 from config import CFG, test_configurations
 from qgan.training import Training
-from tools.data.data_managers import print_and_train_log
+from tools.data.data_managers import print_and_log, print_and_log_with_headers
 from tools.plot_hub import plot_recurrence_vs_fidelity
 
 
@@ -37,7 +37,7 @@ def run_single_training():
         training_instance = Training()
         training_instance.run()
         success_msg = "\nDefault configuration run COMPLETED SUCCESSFULLY.\n"
-        print_and_train_log(success_msg, CFG.log_path)  # Log to file
+        print_and_log(success_msg, CFG.log_path)  # Log to file
 
     except Exception as e:  # noqa: BLE001
         ##############################################################
@@ -52,7 +52,7 @@ def run_single_training():
             f"Traceback:\n{tb_str}"
             f"{'=' * 60}\n"
         )
-        print_and_train_log(error_msg, CFG.log_path)  # Log to file
+        print_and_log(error_msg, CFG.log_path)  # Log to file
 
 
 ##################################################################
@@ -73,71 +73,72 @@ def run_multiple_trainings():
     CFG.base_data_path = base_path
     CFG.set_results_paths()
 
-    print_and_train_log("Running in MULTIPLE RUNS mode with a change in the middle.\n", CFG.log_path)
+    print_and_log("Running in MULTIPLE RUNS mode with a change in the middle.\n", CFG.log_path)
+
+    # Cache loops configuration parameters
+    n_initial_exp = getattr(CFG, "N_initial_exp", 1)
+    n_reps_each_init_exp = getattr(CFG, "N_reps_each_init_exp", 1)
 
     try:
         ##############################################################
         # Run initial experiments
         ##############################################################
-        for i in range(getattr(CFG, "N_initial_exp", 1)):
+        for i in range(n_initial_exp):
             # Set path for initial experiment
             CFG.base_data_path = f"{base_path}/initial_exp_{i+1}"
             CFG.set_results_paths()
 
-            msg = f"\n{'='*60}\nInitial Experiment {i+1}/{CFG.N_initial_exp}\n{'-'*60}"
-            print_and_train_log(msg, CFG.log_path)
-            training_instance = Training()
-            training_instance.run()
-            print_and_train_log(f"\nInitial Experiment {i+1} completed.\n", CFG.log_path)
+            print_and_log_with_headers(f"\nInitial Experiment {i+1}/{n_initial_exp}", CFG.log_path)
+            Training().run()
+            print_and_log(f"\nInitial Experiment {i+1} completed.\n", CFG.log_path)
 
         ##############################################################
         # Run control without changes, from each initial experiment
         ##############################################################
-        for i in range(getattr(CFG, "N_initial_exp", 1)):
-            for rep in range(getattr(CFG, "N_reps_each_init_exp", 1)):
-                msg = f"\n{'='*60}\nRepeated Experiments controls {rep+1}/{CFG.N_reps_each_init_exp} for Initial Exp {i+1}\n{'-'*60}"
-                print_and_train_log(msg, CFG.log_path)
-                # Set CFG.load_timestamp to the initial experiment's timestamp
+        for i in range(n_initial_exp):
+            for rep in range(n_reps_each_init_exp):
+                # Set load_timestamp to the initial experiment's timestamp, and base_data_path for controls
                 CFG.load_timestamp = f"MULTIPLE_RUNS/{CFG.run_timestamp}/initial_exp_{i+1}"
                 CFG.base_data_path = f"{base_path}/initial_exp_{i+1}/repeated_control_{rep+1}"
                 CFG.set_results_paths()
-                training_instance = Training()
-                training_instance.run()
-                print_and_train_log(
-                    f"\nRepeated Experiment control {rep+1} for Initial Exp {i+1} completed.\n", CFG.log_path
+
+                print_and_log_with_headers(
+                    f"\nRepeated Experiments controls {rep+1}/{n_reps_each_init_exp} for Initial Exp {i+1}/{n_initial_exp}",
+                    CFG.log_path,
                 )
+                Training().run()
+                print_and_log(f"\nRepeated Experiment control {rep+1} for Initial Exp {i+1} completed.\n", CFG.log_path)
 
         ##############################################################
         # Change config for repeated experiments
         ##############################################################
         for key, value in getattr(CFG, "reps_new_config", {}).items():
             setattr(CFG, key, value)
-        print_and_train_log(
-            f"\n{'='*60}\nChanged config for repeated experiments: {CFG.reps_new_config}\n{'='*60}", CFG.log_path
-        )
+        print_and_log_with_headers(f"\nChanged config for repeated experiments: {CFG.reps_new_config}", CFG.log_path)
 
         ##############################################################
         # Run changed experiments, from each initial experiment
         ##############################################################
-        for i in range(getattr(CFG, "N_initial_exp", 1)):
-            for rep in range(getattr(CFG, "N_reps_each_init_exp", 1)):
-                msg = f"\n{'='*60}\nRepeated Experiment {rep+1}/{CFG.N_reps_each_init_exp} for Initial Exp {i+1}\n{'-'*60}"
-                print_and_train_log(msg, CFG.log_path)
-                # Set CFG.load_timestamp to the initial experiment's timestamp
+        for i in range(n_initial_exp):
+            for rep in range(n_reps_each_init_exp):
+                # Set load_timestamp to the initial experiment's timestamp, and base_data_path for changed experiments
                 CFG.load_timestamp = f"MULTIPLE_RUNS/{CFG.run_timestamp}/initial_exp_{i+1}"
                 CFG.base_data_path = f"{base_path}/initial_exp_{i+1}/repeated_changed_{rep+1}"
                 CFG.set_results_paths()
-                training_instance = Training()
-                training_instance.run()
-                print_and_train_log(f"\nRepeated Experiment {rep+1} for Initial Exp {i+1} completed.\n", CFG.log_path)
+
+                print_and_log_with_headers(
+                    f"\nRepeated Experiment {rep+1}/{n_reps_each_init_exp} for Initial Exp {i+1}/{n_initial_exp}",
+                    CFG.log_path,
+                )
+                Training().run()
+                print_and_log(f"\nRepeated Experiment {rep+1} for Initial Exp {i+1} completed.\n", CFG.log_path)
 
         ##############################################################
         # Plot results: recurrence vs max fidelity for controls and changed
         ##############################################################
         plot_recurrence_vs_fidelity(base_path)
-        print_and_train_log("\nAnalysis plot (recurrence vs max fidelity) generated.\n", CFG.log_path)
-
-        print_and_train_log("\nAll multiple training runs completed.\n", CFG.log_path)
+        print_and_log("\nAll multiple training runs completed.\n", CFG.log_path)
+        print_and_log("\nAnalysis plot (recurrence vs max fidelity) generated.\n", CFG.log_path)
 
     except Exception as e:
         tb_str = traceback.format_exc()
@@ -149,7 +150,7 @@ def run_multiple_trainings():
             f"Traceback:\n{tb_str}"
             f"{'=' * 60}\n"
         )
-        print_and_train_log(error_msg, CFG.log_path)
+        print_and_log(error_msg, CFG.log_path)
 
 
 ###################################################################
@@ -166,7 +167,7 @@ def run_test_configurations():
     all_passed = True
     for i, config_params in enumerate(test_configurations):
         test_header_msg = f"\n{'=' * 60}\nRunning Test Configuration {i + 1}/{len(test_configurations)}: {config_params['label_suffix']}\n{'-' * 60}\n"
-        print_and_train_log(test_header_msg, CFG.log_path)  # Also log to file
+        print_and_log(test_header_msg, CFG.log_path)  # Also log to file
 
         ##############################################################
         # Set config for the current test run
@@ -177,7 +178,7 @@ def run_test_configurations():
                 setattr(CFG, key, value)
             else:
                 error_msg = f"Invalid configuration key: {key}. This key does not exist in CFG."
-                print_and_train_log(error_msg, CFG.log_path)  # Log the error
+                print_and_log(error_msg, CFG.log_path)  # Log the error
                 raise AttributeError(error_msg)
 
         try:
@@ -187,7 +188,7 @@ def run_test_configurations():
             training_instance = Training()
             training_instance.run()
             success_msg = f"\n{'-' * 60}\nTest Configuration {i + 1} ({config_params['label_suffix']}) COMPLETED SUCCESSFULLY.\n{'=' * 60}\n"
-            print_and_train_log(success_msg, CFG.log_path)
+            print_and_log(success_msg, CFG.log_path)
 
         except Exception as e:  # noqa: BLE001
             ##############################################################
@@ -203,7 +204,7 @@ def run_test_configurations():
                 f"Traceback:\n{tb_str}"
                 f"{'=' * 60}\n"
             )
-            print_and_train_log(error_msg, CFG.log_path)
+            print_and_log(error_msg, CFG.log_path)
             # Continue with other test configurations
 
     ##############################################################
@@ -214,4 +215,4 @@ def run_test_configurations():
         final_summary_msg = "\nAll test configurations ran SUCCESSFULLY! No errors detected during these runs.\n"
     else:
         final_summary_msg = "\nSome test configurations FAILED. Please review the logs above and the log file.\n"
-    print_and_train_log(final_summary_msg, CFG.log_path)
+    print_and_log(final_summary_msg, CFG.log_path)
