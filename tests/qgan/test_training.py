@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 
 from config import CFG
 from qgan.training import Training
-from tools.data.data_managers import print_and_train_log
+from tools.data.data_managers import print_and_log
 from tools.training_init import run_test_configurations
 
 class TestTraining():
@@ -18,10 +18,6 @@ class TestTraining():
         assert t.total_target_state is not None
 
     def test_training_run(self):
-        # Change results directory to TESTING:
-        CFG.base_data_path = f"./generated_data/TESTING/{CFG.run_timestamp}"
-        CFG.set_results_paths()
-
         # Run the test configurations:
-        print_and_train_log("Running in TESTING mode.\n", CFG.log_path)
+        print_and_log("Running in TESTING mode.\n", CFG.log_path)
         run_test_configurations()

@@ -24,7 +24,7 @@ from qgan.discriminator import Discriminator
 from qgan.generator import Generator
 from qgan.target import get_total_target_state
 from tools.data.data_managers import (
-    print_and_train_log,
+    print_and_log,
     save_fidelity_loss,
     save_gen_final_params,
     save_model,
@@ -57,7 +57,7 @@ class Training:
         ###########################################################
         # Initialize training
         ###########################################################
-        print_and_train_log("\n" + CFG.show_data(), CFG.log_path)
+        print_and_log("\n" + CFG.show_data(), CFG.log_path)
 
         # Load models if specified (only the params, and only if compatible)
         load_models_if_specified(self)
@@ -105,7 +105,7 @@ class Training:
                     info = "\nepoch:{:4d} | iters:{:4d} | fidelity:{:8f} | loss:{:8f}".format(
                         num_epochs, epoch_iter + 1, round(fidelities[epoch_iter], 6), round(losses[epoch_iter], 6)
                     )
-                    print_and_train_log(info, CFG.log_path)
+                    print_and_log(info, CFG.log_path)
 
             ###########################################################
             # End of epoch, store data and plot
@@ -118,13 +118,13 @@ class Training:
             # Stopping conditions
             #############################################################
             if num_epochs >= CFG.epochs:
-                print_and_train_log("\n==================================================\n", CFG.log_path)
-                print_and_train_log(f"\nThe number of epochs exceeds {CFG.epochs}.", CFG.log_path)
+                print_and_log("\n==================================================\n", CFG.log_path)
+                print_and_log(f"\nThe number of epochs exceeds {CFG.epochs}.", CFG.log_path)
                 break
 
             if fidelities[-1] > CFG.max_fidelity:  # TODO: Maybe change this cond, to use max(fidelities)?
-                print_and_train_log("\n==================================================\n", CFG.log_path)
-                print_and_train_log(
+                print_and_log("\n==================================================\n", CFG.log_path)
+                print_and_log(
                     f"\nThe fidelity {fidelities[-1]} exceeds the maximum {CFG.max_fidelity}.",
                     CFG.log_path,
                 )
@@ -144,4 +144,4 @@ class Training:
         save_gen_final_params(self.gen, CFG.gen_final_params_path)
 
         endtime = datetime.now()
-        print_and_train_log(f"\nRun took: {endtime - starttime} time.", CFG.log_path)
+        print_and_log(f"\nRun took: {endtime - starttime} time.", CFG.log_path)

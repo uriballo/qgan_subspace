@@ -24,9 +24,15 @@ def train_log(param, file_path):
         file.write(param)
 
 
-def print_and_train_log(param, file_path):
+def print_and_log(param, file_path):
     print(param)  # Console feedback
     train_log(param, file_path)  # Logging to file
+
+
+def print_and_log_with_headers(param, file_path):
+    print_and_log(f"\n{'=' * 60}", file_path)
+    print_and_log(param, file_path)
+    print_and_log(f"\n{'=' * 60}", file_path)
 
 
 # Not used, changed by specific gen and dis load_model_params methods:

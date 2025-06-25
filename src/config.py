@@ -26,6 +26,34 @@ class Config:
     def __init__(self):
         """Configuration for the QGAN experiment, which sets up all parameters required for training it."""
 
+        ############################################################################################
+        # ---------------------
+        # RUNS CONFIGURATION
+        # ---------------------
+        #       If activated, you will first run `N_initial_exp` initial experiments. And then for each of
+        #       those you would continue them `N_reps_each_init_exp` times, adding the specified changes
+        #       and not adding the changes (controls), for then comparing the effects of the changes.
+        #       Each individual experiment lasting the specified number of epochs and iterations in CFG.
+        #
+        #   - run_multiple_experiments: Whether to run multiple experiments with a change in the middle.
+        #
+        #   - N_initial_exp: Number of initial experiments to run, without change (default: 5).
+        #
+        #   - N_reps_each_init_exp: Num of reps for each initial experiment afterwards, with changes (default: 20).
+        #
+        #   - reps_new_config: The configuration changes to run, after the initial experiments.
+        #
+        #############################################################################################
+        self.run_multiple_experiments: bool = True
+        self.N_initial_exp: int = 10
+        self.N_reps_each_init_exp: int = 20
+        self.reps_new_config: dict[str, Any] = {
+            "extra_ancilla": True,
+            "ancilla_mode": "project",
+            "ancilla_topology": "bridge",
+            "type_of_warm_start": "none",
+        }
+
         #############################################################################################
         # ---------------------
         # LOADING CONFIGURATION
@@ -41,7 +69,7 @@ class Config:
         #
         #############################################################################################
         self.load_timestamp: Optional[str] = None  # "2025-06-06__02-05-10"
-        self.type_of_warm_start: Literal["none", "all", "some"] = "all"
+        self.type_of_warm_start: Literal["none", "all", "some"] = "none"
         self.warm_start_strength: Optional[float] = 0.1
 
         #############################################################################################
@@ -56,14 +84,14 @@ class Config:
         #
         #   - max_fidelity: Stopping criterion for fidelity (default: ~0.99)
         #
-        #   - steps_gen/dis: Discriminator and Generator training steps in each iter (default: 1-5).
+        #   - steps_gen/dis: Discriminator and Generator update steps in each iter (1~5).
         #
         #############################################################################################
-        self.epochs: int = 10
+        self.epochs: int = 20
         self.iterations_epoch: int = 100
         self.log_every_x_iter: int = 1
         self.max_fidelity: float = 0.99
-        self.steps_gen: int = 2
+        self.steps_gen: int = 1
         self.steps_dis: int = 1
 
         #############################################################################################
@@ -97,12 +125,12 @@ class Config:
         # |-----|-----------------|-----------------|-----------------|-----------------------|------------------------|
         #
         ###############################################################################################
-        self.system_size: int = 2
-        self.extra_ancilla: bool = True
+        self.system_size: int = 3
+        self.extra_ancilla: bool = False
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "project"
+        self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "bridge"
         # TODO: [FUTURE] Implement "project" with norm somewhere, passing unnormalized states, or add penalizer to cost?
         # TODO: [FUTURE] Decide what to do with trace, make all code work with density matrices, instead than sampling?
-        self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "bridge"
 
         #############################################################################################
         # -----------------------
@@ -116,7 +144,7 @@ class Config:
         #
         #############################################################################################
         self.gen_layers: int = 3  # 2, 3, 5, 10, 20 ...
-        self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "ZZ_X_Z"
+        self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "XX_YY_ZZ_Z"
 
         #############################################################################################
         # ---------------------
@@ -135,7 +163,7 @@ class Config:
         #
         #############################################################################################
         self.target_hamiltonian: Literal["cluster_h", "rotated_surface_h", "custom_h"] = "cluster_h"
-        self.custom_hamiltonian_terms: Optional[list[str]] = ["ZZZ"]  # Custom Terms: ["ZZZ", "ZZ", "Z", "I"]
+        self.custom_hamiltonian_terms: Optional[list[str]] = ["ZZ"]  # Custom Terms: ["ZZZ", "ZZ", "Z", "I"]
 
         #############################################################################################
         # -----------------------------------
@@ -188,24 +216,31 @@ class Config:
         return (
             "================================================== \n"
             f"run_timestamp: {self.run_timestamp},\n"
+            "----------------------------------------------\n"
             f"load_timestamp: {self.load_timestamp},\n"
             f"type_of_warm_start: {self.type_of_warm_start},\n"
             f"warm_start_strength: {self.warm_start_strength},\n"
+            "----------------------------------------------\n"
             f"system_size: {self.system_size},\n"
             f"extra_ancilla: {self.extra_ancilla},\n"
             f"ancilla_mode: {self.ancilla_mode},\n"
             f"ancilla_topology: {self.ancilla_topology},\n"
+            "----------------------------------------------\n"
             f"gen_layers: {self.gen_layers},\n"
             f"gen_ansatz: {self.gen_ansatz},\n"
+            "----------------------------------------------\n"
             f"target_hamiltonian: {self.target_hamiltonian},\n"
             f"custom_hamiltonian_terms: {self.custom_hamiltonian_terms},\n"
+            "----------------------------------------------\n"
             f"epochs: {self.epochs},\n"
             f"iterations_epoch: {self.iterations_epoch},\n"
             f"log_every_x_iter: {self.log_every_x_iter},\n"
             f"max_fidelity: {self.max_fidelity},\n"
-            f"l_rate: {self.l_rate},\n"
             f"steps_gen: {self.steps_gen},\n"
             f"steps_dis: {self.steps_dis},\n"
+            "----------------------------------------------\n"
+            f"l_rate: {self.l_rate},\n"
+            f"momentum_coeff: {self.momentum_coeff},\n"
             "================================================== \n"
         )
 

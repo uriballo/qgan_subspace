@@ -19,7 +19,7 @@ import numpy as np
 
 from config import CFG
 from qgan.generator import Generator
-from tools.data.data_managers import print_and_train_log
+from tools.data.data_managers import print_and_log
 
 
 def load_models_if_specified(training_instance):
@@ -35,14 +35,14 @@ def load_models_if_specified(training_instance):
     # Conditions to skip loading models
     ################################################################
     if not CFG.load_timestamp:
-        print_and_train_log("\nStarting training from scratch (no timestamp specified).\n", CFG.log_path)
-        print_and_train_log("==================================================\n", CFG.log_path)
+        print_and_log("\nStarting training from scratch (no timestamp specified).\n", CFG.log_path)
+        print_and_log("==================================================\n", CFG.log_path)
         return
 
     ################################################################
     # If we reach here, we have a load_timestamp
     ################################################################
-    print_and_train_log(f"\nAttempting to load model parameters [{CFG.load_timestamp}].\n", CFG.log_path)
+    print_and_log(f"\nAttempting to load model parameters [{CFG.load_timestamp}].\n", CFG.log_path)
 
     # Ensure the load_timestamp is valid
     gen_model_filename = os.path.basename(CFG.model_gen_path)
@@ -54,7 +54,7 @@ def load_models_if_specified(training_instance):
     ################################################################
     # Attempt to load generator:
     ################################################################
-    print_and_train_log(
+    print_and_log(
         f"Attempting to load Generator parameters from: {load_gen_path}\n",
         CFG.log_path,
     )
@@ -63,7 +63,7 @@ def load_models_if_specified(training_instance):
     ################################################################
     # Attempt to load discriminator:
     ################################################################
-    print_and_train_log(
+    print_and_log(
         f"\nAttempting to load Discriminator parameters from: {load_dis_path}\n",
         CFG.log_path,
     )
@@ -79,8 +79,8 @@ def load_models_if_specified(training_instance):
         if CFG.type_of_warm_start != "none":
             apply_warm_start(training_instance)
 
-        print_and_train_log("Model parameter loading complete. Continuing training.\n", CFG.log_path)
-        print_and_train_log("==================================================\n", CFG.log_path)
+        print_and_log("Model parameter loading complete. Continuing training.\n", CFG.log_path)
+        print_and_log("==================================================\n", CFG.log_path)
     else:
         raise ValueError("Incompatible or missing model parameters. Check the load paths or model compatibility.")
 
@@ -132,7 +132,7 @@ def apply_warm_start(training_instance):
     Args:
         training_instance (Training): The training instance containing the generator.
     """
-    print_and_train_log(
+    print_and_log(
         "Warm start enabled. Randomly perturbing model gen parameters.\n",
         CFG.log_path,
     )
