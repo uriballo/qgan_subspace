@@ -107,6 +107,10 @@ class Config:
         #       + "project": Project the ancilla qubit to the |0> state after gen (doesn't arrive to dis).
         #       + "trace": Trace out the ancilla qubit after gen (doesn't arrive to dis).
         #
+        #   - ancilla_project_norm: How to handle the ancilla norm after projection:
+        #       + "re-norm": Re-normalize after project (losses norm info, easier train, less effective Ham).
+        #       + "pass": Pass state with its norm after project (keeps norm info, harder train, more effective Ham).
+        #
         #   - ancilla_topology: Topology for the ancilla connections:
         #       |-----------------|-----------------|-----------------|-----------------------|------------------------|
         #       |    "trivial"    |  "disconnected" |     "ansatz"    |        "bridge"       |         "total"        |
@@ -128,8 +132,8 @@ class Config:
         self.system_size: int = 3
         self.extra_ancilla: bool = False
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "project"
+        self.ancilla_project_norm: Optional[Literal["re-norm", "pass"]] = "re-norm"
         self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "bridge"
-        # TODO: [FUTURE] Implement "project" with norm somewhere, passing unnormalized states, or add penalizer to cost?
         # TODO: [FUTURE] Decide what to do with trace, make all code work with density matrices, instead than sampling?
 
         #############################################################################################
@@ -224,6 +228,7 @@ class Config:
             f"system_size: {self.system_size},\n"
             f"extra_ancilla: {self.extra_ancilla},\n"
             f"ancilla_mode: {self.ancilla_mode},\n"
+            f"ancilla_project_norm: {self.ancilla_project_norm},\n"
             f"ancilla_topology: {self.ancilla_topology},\n"
             "----------------------------------------------\n"
             f"gen_layers: {self.gen_layers},\n"
