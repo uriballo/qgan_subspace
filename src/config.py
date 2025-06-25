@@ -108,8 +108,8 @@ class Config:
         #       + "trace": Trace out the ancilla qubit after gen (doesn't arrive to dis).
         #
         #   - ancilla_project_norm: How to handle the ancilla norm after projection:
-        #       + "re-norm": Re-normalize to 1, after projection (losses the norm info, easier training, less effective Ham).
-        #       + "pass": Pass the state with its norm, after projection (keeps the norm info, harder training, more effective Ham).
+        #       + "re-norm": Re-normalize after project (losses norm info, easier train, less effective Ham).
+        #       + "pass": Pass state with its norm after project (keeps norm info, harder train, more effective Ham).
         #
         #   - ancilla_topology: Topology for the ancilla connections:
         #       |-----------------|-----------------|-----------------|-----------------------|------------------------|
