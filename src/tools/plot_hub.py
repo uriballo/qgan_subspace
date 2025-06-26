@@ -42,6 +42,7 @@ def plt_fidelity_vs_iter(fidelities, losses, config, indx=0):
     fig_path = f"{config.figure_path}/{config.system_size}qubit_{config.gen_layers}_{indx}.png"
     os.makedirs(os.path.dirname(fig_path), exist_ok=True)
     plt.savefig(fig_path)
+    plt.close()
 
 
 def get_max_fidelity_from_file(fid_loss_path):
@@ -58,12 +59,18 @@ def get_max_fidelity_from_file(fid_loss_path):
         return None
 
 
-def collect_max_fidelities(base_path, pattern, only_new_run_suffix=False):
+def collect_max_fidelities_nested(base_path, outer_pattern, inner_pattern):
+    """
+    Collect max fidelities from all outer_pattern/inner_pattern/fidelities/log_fidelity_loss.txt
+    """
     max_fids = []
     for root, dirs, files in os.walk(base_path):
-        if pattern in root and "log_fidelity_loss.txt" in files:
-            if only_new_run_suffix and "_run" not in root:
-                continue
+        if (
+            re.search(outer_pattern, root)
+            and re.search(inner_pattern, root)
+            and os.path.basename(root) == "fidelities"
+            and "log_fidelity_loss.txt" in files
+        ):
             fid_loss_path = os.path.join(root, "log_fidelity_loss.txt")
             max_fid = get_max_fidelity_from_file(fid_loss_path)
             if max_fid is not None:
@@ -71,25 +78,23 @@ def collect_max_fidelities(base_path, pattern, only_new_run_suffix=False):
     return max_fids
 
 
-def collect_latest_changed_fidelities(base_path):
+def collect_latest_changed_fidelities_nested(base_path):
     """
-    For each repeated_changed_{rep+1}, find the directory with the highest _runX suffix (or base if no suffix),
-    and collect the max fidelity from that run only.
+    For each initial_exp_J, for each X, find the repeated_changed_runY/X/fidelities/log_fidelity_loss.txt with the highest runY,
+    and collect the max fidelity from that file.
     """
-    changed_base = "repeated_changed_"
-    latest_dirs = {}
+    run_dirs = {}
     for root, dirs, files in os.walk(base_path):
-        if changed_base in root and "log_fidelity_loss.txt" in files:
-            # Match repeated_changed_{rep+1}[_runX]
-            m = re.search(r"(repeated_changed_\d+)(?:_run(\d+))?", root)
-            if m:
-                base = m.group(1)
-                run_num = int(m.group(2)) if m.group(2) else 1
-                if base not in latest_dirs or run_num > latest_dirs[base][0]:
-                    latest_dirs[base] = (run_num, os.path.join(root, "log_fidelity_loss.txt"))
-    # Collect max fidelities from the latest run for each rep
+        m = re.search(r"initial_exp_(\d+)[/\\]repeated_changed_run(\d+)[/\\](\d+)[/\\]fidelities$", root)
+        if m and "log_fidelity_loss.txt" in files:
+            exp_j = int(m.group(1))
+            run_y = int(m.group(2))
+            x_num = int(m.group(3))
+            key = (exp_j, x_num)
+            if key not in run_dirs or run_y > run_dirs[key][0]:
+                run_dirs[key] = (run_y, os.path.join(root, "log_fidelity_loss.txt"))
     max_fids = []
-    for run_num, fid_loss_path in latest_dirs.values():
+    for run_y, fid_loss_path in run_dirs.values():
         max_fid = get_max_fidelity_from_file(fid_loss_path)
         if max_fid is not None:
             max_fids.append(max_fid)
@@ -97,9 +102,10 @@ def collect_latest_changed_fidelities(base_path):
 
 
 def plot_recurrence_vs_fidelity(base_path, log_path):
-    control_fids = collect_max_fidelities(base_path, "repeated_control_")
-    # Plot only new changed results (those with _run2, _run3, etc. if loading)
-    changed_fids = collect_latest_changed_fidelities(base_path)
+    # Controls: repeated_controls/X/fidelities/log_fidelity_loss.txt
+    control_fids = collect_max_fidelities_nested(base_path, r"repeated_controls", r"\d+")
+    # Changed: repeated_changed_runY/X/fidelities/log_fidelity_loss.txt (only latest runY for each X)
+    changed_fids = collect_latest_changed_fidelities_nested(base_path)
 
     bins = np.linspace(0, 1, 21)
     control_hist, _ = np.histogram(control_fids, bins=bins)
@@ -128,3 +134,4 @@ def plot_recurrence_vs_fidelity(base_path, log_path):
     plt.tight_layout()
     plt.savefig(save_path)
     print_and_log(f"Saved plot to {save_path}", log_path)
+    plt.close()

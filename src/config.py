@@ -71,7 +71,7 @@ class Config:
         #   - warm_start_strength: Strength of warm start for generator (only if loading).
         #
         #############################################################################################
-        self.load_timestamp: Optional[str] = None  # "2025-06-06__02-05-10"
+        self.load_timestamp: Optional[str] = None  # "2025-06-26__17-26-03"  # None
         self.type_of_warm_start: Literal["none", "all", "some"] = "none"
         self.warm_start_strength: Optional[float] = 0.1
 
@@ -90,8 +90,6 @@ class Config:
         #   - steps_gen/dis: Discriminator and Generator update steps in each iter (1~5).
         #
         #############################################################################################
-        self.epochs: int = 20
-        self.iterations_epoch: int = 100
         self.log_every_x_iter: int = 1
         self.max_fidelity: float = 0.99
         self.steps_gen: int = 1
