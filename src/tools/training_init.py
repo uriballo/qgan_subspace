@@ -15,6 +15,7 @@
 """Training initialization module for running training instances"""
 
 import itertools
+import os
 import traceback
 
 from config import CFG, test_configurations
@@ -70,13 +71,21 @@ def run_multiple_trainings():
     Saves and loads results using the generated_data folder structure.
     """
     ##############################################################
+    # Loading previous MULTIPLE run timestamp if specified:
+    ##############################################################
+    if CFG.load_timestamp is not None:
+        _check_for_previous_multiple_runs()
+        CFG.run_timestamp = CFG.load_timestamp
+        print_and_log("Following previous MULTIPLE run, only changed experiments will be run.\n", CFG.log_path)
+    else:
+        print_and_log("Running MULTIPLE initial, controls and changed experiments.\n", CFG.log_path)
+
+    ##############################################################
     # Change results directory to MULTIPLE RUNS:
     ##############################################################
     base_path = f"./generated_data/MULTIPLE_RUNS/{CFG.run_timestamp}"
     CFG.base_data_path = base_path
     CFG.set_results_paths()
-
-    print_and_log("Running in MULTIPLE RUNS mode with a change in the middle.\n", CFG.log_path)
 
     # Cache loops configuration parameters
     n_initial_exp = getattr(CFG, "N_initial_exp", 1)
@@ -86,16 +95,25 @@ def run_multiple_trainings():
         ##############################################################
         # Run initial experiments
         ##############################################################
-        _run_initial_experiments(n_initial_exp, base_path)
+        if CFG.load_timestamp is None:
+            _run_initial_experiments(n_initial_exp, base_path)
+        else:
+            print_and_log("\nFollowing previous MULTIPLE run, initial experiments will be skipped.\n", CFG.log_path)
 
         #############################################################
         # Run repeated (control and changed), from each initial experiment
         ##############################################################
+
         # Run controls first, from each initial experiment:
-        _run_repeated_experiments(n_initial_exp, n_reps_each_init_exp, base_path, "control")
+        if CFG.load_timestamp is None:
+            _run_repeated_experiments(n_initial_exp, n_reps_each_init_exp, base_path, "control")
+        else:
+            print_and_log("\nFollowing previous MULTIPLE run, control experiments will be skipped.\n", CFG.log_path)
+
         # Change config for changed experiments:
         for key, value in getattr(CFG, "reps_new_config", {}).items():
             setattr(CFG, key, value)
+
         # Run changed experiments, from each initial experiment:
         _run_repeated_experiments(n_initial_exp, n_reps_each_init_exp, base_path, "changed")
 
@@ -119,6 +137,19 @@ def run_multiple_trainings():
         print_and_log(error_msg, CFG.log_path)
 
 
+def _check_for_previous_multiple_runs():
+    # Check config compatibility
+    prev_log_path = f"./generated_data/MULTIPLE_RUNS/{CFG.load_timestamp}/initial_exp_1/logs/log.txt"
+    if not os.path.exists(prev_log_path):
+        raise RuntimeError(f"Previous run log not found: {prev_log_path}")
+    with open(prev_log_path, "r") as f:
+        log_content = f.read()
+    # Only check for a subset of config fields (excluding run_timestamp and load_timestamp.)
+    config_str = CFG.show_data()
+    if config_str.split("type_of_warm_start")[1] not in log_content:
+        raise RuntimeError("Current config does not match previous initial experiments. Aborting.")
+
+
 def _run_initial_experiments(n_initial_exp: int, base_path: str):
     for i in range(n_initial_exp):
         # Set path for initial experiment
@@ -131,12 +162,30 @@ def _run_initial_experiments(n_initial_exp: int, base_path: str):
 
 
 def _run_repeated_experiments(n_initial_exp: int, n_reps_each_init_exp: int, base_path: str, changed_or_control: str):
+    # Find the next available run index for changed experiments
+    if changed_or_control == "changed":
+        run_idx = 1
+        out_dir = f"{base_path}/initial_exp_1/repeated_changed_run1"
+        while os.path.exists(out_dir):
+            run_idx += 1
+            out_dir = f"{base_path}/initial_exp_1/repeated_changed_run{run_idx}"
+
     for i, rep in itertools.product(range(n_initial_exp), range(n_reps_each_init_exp)):
-        # Set load_timestamp to the initial experiment's timestamp, and base_data_path for controls/changed
+        # Set the base/out directory for the repeated experiments
+        if changed_or_control == "control":
+            # For controls, we use the same path as the initial experiment
+            out_dir = f"{base_path}/initial_exp_{i+1}/repeated_controls/{rep+1}"
+        elif changed_or_control == "changed":
+            base_dir = f"{base_path}/initial_exp_{i+1}/repeated_changed"
+            out_dir = f"{base_dir}_run{run_idx}/{rep+1}"
+        else:
+            raise ValueError(f"Invalid value for changed_or_control: {changed_or_control} (!= 'control', 'changed').")
+        # Change load_timestamp to the initial experiment's timestamp, and base_data_path for controls/changed
         CFG.load_timestamp = f"MULTIPLE_RUNS/{CFG.run_timestamp}/initial_exp_{i+1}"
-        CFG.base_data_path = f"{base_path}/initial_exp_{i+1}/repeated_{changed_or_control}_{rep+1}"
+        CFG.base_data_path = out_dir
         CFG.set_results_paths()
 
+        # Run the repeated experiment
         print_and_log_with_headers(
             f"\nRepeated Experiments {changed_or_control} {rep+1}/{n_reps_each_init_exp} for Initial Exp {i+1}/{n_initial_exp}",
             CFG.log_path,
