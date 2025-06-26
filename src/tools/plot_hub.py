@@ -15,11 +15,11 @@
 """The plot tool"""
 
 import os
+import re
 
 import matplotlib as mpl
 import numpy as np
 
-from config import CFG
 from tools.data.data_managers import print_and_log
 
 mpl.use("Agg")
@@ -76,8 +76,6 @@ def collect_latest_changed_fidelities(base_path):
     For each repeated_changed_{rep+1}, find the directory with the highest _runX suffix (or base if no suffix),
     and collect the max fidelity from that run only.
     """
-    import re
-
     changed_base = "repeated_changed_"
     latest_dirs = {}
     for root, dirs, files in os.walk(base_path):
@@ -98,12 +96,10 @@ def collect_latest_changed_fidelities(base_path):
     return max_fids
 
 
-def plot_recurrence_vs_fidelity(base_path, log_path, save_path=None, only_new_changed=False):
+def plot_recurrence_vs_fidelity(base_path, log_path):
     control_fids = collect_max_fidelities(base_path, "repeated_control_")
-    if only_new_changed:
-        changed_fids = collect_latest_changed_fidelities(base_path)
-    else:
-        changed_fids = collect_max_fidelities(base_path, "repeated_changed_")
+    # Plot only new changed results (those with _run2, _run3, etc. if loading)
+    changed_fids = collect_latest_changed_fidelities(base_path)
 
     bins = np.linspace(0, 1, 21)
     control_hist, _ = np.histogram(control_fids, bins=bins)
@@ -121,8 +117,14 @@ def plot_recurrence_vs_fidelity(base_path, log_path, save_path=None, only_new_ch
     plt.title("Recurrence vs Maximum Fidelity")
     plt.legend()
     plt.grid(True)
-    if save_path is None:
-        save_path = os.path.join(base_path, "recurrence_vs_fidelity.png")
+
+    # Find the next available _runX suffix
+    base_plot = os.path.join(base_path, "recurrence_vs_fidelity")
+    run_idx = 1
+    while os.path.exists(f"{base_plot}_run{run_idx}.png"):
+        run_idx += 1
+    save_path = f"{base_plot}_run{run_idx}.png"
+
     plt.tight_layout()
     plt.savefig(save_path)
     print_and_log(f"Saved plot to {save_path}", log_path)

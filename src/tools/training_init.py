@@ -74,16 +74,7 @@ def run_multiple_trainings():
     # Loading previous MULTIPLE run timestamp if specified:
     ##############################################################
     if CFG.load_timestamp is not None:
-        # Check config compatibility
-        prev_log_path = f"./generated_data/MULTIPLE_RUNS/{CFG.load_timestamp}/initial_exp_1/logs/log.txt"
-        if not os.path.exists(prev_log_path):
-            raise RuntimeError(f"Previous run log not found: {prev_log_path}")
-        with open(prev_log_path, "r") as f:
-            log_content = f.read()
-        # Only check for a subset of config fields (excluding reps_new_config, run_timestamp, etc.)
-        config_str = CFG.show_data()
-        if config_str.split("reps_new_config")[0] not in log_content:
-            raise RuntimeError("Current config does not match previous initial experiments. Aborting.")
+        _check_for_previous_multiple_runs()
         CFG.run_timestamp = CFG.load_timestamp
         print_and_log("Following previous MULTIPLE run, only changed experiments will be run.\n", CFG.log_path)
     else:
@@ -126,9 +117,10 @@ def run_multiple_trainings():
         # Run changed experiments, from each initial experiment:
         _run_repeated_experiments(n_initial_exp, n_reps_each_init_exp, base_path, "changed")
 
-        # Plot only new changed results (those with _run2, _run3, etc. if loading)
-        plot_recurrence_vs_fidelity(base_path, CFG.log_path, only_new_changed=True)
-        # TODO: Make that it plots the new results, not the previous ones, or appends to the previous plots??
+        ##############################################################
+        # Plot results: recurrence vs max fidelity for controls and changed
+        ##############################################################
+        plot_recurrence_vs_fidelity(base_path, CFG.log_path)
         print_and_log("\nAll multiple training runs completed.\n", CFG.log_path)
         print_and_log("\nAnalysis plot (recurrence vs max fidelity) generated.\n", CFG.log_path)
 
@@ -143,6 +135,19 @@ def run_multiple_trainings():
             f"{'=' * 60}\n"
         )
         print_and_log(error_msg, CFG.log_path)
+
+
+def _check_for_previous_multiple_runs():
+    # Check config compatibility
+    prev_log_path = f"./generated_data/MULTIPLE_RUNS/{CFG.load_timestamp}/initial_exp_1/logs/log.txt"
+    if not os.path.exists(prev_log_path):
+        raise RuntimeError(f"Previous run log not found: {prev_log_path}")
+    with open(prev_log_path, "r") as f:
+        log_content = f.read()
+    # Only check for a subset of config fields (excluding run_timestamp and load_timestamp.)
+    config_str = CFG.show_data()
+    if config_str.split("load_timestamp")[1] not in log_content:
+        raise RuntimeError("Current config does not match previous initial experiments. Aborting.")
 
 
 def _run_initial_experiments(n_initial_exp: int, base_path: str):
