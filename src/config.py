@@ -90,6 +90,8 @@ class Config:
         #   - steps_gen/dis: Discriminator and Generator update steps in each iter (1~5).
         #
         #############################################################################################
+        self.epochs: int = 10
+        self.iterations_epoch: int = 30
         self.log_every_x_iter: int = 1
         self.max_fidelity: float = 0.99
         self.steps_gen: int = 1
