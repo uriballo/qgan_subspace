@@ -58,10 +58,12 @@ def get_max_fidelity_from_file(fid_loss_path):
         return None
 
 
-def collect_max_fidelities(base_path, pattern):
+def collect_max_fidelities(base_path, pattern, only_new_run_suffix=False):
     max_fids = []
     for root, dirs, files in os.walk(base_path):
         if pattern in root and "log_fidelity_loss.txt" in files:
+            if only_new_run_suffix and "_run" not in root:
+                continue
             fid_loss_path = os.path.join(root, "log_fidelity_loss.txt")
             max_fid = get_max_fidelity_from_file(fid_loss_path)
             if max_fid is not None:
@@ -69,9 +71,39 @@ def collect_max_fidelities(base_path, pattern):
     return max_fids
 
 
-def plot_recurrence_vs_fidelity(base_path, log_path, save_path=None):
+def collect_latest_changed_fidelities(base_path):
+    """
+    For each repeated_changed_{rep+1}, find the directory with the highest _runX suffix (or base if no suffix),
+    and collect the max fidelity from that run only.
+    """
+    import re
+
+    changed_base = "repeated_changed_"
+    latest_dirs = {}
+    for root, dirs, files in os.walk(base_path):
+        if changed_base in root and "log_fidelity_loss.txt" in files:
+            # Match repeated_changed_{rep+1}[_runX]
+            m = re.search(r"(repeated_changed_\d+)(?:_run(\d+))?", root)
+            if m:
+                base = m.group(1)
+                run_num = int(m.group(2)) if m.group(2) else 1
+                if base not in latest_dirs or run_num > latest_dirs[base][0]:
+                    latest_dirs[base] = (run_num, os.path.join(root, "log_fidelity_loss.txt"))
+    # Collect max fidelities from the latest run for each rep
+    max_fids = []
+    for run_num, fid_loss_path in latest_dirs.values():
+        max_fid = get_max_fidelity_from_file(fid_loss_path)
+        if max_fid is not None:
+            max_fids.append(max_fid)
+    return max_fids
+
+
+def plot_recurrence_vs_fidelity(base_path, log_path, save_path=None, only_new_changed=False):
     control_fids = collect_max_fidelities(base_path, "repeated_control_")
-    changed_fids = collect_max_fidelities(base_path, "repeated_changed_")
+    if only_new_changed:
+        changed_fids = collect_latest_changed_fidelities(base_path)
+    else:
+        changed_fids = collect_max_fidelities(base_path, "repeated_changed_")
 
     bins = np.linspace(0, 1, 21)
     control_hist, _ = np.histogram(control_fids, bins=bins)
