@@ -70,13 +70,21 @@ def run_multiple_trainings():
     Saves and loads results using the generated_data folder structure.
     """
     ##############################################################
+    # Loading previous MULTIPLE run timestamp if specified:
+    ##############################################################
+    if CFG.load_timestamp is not None:
+        # TODO: Make a check of CFG.show_data() is in the previous runs log, and if not raise incompatible error.
+        CFG.run_timestamp = CFG.load_timestamp
+        print_and_log("Following previous MULTIPLE run, only changed experiments will be run.\n", CFG.log_path)
+    else:
+        print_and_log("Running MULTIPLE initial, controls and changed experiments.\n", CFG.log_path)
+
+    ##############################################################
     # Change results directory to MULTIPLE RUNS:
     ##############################################################
     base_path = f"./generated_data/MULTIPLE_RUNS/{CFG.run_timestamp}"
     CFG.base_data_path = base_path
     CFG.set_results_paths()
-
-    print_and_log("Running in MULTIPLE RUNS mode with a change in the middle.\n", CFG.log_path)
 
     # Cache loops configuration parameters
     n_initial_exp = getattr(CFG, "N_initial_exp", 1)
@@ -86,23 +94,34 @@ def run_multiple_trainings():
         ##############################################################
         # Run initial experiments
         ##############################################################
-        _run_initial_experiments(n_initial_exp, base_path)
+        if CFG.load_timestamp is None:
+            _run_initial_experiments(n_initial_exp, base_path)
+        else:
+            print_and_log("\nFollowing previous MULTIPLE run, initial experiments will be skipped.\n", CFG.log_path)
 
         #############################################################
         # Run repeated (control and changed), from each initial experiment
         ##############################################################
+
         # Run controls first, from each initial experiment:
-        _run_repeated_experiments(n_initial_exp, n_reps_each_init_exp, base_path, "control")
+        if CFG.load_timestamp is None:
+            _run_repeated_experiments(n_initial_exp, n_reps_each_init_exp, base_path, "control")
+        else:
+            print_and_log("\nFollowing previous MULTIPLE run, control experiments will be skipped.\n", CFG.log_path)
+
         # Change config for changed experiments:
         for key, value in getattr(CFG, "reps_new_config", {}).items():
             setattr(CFG, key, value)
+
         # Run changed experiments, from each initial experiment:
         _run_repeated_experiments(n_initial_exp, n_reps_each_init_exp, base_path, "changed")
+        # TODO: Make that it doesn't overwrite the previous results, but appends, or does a new directory for them.
 
         ##############################################################
         # Plot results: recurrence vs max fidelity for controls and changed
         ##############################################################
         plot_recurrence_vs_fidelity(base_path, CFG.log_path)
+        # TODO: Make that it plots the new results, not the previous ones, or appends to the previous plots??
         print_and_log("\nAll multiple training runs completed.\n", CFG.log_path)
         print_and_log("\nAnalysis plot (recurrence vs max fidelity) generated.\n", CFG.log_path)
 
