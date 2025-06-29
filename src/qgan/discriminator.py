@@ -226,28 +226,12 @@ class Discriminator:
             ##################################################################
             # Compute the regularization terms:
             ##################################################################
-            term1 = (
-                cs
-                * np.matmul(final_gen_state.getH(), np.matmul(A, final_gen_state))
-                * np.matmul(final_target_state.getH(), np.matmul(grad_psi, np.matmul(B, final_target_state)))
-            )
-            term2 = (
-                cs
-                * np.matmul(final_gen_state.getH(), np.matmul(grad_psi, np.matmul(B, final_target_state)))
-                * np.matmul(final_target_state.getH(), np.matmul(A, final_gen_state))
-            )
-            term3 = (
-                cs
-                * np.matmul(final_gen_state.getH(), np.matmul(A, final_target_state))
-                * np.matmul(final_target_state.getH(), np.matmul(grad_psi, np.matmul(B, final_gen_state)))
-            )
-            term4 = (
-                cs
-                * np.matmul(final_gen_state.getH(), np.matmul(grad_psi, np.matmul(B, final_gen_state)))
-                * np.matmul(final_target_state.getH(), np.matmul(A, final_target_state))
-            )
+            term1 = cs * braket(final_gen_state, A, final_gen_state) * braket(final_target_state, grad_psi, B, final_target_state)
+            term2 = cs * braket(final_gen_state, grad_psi, B, final_target_state) * braket(final_target_state, A, final_gen_state)
+            term3 = cs * braket(final_gen_state, A, final_target_state) * braket(final_target_state, grad_psi, B, final_gen_state)
+            term4 = cs * braket(final_gen_state, grad_psi, B, final_gen_state) * braket(final_target_state, A, final_target_state)
 
-            gradreg_list.append(np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4)))
+            gradreg_list.append(np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * (term2 + term3) + cst3 * term4)))
             # fmt: on
 
         return gradpsi_list, gradphi_list, gradreg_list
@@ -267,8 +251,7 @@ class Discriminator:
         """
         cs = -1 / lamb
 
-        gradphi = self._grad_psi_or_phi(type, respect_to="phi")
-
+        gradphi: list = self._grad_psi_or_phi(type, respect_to="phi")
         gradpsi_list, gradphi_list, gradreg_list = [], [], []
 
         # fmt: off
@@ -286,30 +269,12 @@ class Discriminator:
             ##################################################################
             # Compute the regularization terms:
             ##################################################################
-            term1 = (
-                cs
-                * np.matmul(final_gen_state.getH(), np.matmul(grad_phi, np.matmul(A, final_gen_state)))
-                * np.matmul(final_target_state.getH(), np.matmul(B, final_target_state))
-            )
-            term2 = (
-                cs
-                * np.matmul(final_gen_state.getH(), np.matmul(B, final_target_state))
-                * np.matmul(final_target_state.getH(), np.matmul(grad_phi, np.matmul(A, final_gen_state)))
-            )
-            term3 = (
-                cs
-                * np.matmul(final_gen_state.getH(), np.matmul(grad_phi, np.matmul(A, final_target_state)))
-                * np.matmul(final_target_state.getH(), np.matmul(B, final_gen_state))
-            )
-            term4 = (
-                cs
-                * np.matmul(final_gen_state.getH(), np.matmul(B, final_gen_state))
-                * np.matmul(final_target_state.getH(), np.matmul(grad_phi, np.matmul(A, final_target_state)))
-            )
+            term1 = cs * braket(final_gen_state, grad_phi, A, final_gen_state) * braket(final_target_state, B, final_target_state)
+            term2 = cs * braket(final_gen_state, B, final_target_state) * braket(final_target_state, grad_phi, A, final_gen_state)
+            term3 = cs * braket(final_gen_state, grad_phi, A, final_target_state) * braket(final_target_state, B, final_gen_state)
+            term4 = cs * braket(final_gen_state, B, final_gen_state) * braket(final_target_state, grad_phi, A, final_target_state)
 
-            gradreg_list.append(
-                np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4))
-            )
+            gradreg_list.append(np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * (term2 + term3) + cst3 * term4)))
             # fmt: on
         return gradpsi_list, gradphi_list, gradreg_list
 

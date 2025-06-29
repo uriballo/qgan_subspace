@@ -30,21 +30,15 @@ def braket(*args) -> float:
     Returns:
         float: The inner product of the two vectors.
     """
-    if len(args) == 2:
-        bra, ket = args
-        return np.matmul(bra.getH(), ket)
-    if len(args) == 3:
-        bra, op, ket = args
-        return np.matmul(bra.getH(), np.matmul(op, ket))
-    if len(args) > 3:
-        bra, *ops, ket = args
-        result = ket
-        for op in ops:
-            result = np.matmul(op, ket)
-        return np.matmul(bra.getH(), result)
-    raise ValueError(
-        "braket function requires at least two arguments (bra and ket) or more than three (bra, operators, ket)."
-    )
+    if len(args) < 2:
+        raise ValueError(
+            "braket function requires at least two arguments (bra and ket) or more than three (bra, operators, ket)."
+        )
+
+    bra, *ops, ket = args
+    for op in ops:
+        ket = np.matmul(op, ket)
+    return np.matmul(bra.getH(), ket)
 
 
 def get_final_comp_states_for_dis(total_target_state: np.ndarray, total_gen_state: np.ndarray) -> tuple:
