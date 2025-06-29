@@ -81,7 +81,7 @@ class Config:
         # ----------------------
         #   - epochs: Number of training epochs (default: ~10)
         #
-        #   - iterations_epoch: Number of iterations per epoch (default: ~300)
+        #   - iterations_epoch: Number of iterations per epoch (default: ~100)
         #
         #   - log_every_x_iter: Logging every x iterations (default: ~10)
         #
@@ -91,7 +91,7 @@ class Config:
         #
         #############################################################################################
         self.epochs: int = 10
-        self.iterations_epoch: int = 300
+        self.iterations_epoch: int = 100
         self.log_every_x_iter: int = 10
         self.max_fidelity: float = 0.99
         self.steps_gen: int = 1
