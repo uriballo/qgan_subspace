@@ -45,7 +45,7 @@ class Config:
         #
         #############################################################################################
         self.run_multiple_experiments: bool = True
-        self.N_initial_exp: int = 10
+        self.N_initial_exp: int = 5
         self.N_reps_each_init_exp: int = 20
         self.reps_new_config: dict[str, Any] = {
             "extra_ancilla": True,
@@ -81,7 +81,7 @@ class Config:
         # ----------------------
         #   - epochs: Number of training epochs (default: ~10)
         #
-        #   - iterations_epoch: Number of iterations per epoch (default: ~100)
+        #   - iterations_epoch: Number of iterations per epoch (default: ~300)
         #
         #   - log_every_x_iter: Logging every x iterations (default: ~10)
         #
@@ -91,8 +91,8 @@ class Config:
         #
         #############################################################################################
         self.epochs: int = 10
-        self.iterations_epoch: int = 30
-        self.log_every_x_iter: int = 1
+        self.iterations_epoch: int = 300
+        self.log_every_x_iter: int = 10
         self.max_fidelity: float = 0.99
         self.steps_gen: int = 1
         self.steps_dis: int = 1
@@ -151,7 +151,7 @@ class Config:
         #
         #############################################################################################
         self.gen_layers: int = 3  # 2, 3, 5, 10, 20 ...
-        self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "XX_YY_ZZ_Z"
+        self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "ZZ_X_Z"
 
         #############################################################################################
         # ---------------------
@@ -169,7 +169,7 @@ class Config:
         #       + "I": Adds a 1 body identity term.
         #
         #############################################################################################
-        self.target_hamiltonian: Literal["cluster_h", "rotated_surface_h", "custom_h"] = "cluster_h"
+        self.target_hamiltonian: Literal["cluster_h", "rotated_surface_h", "custom_h"] = "custom_h"
         self.custom_hamiltonian_terms: Optional[list[str]] = ["ZZ"]  # Custom Terms: ["ZZZ", "ZZ", "Z", "I"]
 
         #############################################################################################
