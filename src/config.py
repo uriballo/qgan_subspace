@@ -275,7 +275,7 @@ test_configurations = [
         "gen_layers": 1,
         "gen_ansatz": "XX_YY_ZZ_Z",
         "target_hamiltonian": "custom_h",
-        "custom_hamiltonian_terms": ["ZZZ"],
+        "custom_hamiltonian_terms": ["ZZZ", "ZZ", "XX", "XZ"],
         "label_suffix": "c1_2q_1l_noanc_XXYYZZZ_CustomH_ZZZ",
     },
     # Testing extra ancilla with different modes and topologies
@@ -300,7 +300,7 @@ test_configurations = [
         "iterations_epoch": 2,
         "gen_layers": 2,
         "gen_ansatz": "XX_YY_ZZ_Z",
-        "target_hamiltonian": "cluster_h",
+        "target_hamiltonian": "ising_h",
         "label_suffix": "c3_2q_2l_anc_project_XXYYZZZ_ClusterH",
     },
     {
