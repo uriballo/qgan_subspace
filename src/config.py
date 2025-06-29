@@ -44,7 +44,7 @@ class Config:
         #   - reps_new_config: The configuration changes to run, after the initial experiments.
         #
         #############################################################################################
-        self.run_multiple_experiments: bool = True
+        self.run_multiple_experiments: bool = False
         self.N_initial_exp: int = 5
         self.N_reps_each_init_exp: int = 20
         self.reps_new_config: dict[str, Any] = {
@@ -90,7 +90,7 @@ class Config:
         #   - steps_gen/dis: Discriminator and Generator update steps in each iter (1~5).
         #
         #############################################################################################
-        self.epochs: int = 10
+        self.epochs: int = 20
         self.iterations_epoch: int = 100
         self.log_every_x_iter: int = 10
         self.max_fidelity: float = 0.99
@@ -160,17 +160,15 @@ class Config:
         #   - target_hamiltonian: Target Hamiltonian type:
         #       + "cluster_h": Cluster Hamiltonian (default).
         #       + "rotated_surface_h": Rotated surface code (only for squared sizes: 4, 9, 16...).
+        #       + "ising_h": Ising Hamiltonian.
         #       + "custom_h": Custom Hamiltonian terms.
         #
         #   - custom_hamiltonian_terms: Custom Hamiltonian terms (only apply if target_hamiltonian is "custom_h").
-        #       + "ZZZ": Adds a 3 body Z term.
-        #       + "ZZ": Adds a 2 body Z term.
-        #       + "Z": Adds a 1 body Z term.
-        #       + "I": Adds a 1 body identity term.
+        #       + "I", "X", "Y", "Z", "XX", "XZ", "ZZ", "ZZZ", "ZZZZ", "XZX", "XXXX": Available custom Hamiltonian terms.
         #
         #############################################################################################
-        self.target_hamiltonian: Literal["cluster_h", "rotated_surface_h", "custom_h"] = "custom_h"
-        self.custom_hamiltonian_terms: Optional[list[str]] = ["ZZ"]  # Custom Terms: ["ZZZ", "ZZ", "Z", "I"]
+        self.target_hamiltonian: Literal["cluster_h", "rotated_surface_h", "ising_h", "custom_h"] = "custom_h"
+        self.custom_hamiltonian_terms: Optional[list[str]] = ["ZZ"]  # "I", "X", "Y", "Z", "XX", "XZ", "ZZ", "ZZZ" ...
 
         #############################################################################################
         # -----------------------------------

@@ -19,7 +19,7 @@ import numpy as np
 from scipy import linalg
 
 from config import CFG
-from tools.qobjects.qgates import I, Identity, X, Z
+from tools.qobjects.qgates import I, Identity, X, Y, Z
 
 
 ##############################################################
@@ -29,7 +29,7 @@ def get_target_unitary(target_type: str, size: int) -> np.ndarray:
     """Get the target unitary based on the target type and size.
 
     Args:
-        target_type (str): Type of target Hamiltonian, either 'ZZ', 'ZZZ', 'ZZZZ', or 'I'.
+        target_type (str): Type of target Hamiltonian, either cluster_h, rotated_surface_h, ising_h, or custom_h.
         size (int): Size of the system.
 
     Returns:
@@ -39,14 +39,10 @@ def get_target_unitary(target_type: str, size: int) -> np.ndarray:
         return construct_clusterH(size)
     if target_type == "rotated_surface_h":
         return construct_RotatedSurfaceCode(size)
+    if target_type == "ising_h":
+        return construct_ising(size)
     if target_type == "custom_h":
-        return construct_target(
-            size,
-            Z="Z" in CFG.custom_hamiltonian_terms,
-            ZZ="ZZ" in CFG.custom_hamiltonian_terms,
-            ZZZ="ZZZ" in CFG.custom_hamiltonian_terms,
-            I="I" in CFG.custom_hamiltonian_terms,
-        )
+        return construct_target(size, CFG.custom_hamiltonian_terms)
     raise ValueError(f"Unknown target type: {target_type}. Expected 'cluster_h', 'rotated_surface_h', or 'custom_h'.")
 
 
@@ -70,28 +66,55 @@ def get_total_target_state(total_input_state: np.ndarray) -> np.ndarray:
 ##################################################################
 # PREDEFINED TARGETS
 ##################################################################
-def construct_target(size: int, Z: bool = False, ZZ: bool = False, ZZZ: bool = False, I: bool = False) -> np.ndarray:
-    """Construct target Hamiltonian. Specify the terms to include, setting them to true.
+
+
+def construct_target(size: int, terms: list[str]) -> np.ndarray:
+    """Construct target Hamiltonian. Specify the terms to include as a list of strings.
 
     Args:
         size (int): the size of the system.
-        Z (bool): whether to include Z terms.
-        ZZ (bool): whether to include ZZ terms.
-        ZZZ (bool): whether to include ZZZ terms.
-        I (bool): whether to include I terms.
+        terms (list[str]): which terms to include, e.g. ["I", "X", "Y", "Z", "XX", "XZ", "ZZ", "ZZZ", "ZZZZ", "XZX", "XXXX"]
 
     Returns:
         np.ndarray: the target Hamiltonian.
     """
     H = np.zeros([2**size, 2**size])
-    if Z:
-        H += sum(term_Z(size, i) for i in range(size))
-    if ZZ:
-        H += sum(term_ZZ(size, i, i + 1) for i in range(size - 1))
-    if ZZZ:
-        H += sum(term_ZZZ(size, i, i + 1, i + 2) for i in range(size - 2))
-    if I:
-        H += np.identity(2**size)
+    for term in terms:
+        if term == "I":
+            H += np.identity(2**size)
+        elif term == "X":
+            for i in range(size):
+                H += term_X(size, i)
+        elif term == "Y":
+            for i in range(size):
+                H += term_Y(size, i)
+        elif term == "Z":
+            for i in range(size):
+                H += term_Z(size, i)
+        elif term == "XX":
+            for i in range(size - 1):
+                H += term_XX(size, i, i + 1)
+        elif term == "XZ":
+            for i in range(size - 1):
+                H += term_XZ(size, i, i + 1)
+        elif term == "ZZ":
+            for i in range(size - 1):
+                H += term_ZZ(size, i, i + 1)
+        elif term == "ZZZ":
+            for i in range(size - 2):
+                H += term_ZZZ(size, i, i + 1, i + 2)
+        elif term == "ZZZZ":
+            for i in range(size - 3):
+                H += term_ZZZZ(size, i, i + 1, i + 2, i + 3)
+        elif term == "XZX":
+            for i in range(size - 2):
+                H += term_XZX(size, i, i + 1, i + 2)
+        elif term == "XXXX":
+            for i in range(size - 3):
+                H += term_XXXX(size, i, i + 1, i + 2, i + 3)
+        # Add more terms as needed
+        else:
+            raise ValueError(f"Unknown term '{term}' in custom_hamiltonian_terms.")
     return linalg.expm(-1j * H)
 
 
@@ -139,6 +162,18 @@ def construct_RotatedSurfaceCode(size: int) -> np.ndarray:
         H += -term_ZZ(size, 7, 8)
     else:
         sys.exit("system size is not 2*2 or 3*3 either")
+
+    return linalg.expm(-1j * H)
+
+
+def construct_ising(size):
+    """Construct Ising Hamiltonian."""
+    H = np.zeros([2**size, 2**size])
+
+    for i in range(size - 1):
+        H += -term_ZZ(size, i, i + 1)
+        H += -term_X(size, i)
+    H += -term_X(size, size - 1)
 
     return linalg.expm(-1j * H)
 
@@ -214,12 +249,38 @@ def term_ZZ(size: int, qubit1: int, qubit2: int) -> np.ndarray:
     return matrix
 
 
+def term_XZ(size, qubit1, qubit2):
+    """Construct a term for the Hamiltonian with an X gate on one qubit and a Z gate on another."""
+    matrix = 1
+    for i in range(size):
+        if qubit1 == i:
+            matrix = np.kron(matrix, X)
+        elif qubit2 == i:
+            matrix = np.kron(matrix, Z)
+        else:
+            matrix = np.kron(matrix, I)
+    return matrix
+
+
 def term_Z(size: int, qubit1: int) -> np.ndarray:
     """Construct a term for the Hamiltonian with a single Z gate acting on a specified qubit."""
     matrix = 1
     for i in range(size):
-        if qubit1 == i:
-            matrix = np.kron(matrix, Z)
-        else:
-            matrix = np.kron(matrix, I)
+        matrix = np.kron(matrix, Z) if qubit1 == i else np.kron(matrix, I)
+    return matrix
+
+
+def term_X(size, qubit1):
+    """Construct a term for the Hamiltonian with a single X gate acting on a specified qubit."""
+    matrix = 1
+    for i in range(size):
+        matrix = np.kron(matrix, X) if qubit1 == i else np.kron(matrix, I)
+    return matrix
+
+
+def term_Y(size, qubit1):
+    """Construct a term for the Hamiltonian with a single Y gate acting on a specified qubit."""
+    matrix = 1
+    for i in range(size):
+        matrix = np.kron(matrix, Y) if qubit1 == i else np.kron(matrix, I)
     return matrix
