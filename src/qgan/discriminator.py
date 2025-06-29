@@ -72,8 +72,6 @@ class Discriminator:
             self.alpha[i] = -1 + 2 * np.random.random(len(self.herm))
             self.beta[i] = -1 + 2 * np.random.random(len(self.herm))
 
-        self.normalize_params()  # FIXME: Temporary solution, for not letting it diverge, but we need to find the root.
-
     def normalize_params(self):
         """Normalize the alpha and beta parameters."""
         self.alpha /= np.linalg.norm(self.alpha, axis=1, keepdims=True)  # Normalize alpha params
@@ -162,7 +160,7 @@ class Discriminator:
         # Update the parameters later, to avoid affecting gradient computations:
         self.alpha = new_alpha
         self.beta = new_beta
-        self.normalize_params()  # FIXME: Temporary solution, for not letting it diverge, but we need to find the root.
+        # self.normalize_params()  # FIXME: Temporary solution, for not letting it diverge, but we need to find the root.
 
     def _compute_grad(self, final_target_state, final_gen_state, A, B, param: str) -> np.ndarray:
         """Calculate the gradient of the discriminator with respect to the param (alpha or beta).
