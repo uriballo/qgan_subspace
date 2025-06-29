@@ -36,16 +36,15 @@ def braket(*args) -> float:
     if len(args) == 3:
         bra, op, ket = args
         return np.matmul(bra.getH(), np.matmul(op, ket))
-    elif len(args) > 3:
+    if len(args) > 3:
         bra, *ops, ket = args
         result = ket
         for op in ops:
             result = np.matmul(op, ket)
         return np.matmul(bra.getH(), result)
-    else:
-        raise ValueError(
-            "braket function requires at least two arguments (bra and ket) or more than three (bra, operators, ket)."
-        )
+    raise ValueError(
+        "braket function requires at least two arguments (bra and ket) or more than three (bra, operators, ket)."
+    )
 
 
 def get_final_comp_states_for_dis(total_target_state: np.ndarray, total_gen_state: np.ndarray) -> tuple:

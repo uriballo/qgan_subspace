@@ -216,7 +216,7 @@ class Discriminator:
             ##################################################################
             # Compute the gradient of psi with respect to alpha
             ##################################################################
-            gradpsi_list.append(np.ndarray.item(np.matmul(final_target_state.getH(), np.matmul(grad_psi, final_target_state))))
+            gradpsi_list.append(np.ndarray.item(braket(final_target_state, grad_psi, final_target_state)))
 
             ##################################################################
             # No gradient of phi with respect to alpha, so append 0
@@ -281,7 +281,7 @@ class Discriminator:
             ##################################################################
             # Compute the gradient of phi with respect to beta
             ##################################################################
-            gradphi_list.append(np.ndarray.item(np.matmul(final_gen_state.getH(), np.matmul(grad_phi, final_gen_state))))
+            gradphi_list.append(np.ndarray.item(braket(final_gen_state, grad_phi, final_gen_state)))
 
             ##################################################################
             # Compute the regularization terms:
