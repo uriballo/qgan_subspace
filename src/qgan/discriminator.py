@@ -72,11 +72,6 @@ class Discriminator:
             self.alpha[i] = -1 + 2 * np.random.random(len(self.herm))
             self.beta[i] = -1 + 2 * np.random.random(len(self.herm))
 
-    def normalize_params(self):
-        """Normalize the alpha and beta parameters."""
-        self.alpha /= np.linalg.norm(self.alpha, axis=1, keepdims=True)  # Normalize alpha params
-        self.beta /= np.linalg.norm(self.beta, axis=1, keepdims=True)  # Normalize beta params
-
     def get_psi_and_phi(self) -> np.ndarray:
         """Get matrix representation of real (psi) & imaginary (phi) part of the discriminator
 
@@ -160,7 +155,6 @@ class Discriminator:
         # Update the parameters later, to avoid affecting gradient computations:
         self.alpha = new_alpha
         self.beta = new_beta
-        # self.normalize_params()  # FIXME: Temporary solution, for not letting it diverge, but we need to find the root.
 
     def _compute_grad(self, final_target_state, final_gen_state, A, B, param: str) -> np.ndarray:
         """Calculate the gradient of the discriminator with respect to the param (alpha or beta).
@@ -212,6 +206,8 @@ class Discriminator:
         Returns:
             tuple: A tuple containing the gradients of psi, phi, and regularization terms.
         """
+        cs = 1 / lamb
+
         gradpsi: list = self._grad_psi_or_phi(type, respect_to="psi")
         gradpsi_list, gradphi_list, gradreg_list = [], [], []
 
@@ -220,7 +216,8 @@ class Discriminator:
             ##################################################################
             # Compute the gradient of psi with respect to alpha
             ##################################################################
-            gradpsi_list.append(np.ndarray.item(braket(final_target_state, grad_psi, final_target_state)))
+            gradpsi_list.append(np.ndarray.item(np.matmul(final_target_state.getH(), np.matmul(grad_psi, final_target_state))))
+
             ##################################################################
             # No gradient of phi with respect to alpha, so append 0
             ##################################################################
@@ -229,12 +226,29 @@ class Discriminator:
             ##################################################################
             # Compute the regularization terms:
             ##################################################################
-            term1 = cs * braket(final_gen_state, A, final_gen_state) * braket(final_target_state, grad_psi, B, final_target_state)
-            term2 = cs * braket(final_gen_state, grad_psi, B, final_target_state) * braket(final_target_state, A, final_gen_state)
-            term3 = cs * braket(final_gen_state, A, final_target_state) * braket(final_target_state, grad_psi, B, final_gen_state)
-            term4 = cs * braket(final_gen_state, grad_psi, B, final_gen_state) * braket(final_target_state, A, final_target_state)
-            gradreg_list.append(np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * (term2 + term3) + cst3 * term4)))
-        # fmt: on
+            term1 = (
+                cs
+                * np.matmul(final_gen_state.getH(), np.matmul(A, final_gen_state))
+                * np.matmul(final_target_state.getH(), np.matmul(grad_psi, np.matmul(B, final_target_state)))
+            )
+            term2 = (
+                cs
+                * np.matmul(final_gen_state.getH(), np.matmul(grad_psi, np.matmul(B, final_target_state)))
+                * np.matmul(final_target_state.getH(), np.matmul(A, final_gen_state))
+            )
+            term3 = (
+                cs
+                * np.matmul(final_gen_state.getH(), np.matmul(A, final_target_state))
+                * np.matmul(final_target_state.getH(), np.matmul(grad_psi, np.matmul(B, final_gen_state)))
+            )
+            term4 = (
+                cs
+                * np.matmul(final_gen_state.getH(), np.matmul(grad_psi, np.matmul(B, final_gen_state)))
+                * np.matmul(final_target_state.getH(), np.matmul(A, final_target_state))
+            )
+
+            gradreg_list.append(np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4)))
+            # fmt: on
 
         return gradpsi_list, gradphi_list, gradreg_list
 
@@ -251,7 +265,10 @@ class Discriminator:
         Returns:
             tuple: A tuple containing the gradients of psi, phi, and regularization terms.
         """
-        gradphi: list = self._grad_psi_or_phi(type, respect_to="phi")
+        cs = -1 / lamb
+
+        gradphi = self._grad_psi_or_phi(type, respect_to="phi")
+
         gradpsi_list, gradphi_list, gradreg_list = [], [], []
 
         # fmt: off
@@ -264,18 +281,36 @@ class Discriminator:
             ##################################################################
             # Compute the gradient of phi with respect to beta
             ##################################################################
-            gradphi_list.append(np.ndarray.item(braket(final_gen_state, grad_phi, final_gen_state)))
+            gradphi_list.append(np.ndarray.item(np.matmul(final_gen_state.getH(), np.matmul(grad_phi, final_gen_state))))
 
             ##################################################################
             # Compute the regularization terms:
             ##################################################################
-            term1 = cs * braket(final_gen_state, grad_phi, A, final_gen_state) * braket(final_target_state, B, final_target_state)
-            term2 = cs * braket(final_gen_state, B, final_target_state) * braket(final_target_state, grad_phi, A, final_gen_state)
-            term3 = cs * braket(final_gen_state, grad_phi, A, final_target_state) * braket(final_target_state, B, final_gen_state)
-            term4 = cs * braket(final_gen_state, B, final_gen_state) * braket(final_target_state, grad_phi, A, final_target_state)
-            gradreg_list.append(np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * (term2 + term3) + cst3 * term4)))
-        # fmt: on
+            term1 = (
+                cs
+                * np.matmul(final_gen_state.getH(), np.matmul(grad_phi, np.matmul(A, final_gen_state)))
+                * np.matmul(final_target_state.getH(), np.matmul(B, final_target_state))
+            )
+            term2 = (
+                cs
+                * np.matmul(final_gen_state.getH(), np.matmul(B, final_target_state))
+                * np.matmul(final_target_state.getH(), np.matmul(grad_phi, np.matmul(A, final_gen_state)))
+            )
+            term3 = (
+                cs
+                * np.matmul(final_gen_state.getH(), np.matmul(grad_phi, np.matmul(A, final_target_state)))
+                * np.matmul(final_target_state.getH(), np.matmul(B, final_gen_state))
+            )
+            term4 = (
+                cs
+                * np.matmul(final_gen_state.getH(), np.matmul(B, final_gen_state))
+                * np.matmul(final_target_state.getH(), np.matmul(grad_phi, np.matmul(A, final_target_state)))
+            )
 
+            gradreg_list.append(
+                np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * term2 - cst2 * term3 + cst3 * term4))
+            )
+            # fmt: on
         return gradpsi_list, gradphi_list, gradreg_list
 
     # Psi/Phi gradients
