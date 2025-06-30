@@ -323,15 +323,15 @@ class Ansatz:
             # Ancilla ancilla coupling (2q) logic for: total and bridge
             if CFG.extra_ancilla:
                 if CFG.ancilla_topology == "total":
-                    for gate, i in itertools.product(entg_list, range(size)):
+                    for i, gate in itertools.product(range(size), entg_list):
                         qc.add_gate(QuantumGate(gate, i, size, angle=0))
                 if CFG.ancilla_topology == "bridge":
                     for gate in entg_list:
                         qc.add_gate(QuantumGate(gate, 0, size, angle=0))
-                        qc.add_gate(QuantumGate(gate, CFG.ancilla_connect_to or size - 1, size, angle=0))
-                if CFG.ancilla_topology == "ansatz":
+                if CFG.ancilla_topology in ["bridge", "ansatz"]:
+                    qubit_to_connect_to = CFG.ancilla_connect_to if CFG.ancilla_connect_to is not None else size - 1
                     for gate in entg_list:
-                        qc.add_gate(QuantumGate(gate, CFG.ancilla_connect_to or size - 1, size, angle=0))
+                        qc.add_gate(QuantumGate(gate, qubit_to_connect_to, size, angle=0))
 
         # Make uniform random angles for the gates (0 to 2*pi)
         theta = np.random.uniform(0, 2 * np.pi, len(qc.gates))
@@ -376,9 +376,9 @@ class Ansatz:
                         qc.add_gate(QuantumGate("ZZ", i, size, angle=0))
                 if CFG.ancilla_topology == "bridge":
                     qc.add_gate(QuantumGate("ZZ", 0, size, angle=0))
-                    qc.add_gate(QuantumGate("ZZ", CFG.ancilla_connect_to or size - 1, size, angle=0))
-                if CFG.ancilla_topology == "ansatz":
-                    qc.add_gate(QuantumGate("ZZ", CFG.ancilla_connect_to or size - 1, size, angle=0))
+                if CFG.ancilla_topology in ["bridge", "ansatz"]:
+                    qubit_to_connect_to = CFG.ancilla_connect_to if CFG.ancilla_connect_to is not None else size - 1
+                    qc.add_gate(QuantumGate("ZZ", qubit_to_connect_to, size, angle=0))
 
         # Make uniform random angles for the gates (0 to 2*pi)
         theta = np.random.uniform(0, 2 * np.pi, len(qc.gates))
