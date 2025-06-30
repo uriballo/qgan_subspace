@@ -44,7 +44,7 @@ class Config:
         #   - reps_new_config: The configuration changes to run, after the initial experiments.
         #
         #############################################################################################
-        self.run_multiple_experiments: bool = True
+        self.run_multiple_experiments: bool = False
         self.N_initial_exp: int = 10
         self.N_reps_each_init_exp: int = 20
         self.reps_new_config: dict[str, Any] = {
@@ -83,7 +83,10 @@ class Config:
         #
         #   - iterations_epoch: Number of iterations per epoch (default: ~100)
         #
+        #   - save_fid_and_loss_every_x_iter: Saving fidelity and loss every x iterations (default: ~10)
+        #
         #   - log_every_x_iter: Logging every x iterations (default: ~10)
+        #           (needs to be a multiple of save_fid_and_loss_every_x_iter)
         #
         #   - max_fidelity: Stopping criterion for fidelity (default: ~0.99)
         #
@@ -92,7 +95,8 @@ class Config:
         #############################################################################################
         self.epochs: int = 10
         self.iterations_epoch: int = 200
-        self.log_every_x_iter: int = 10
+        self.save_fid_and_loss_every_x_iter: int = 10
+        self.log_every_x_iter: int = 10  # This needs to be a multiple of save_fid_and_loss_every_x_iter
         self.max_fidelity: float = 0.99
         self.steps_gen: int = 1
         self.steps_dis: int = 1
@@ -127,12 +131,12 @@ class Config:
         # |     |        or       |       or        |         or        |           or        |          or          |
         # |     |                 |                 |                   |                     |                      |
         # |  M  |                 |                 |     Q0──Q1──Q2    |      Q0──Q1──Q2     |      Q0──Q1──Q2      |
-        # |  A  |  Q0──Q1──Q2  A  |  Q0──Q1──Q2  A  |         ("x")|    |      │   ("x")│     |      │   │   │       |
+        # |  A  |  Q0──Q1──Q2  A  |  Q0──Q1──Q2  A  |           "x"|    |      │     "x"│     |      │   │   │       |
         # |  P  |                 |                 |     A────────     |      A────────      |      A────────       |
         # |-----|-----------------|-----------------|-------------------|---------------------|----------------------|
         #
         #   - ancilla_connect_to: If ancilla_topology is "ansatz" or "bridge" connect to this qubit index.
-        #       If None, then the ancilla is connected to the last qubit, otherwise to the specified qubit.
+        #       If None, then the ancilla is connected to the last qubit.
         #       (In the diagrams above, you would basically choose where that "x" connection goes in those)
         #
         ###############################################################################################
@@ -211,6 +215,11 @@ class Config:
         self.base_data_path: str = f"./generated_data/{self.run_timestamp}"
         # File path settings (dynamic based on run_timestamp and system_size)
         self.set_results_paths()
+        self.__post_init_checks__()
+
+    def __post_init_checks__(self) -> None:
+        if self.log_every_x_iter % self.save_fid_and_loss_every_x_iter != 0:
+            raise ValueError("log_every_x_iter must be a multiple of save_fid_and_loss_every_x_iter.")
 
     def set_results_paths(self) -> None:
         """Set the paths for saving results based on the base data path."""
@@ -247,6 +256,7 @@ class Config:
             f"epochs: {self.epochs},\n"
             f"iterations_epoch: {self.iterations_epoch},\n"
             f"log_every_x_iter: {self.log_every_x_iter},\n"
+            f"save_fid_and_loss_every_x_iter: {self.save_fid_and_loss_every_x_iter},\n"
             f"max_fidelity: {self.max_fidelity},\n"
             f"steps_gen: {self.steps_gen},\n"
             f"steps_dis: {self.steps_dis},\n"
