@@ -72,13 +72,6 @@ class Discriminator:
             self.alpha[i] = -1 + 2 * np.random.random(len(self.herm))
             self.beta[i] = -1 + 2 * np.random.random(len(self.herm))
 
-        self.normalize_params()  # FIXME: Temporary solution, for not letting it diverge, but we need to find the root.
-
-    def normalize_params(self):
-        """Normalize the alpha and beta parameters."""
-        self.alpha /= np.linalg.norm(self.alpha, axis=1, keepdims=True)  # Normalize alpha params
-        self.beta /= np.linalg.norm(self.beta, axis=1, keepdims=True)  # Normalize beta params
-
     def get_psi_and_phi(self) -> np.ndarray:
         """Get matrix representation of real (psi) & imaginary (phi) part of the discriminator
 
@@ -162,7 +155,6 @@ class Discriminator:
         # Update the parameters later, to avoid affecting gradient computations:
         self.alpha = new_alpha
         self.beta = new_beta
-        self.normalize_params()  # FIXME: Temporary solution, for not letting it diverge, but we need to find the root.
 
     def _compute_grad(self, final_target_state, final_gen_state, A, B, param: str) -> np.ndarray:
         """Calculate the gradient of the discriminator with respect to the param (alpha or beta).
@@ -214,6 +206,8 @@ class Discriminator:
         Returns:
             tuple: A tuple containing the gradients of psi, phi, and regularization terms.
         """
+        cs = 1 / lamb
+
         gradpsi: list = self._grad_psi_or_phi(type, respect_to="psi")
         gradpsi_list, gradphi_list, gradreg_list = [], [], []
 
@@ -223,6 +217,7 @@ class Discriminator:
             # Compute the gradient of psi with respect to alpha
             ##################################################################
             gradpsi_list.append(np.ndarray.item(braket(final_target_state, grad_psi, final_target_state)))
+
             ##################################################################
             # No gradient of phi with respect to alpha, so append 0
             ##################################################################
@@ -231,10 +226,7 @@ class Discriminator:
             ##################################################################
             # Compute the regularization terms:
             ##################################################################
-            try:
-                term1 = cs * braket(final_gen_state, A, final_gen_state) * braket(final_target_state, grad_psi, B, final_target_state)
-            except Exception:
-                print("here")
+            term1 = cs * braket(final_gen_state, A, final_gen_state) * braket(final_target_state, grad_psi, B, final_target_state)
             term2 = cs * braket(final_gen_state, grad_psi, B, final_target_state) * braket(final_target_state, A, final_gen_state)
             term3 = cs * braket(final_gen_state, A, final_target_state) * braket(final_target_state, grad_psi, B, final_gen_state)
             term4 = cs * braket(final_gen_state, grad_psi, B, final_gen_state) * braket(final_target_state, A, final_target_state)
@@ -256,6 +248,8 @@ class Discriminator:
         Returns:
             tuple: A tuple containing the gradients of psi, phi, and regularization terms.
         """
+        cs = -1 / lamb
+
         gradphi: list = self._grad_psi_or_phi(type, respect_to="phi")
         gradpsi_list, gradphi_list, gradreg_list = [], [], []
 
