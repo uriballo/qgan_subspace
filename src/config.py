@@ -17,7 +17,6 @@ from datetime import datetime
 from typing import Any, Literal, Optional
 
 import numpy as np
-from matplotlib.pylab import f
 
 
 ################################################################

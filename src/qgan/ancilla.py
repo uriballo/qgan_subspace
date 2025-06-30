@@ -13,8 +13,6 @@
 # limitations under the License.
 """Ancilla post-processing tools."""
 
-import math
-
 import numpy as np
 
 from config import CFG

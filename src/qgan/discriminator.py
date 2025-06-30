@@ -20,7 +20,7 @@ import numpy as np
 from scipy.linalg import expm
 
 from config import CFG
-from qgan.cost_functions import braket, get_final_comp_states_for_dis
+from qgan.cost_functions import braket
 from tools.data.data_managers import print_and_log
 from tools.optimizer import MomentumOptimizer
 from tools.qobjects.qgates import I, X, Y, Z
