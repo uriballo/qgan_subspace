@@ -30,12 +30,8 @@ def braket(*args) -> float:
     Returns:
         float: The inner product of the two vectors.
     """
-    if len(args) < 2:
-        raise ValueError(
-            "braket function requires at least two arguments (bra and ket) or more than three (bra, operators, ket)."
-        )
-
     bra, *ops, ket = args
+
     for op in ops:
         ket = np.matmul(op, ket)
     return np.matmul(bra.getH(), ket)

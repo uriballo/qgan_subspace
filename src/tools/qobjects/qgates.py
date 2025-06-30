@@ -119,18 +119,6 @@ def expan_2qubit_gate(gate, size, control, target):
     return U_one + U_two
 
 
-def XX_Rotation1(size, qubit1, qubit2, param, is_grad):
-    return expan_2qubit_gate(linalg.expm(-1j * param * np.kron(X, X)), size, qubit1, qubit2)
-
-
-def YY_Rotation1(size, qubit1, qubit2, param, is_grad):
-    return expan_2qubit_gate(linalg.expm(-1j * param * np.kron(Y, Y)), size, qubit1, qubit2)
-
-
-def ZZ_Rotation1(size, qubit1, qubit2, param, is_grad):
-    return expan_2qubit_gate(linalg.expm(1j / 2 * param * np.kron(Z, Z)), size, qubit1, qubit2)
-
-
 def XX_Rotation(size, qubit1, qubit2, param, is_grad):
     matrix = 1
     for i in range(size):

@@ -61,9 +61,6 @@ def project_ancilla_zero(state: np.ndarray, renormalize: bool = True) -> tuple[n
     # Compute the norm of the projected state:
     norm = np.linalg.norm(projected)
 
-    if math.isnan(norm):
-        raise ValueError("Norm is NaN, check the input state.")
-
     if norm == 0:  # Return the system part (without ancilla) as zeros
         return np.zeros((2 ** (CFG.system_size * 2), 1)), 0.0
 
