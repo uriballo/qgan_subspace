@@ -17,6 +17,7 @@ from datetime import datetime
 from typing import Any, Literal, Optional
 
 import numpy as np
+from matplotlib.pylab import f
 
 
 ################################################################
@@ -44,13 +45,13 @@ class Config:
         #   - reps_new_config: The configuration changes to run, after the initial experiments.
         #
         #############################################################################################
-        self.run_multiple_experiments: bool = False
-        self.N_initial_exp: int = 5
+        self.run_multiple_experiments: bool = True
+        self.N_initial_exp: int = 10
         self.N_reps_each_init_exp: int = 20
         self.reps_new_config: dict[str, Any] = {
             "extra_ancilla": True,
             "ancilla_mode": "project",
-            "ancilla_topology": "bridge",
+            "ancilla_topology": "total",
             "type_of_warm_start": "none",
         }
 
@@ -90,8 +91,8 @@ class Config:
         #   - steps_gen/dis: Discriminator and Generator update steps in each iter (1~5).
         #
         #############################################################################################
-        self.epochs: int = 20
-        self.iterations_epoch: int = 100
+        self.epochs: int = 10
+        self.iterations_epoch: int = 200
         self.log_every_x_iter: int = 10
         self.max_fidelity: float = 0.99
         self.steps_gen: int = 1
@@ -115,21 +116,25 @@ class Config:
         #       + "pass": Pass state with its norm after project (keeps norm info, harder train, more effective Ham).
         #
         #   - ancilla_topology: Topology for the ancilla connections:
-        #       |-----------------|-----------------|-----------------|-----------------------|------------------------|
-        #       |    "trivial"    |  "disconnected" |     "ansatz"    |        "bridge"       |         "total"        |
-        # |-----|-----------------|-----------------|-----------------|-----------------------|------------------------|
-        # | Q0: |  ───|     |───  |  ───|     |───  |  ───|     |───  |  ───|     |───■─────  |  ───|     |───■─────── |
-        # | Q1: |  ───|  G  |───  |  ───|  G  |───  |  ───|     |───  |  ───|  G  |───│─────  |  ───|  G  |───│─■───── |
-        # | Q2: |  ───|     |───  |  ───|     |───  |  ───|  G  |───  |  ───|     |───│─■───  |  ───|     |───│─│─■─── |
-        # |     |                 |                 |     |     |     |               │ │     |               │ │ │    |
-        # | A:  |  ─────────────  |  ────X...X────  |  ───|     |───  |  ────X...X────■─■───  |  ────X...X────■─■─■─── |
-        # |     |                 |                 |                 |                       |                        |
-        # |     |        or       |       or        |         or      |          or           |          or            |
-        # |     |                 |                 |                 |                       |                        |
-        # |  M  |                 |                 |                 |      Q0──Q1──Q2       |      Q0──Q1──Q2        |
-        # |  A  |  Q0──Q1──Q2  A  |  Q0──Q1──Q2  A  |  Q0──Q1──Q2──A  |      │       │        |      │   │   │         |
-        # |  P  |                 |                 |                 |      A────────        |      A────────         |
-        # |-----|-----------------|-----------------|-----------------|-----------------------|------------------------|
+        #       |-----------------|-----------------|-------------------|---------------------|----------------------|
+        #       |    "trivial"    |  "disconnected" |      "ansatz"     |       "bridge"      |        "total"       |
+        # |-----|-----------------|-----------------|-------------------|---------------------|----------------------|
+        # | Q0: |  ───|     |───  |  ───|     |───  |  ───|     |─────  |  ───|     |──■────  |  ───|     |──■────── |
+        # | Q1: |  ───|  G  |───  |  ───|  G  |───  |  ───|  G  |─────  |  ───|  G  |──│────  |  ───|  G  |──│─■──── |
+        # | Q2: |  ───|     |───  |  ───|     |───  |  ───|     |──x──  |  ───|     |──│─x──  |  ───|     |──│─│─■── |
+        # |     |                 |                 |              │    |              │ │    |              │ │ │   |
+        # | A:  |  ─────────────  |  ────U...U────  |  ────U...U───■──  |  ────U...U───■─■──  |  ────U...U───■─■─■── |
+        # |     |                 |                 |                   |                     |                      |
+        # |     |        or       |       or        |         or        |           or        |          or          |
+        # |     |                 |                 |                   |                     |                      |
+        # |  M  |                 |                 |     Q0──Q1──Q2    |      Q0──Q1──Q2     |      Q0──Q1──Q2      |
+        # |  A  |  Q0──Q1──Q2  A  |  Q0──Q1──Q2  A  |         ("x")|    |      │   ("x")│     |      │   │   │       |
+        # |  P  |                 |                 |     A────────     |      A────────      |      A────────       |
+        # |-----|-----------------|-----------------|-------------------|---------------------|----------------------|
+        #
+        #   - ancilla_connect_to: If ancilla_topology is "ansatz" or "bridge" connect to this qubit index.
+        #       If None, then the ancilla is connected to the last qubit, otherwise to the specified qubit.
+        #       (In the diagrams above, you would basically choose where that "x" connection goes in those)
         #
         ###############################################################################################
         self.system_size: int = 3
@@ -137,6 +142,7 @@ class Config:
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "project"
         self.ancilla_project_norm: Optional[Literal["re-norm", "pass"]] = "re-norm"
         self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "bridge"
+        self.ancilla_connect_to: Optional[int] = None  # None means connected to last one, otherwise to the specified.
         # TODO: [FUTURE] Decide what to do with trace, make all code work with density matrices, instead than sampling?
 
         #############################################################################################
@@ -168,7 +174,7 @@ class Config:
         #
         #############################################################################################
         self.target_hamiltonian: Literal["cluster_h", "rotated_surface_h", "ising_h", "custom_h"] = "custom_h"
-        self.custom_hamiltonian_terms: Optional[list[str]] = ["ZZ"]  # "I", "X", "Y", "Z", "XX", "XZ", "ZZ", "ZZZ" ...
+        self.custom_hamiltonian_terms: Optional[list[str]] = ["ZZZ"]  # "I", "X", "Y", "Z", "XX", "XZ", "ZZ", "ZZZ" ...
 
         #############################################################################################
         # -----------------------------------
@@ -231,6 +237,7 @@ class Config:
             f"ancilla_mode: {self.ancilla_mode},\n"
             f"ancilla_project_norm: {self.ancilla_project_norm},\n"
             f"ancilla_topology: {self.ancilla_topology},\n"
+            f"ancilla_connect_to: {self.ancilla_connect_to},\n"
             "----------------------------------------------\n"
             f"gen_layers: {self.gen_layers},\n"
             f"gen_ansatz: {self.gen_ansatz},\n"
