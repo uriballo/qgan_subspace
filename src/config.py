@@ -45,12 +45,12 @@ class Config:
         #
         #############################################################################################
         self.run_multiple_experiments: bool = False
-        self.N_initial_exp: int = 5
+        self.N_initial_exp: int = 10
         self.N_reps_each_init_exp: int = 20
         self.reps_new_config: dict[str, Any] = {
             "extra_ancilla": True,
             "ancilla_mode": "project",
-            "ancilla_topology": "bridge",
+            "ancilla_topology": "total",
             "type_of_warm_start": "none",
         }
 
@@ -83,16 +83,20 @@ class Config:
         #
         #   - iterations_epoch: Number of iterations per epoch (default: ~100)
         #
+        #   - save_fid_and_loss_every_x_iter: Saving fidelity and loss every x iterations (default: ~10)
+        #
         #   - log_every_x_iter: Logging every x iterations (default: ~10)
+        #           (needs to be a multiple of save_fid_and_loss_every_x_iter)
         #
         #   - max_fidelity: Stopping criterion for fidelity (default: ~0.99)
         #
         #   - steps_gen/dis: Discriminator and Generator update steps in each iter (1~5).
         #
         #############################################################################################
-        self.epochs: int = 20
-        self.iterations_epoch: int = 100
-        self.log_every_x_iter: int = 10
+        self.epochs: int = 10
+        self.iterations_epoch: int = 200
+        self.save_fid_and_loss_every_x_iter: int = 10
+        self.log_every_x_iter: int = 10  # This needs to be a multiple of save_fid_and_loss_every_x_iter
         self.max_fidelity: float = 0.99
         self.steps_gen: int = 1
         self.steps_dis: int = 1
@@ -115,21 +119,25 @@ class Config:
         #       + "pass": Pass state with its norm after project (keeps norm info, harder train, more effective Ham).
         #
         #   - ancilla_topology: Topology for the ancilla connections:
-        #       |-----------------|-----------------|-----------------|-----------------------|------------------------|
-        #       |    "trivial"    |  "disconnected" |     "ansatz"    |        "bridge"       |         "total"        |
-        # |-----|-----------------|-----------------|-----------------|-----------------------|------------------------|
-        # | Q0: |  ───|     |───  |  ───|     |───  |  ───|     |───  |  ───|     |───■─────  |  ───|     |───■─────── |
-        # | Q1: |  ───|  G  |───  |  ───|  G  |───  |  ───|     |───  |  ───|  G  |───│─────  |  ───|  G  |───│─■───── |
-        # | Q2: |  ───|     |───  |  ───|     |───  |  ───|  G  |───  |  ───|     |───│─■───  |  ───|     |───│─│─■─── |
-        # |     |                 |                 |     |     |     |               │ │     |               │ │ │    |
-        # | A:  |  ─────────────  |  ────X...X────  |  ───|     |───  |  ────X...X────■─■───  |  ────X...X────■─■─■─── |
-        # |     |                 |                 |                 |                       |                        |
-        # |     |        or       |       or        |         or      |          or           |          or            |
-        # |     |                 |                 |                 |                       |                        |
-        # |  M  |                 |                 |                 |      Q0──Q1──Q2       |      Q0──Q1──Q2        |
-        # |  A  |  Q0──Q1──Q2  A  |  Q0──Q1──Q2  A  |  Q0──Q1──Q2──A  |      │       │        |      │   │   │         |
-        # |  P  |                 |                 |                 |      A────────        |      A────────         |
-        # |-----|-----------------|-----------------|-----------------|-----------------------|------------------------|
+        #       |-----------------|-----------------|-------------------|---------------------|----------------------|
+        #       |    "trivial"    |  "disconnected" |      "ansatz"     |       "bridge"      |        "total"       |
+        # |-----|-----------------|-----------------|-------------------|---------------------|----------------------|
+        # | Q0: |  ───|     |───  |  ───|     |───  |  ───|     |─────  |  ───|     |──■────  |  ───|     |──■────── |
+        # | Q1: |  ───|  G  |───  |  ───|  G  |───  |  ───|  G  |─────  |  ───|  G  |──│────  |  ───|  G  |──│─■──── |
+        # | Q2: |  ───|     |───  |  ───|     |───  |  ───|     |──x──  |  ───|     |──│─x──  |  ───|     |──│─│─■── |
+        # |     |                 |                 |              │    |              │ │    |              │ │ │   |
+        # | A:  |  ─────────────  |  ────U...U────  |  ────U...U───■──  |  ────U...U───■─■──  |  ────U...U───■─■─■── |
+        # |     |                 |                 |                   |                     |                      |
+        # |     |        or       |       or        |         or        |           or        |          or          |
+        # |     |                 |                 |                   |                     |                      |
+        # |  M  |                 |                 |     Q0──Q1──Q2    |      Q0──Q1──Q2     |      Q0──Q1──Q2      |
+        # |  A  |  Q0──Q1──Q2  A  |  Q0──Q1──Q2  A  |           "x"|    |      │     "x"│     |      │   │   │       |
+        # |  P  |                 |                 |     A────────     |      A────────      |      A────────       |
+        # |-----|-----------------|-----------------|-------------------|---------------------|----------------------|
+        #
+        #   - ancilla_connect_to: If ancilla_topology is "ansatz" or "bridge" connect to this qubit index.
+        #       If None, then the ancilla is connected to the last qubit.
+        #       (In the diagrams above, you would basically choose where that "x" connection goes in those)
         #
         ###############################################################################################
         self.system_size: int = 3
@@ -137,6 +145,7 @@ class Config:
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "project"
         self.ancilla_project_norm: Optional[Literal["re-norm", "pass"]] = "re-norm"
         self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "bridge"
+        self.ancilla_connect_to: Optional[int] = None  # None means connected to last one, otherwise to the specified.
         # TODO: [FUTURE] Decide what to do with trace, make all code work with density matrices, instead than sampling?
 
         #############################################################################################
@@ -168,7 +177,7 @@ class Config:
         #
         #############################################################################################
         self.target_hamiltonian: Literal["cluster_h", "rotated_surface_h", "ising_h", "custom_h"] = "custom_h"
-        self.custom_hamiltonian_terms: Optional[list[str]] = ["ZZ"]  # "I", "X", "Y", "Z", "XX", "XZ", "ZZ", "ZZZ" ...
+        self.custom_hamiltonian_terms: Optional[list[str]] = ["ZZZ"]  # "I", "X", "Y", "Z", "XX", "XZ", "ZZ", "ZZZ" ...
 
         #############################################################################################
         # -----------------------------------
@@ -206,6 +215,11 @@ class Config:
         self.base_data_path: str = f"./generated_data/{self.run_timestamp}"
         # File path settings (dynamic based on run_timestamp and system_size)
         self.set_results_paths()
+        self.__post_init_checks__()
+
+    def __post_init_checks__(self) -> None:
+        if self.log_every_x_iter % self.save_fid_and_loss_every_x_iter != 0:
+            raise ValueError("log_every_x_iter must be a multiple of save_fid_and_loss_every_x_iter.")
 
     def set_results_paths(self) -> None:
         """Set the paths for saving results based on the base data path."""
@@ -231,6 +245,7 @@ class Config:
             f"ancilla_mode: {self.ancilla_mode},\n"
             f"ancilla_project_norm: {self.ancilla_project_norm},\n"
             f"ancilla_topology: {self.ancilla_topology},\n"
+            f"ancilla_connect_to: {self.ancilla_connect_to},\n"
             "----------------------------------------------\n"
             f"gen_layers: {self.gen_layers},\n"
             f"gen_ansatz: {self.gen_ansatz},\n"
@@ -241,6 +256,7 @@ class Config:
             f"epochs: {self.epochs},\n"
             f"iterations_epoch: {self.iterations_epoch},\n"
             f"log_every_x_iter: {self.log_every_x_iter},\n"
+            f"save_fid_and_loss_every_x_iter: {self.save_fid_and_loss_every_x_iter},\n"
             f"max_fidelity: {self.max_fidelity},\n"
             f"steps_gen: {self.steps_gen},\n"
             f"steps_dis: {self.steps_dis},\n"

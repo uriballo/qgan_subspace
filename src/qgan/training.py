@@ -62,8 +62,6 @@ class Training:
         # Load models if specified (only the params, and only if compatible)
         load_models_if_specified(self)
 
-        # Data storing
-        fidelities, losses = np.zeros(CFG.iterations_epoch), np.zeros(CFG.iterations_epoch)
         fidelities_history, losses_history = [], []
         starttime = datetime.now()
         num_epochs: int = 0
@@ -73,8 +71,8 @@ class Training:
         ###########################################################
         while True:
             # while (f < 0.95):
-            fidelities[:] = 0.0
-            losses[:] = 0.0
+            fidelities = []
+            losses = []
             num_epochs += 1
             for epoch_iter in range(CFG.iterations_epoch):
                 ###########################################################
@@ -92,18 +90,18 @@ class Training:
                     self.dis.update_dis(final_target_state, final_gen_state)
 
                 ###########################################################
-                # Compute fidelity and loss
+                # Every X iterations: compute and save fidelity & loss
                 ###########################################################
-                fidelities[epoch_iter], losses[epoch_iter] = compute_fidelity_and_cost(
-                    self.dis, final_target_state, final_gen_state
-                )
+                if epoch_iter % CFG.save_fid_and_loss_every_x_iter == 0:
+                    fid, loss = compute_fidelity_and_cost(self.dis, final_target_state, final_gen_state)
+                    fidelities.append(fid), losses.append(loss)
 
-                ###########################################################
-                # Every X iterations, log data
-                ###########################################################
+                ############################################################
+                # Every X iterations: Print and log fidelity and loss
+                ############################################################
                 if epoch_iter % CFG.log_every_x_iter == 0:
                     info = "\nepoch:{:4d} | iters:{:4d} | fidelity:{:8f} | loss:{:8f}".format(
-                        num_epochs, epoch_iter + 1, round(fidelities[epoch_iter], 6), round(losses[epoch_iter], 6)
+                        num_epochs, epoch_iter + 1, round(fid, 6), round(loss, 6)
                     )
                     print_and_log(info, CFG.log_path)
 

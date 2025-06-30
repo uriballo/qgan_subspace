@@ -20,7 +20,7 @@ import numpy as np
 from scipy.linalg import expm
 
 from config import CFG
-from qgan.cost_functions import braket, get_final_comp_states_for_dis
+from qgan.cost_functions import braket
 from tools.data.data_managers import print_and_log
 from tools.optimizer import MomentumOptimizer
 from tools.qobjects.qgates import I, X, Y, Z
@@ -98,33 +98,16 @@ class Discriminator:
     def get_dis_matrices_rep(self) -> tuple:
         """Computes the matrices A and B from the psi and phi matrices, scaled by the inverse of lambda.
 
-        Raises:
-            ValueError: If lambda is zero or if psi or phi are not square matrices.
-
         Returns:
             tuple: A tuple containing the matrices A, B, psi, phi.
         """
         psi, phi = self.get_psi_and_phi()
-        A, B = None, None
 
         #########################################################
-        # Compute the matrix A, with expm:
+        # Compute the matrix A & B, with expm:
         ##########################################################
-        try:
-            A = expm(float(-1 / lamb) * phi)
-        except ValueError:
-            print_and_log(f"Can't exp(phi/lamb), 1/lamb: {(1 / lamb)}, size of phi:{phi.shape}\n", CFG.log_path)
-
-        #########################################################
-        # Compute the matrix B, with expm:
-        ##########################################################
-        try:
-            B = expm(float(1 / lamb) * psi)
-        except ValueError:
-            print_and_log(f"Can't exp(psi/lamb), 1/lamb: {(1 / lamb)}, size of psi: {psi.shape}\n", CFG.log_path)
-
-        if A is None or B is None:
-            raise ValueError("Invalid lambda, phi, or psi parameters for computing gradients.")
+        A = expm(float(-1 / lamb) * phi)
+        B = expm(float(1 / lamb) * psi)
 
         return A, B, psi, phi
 

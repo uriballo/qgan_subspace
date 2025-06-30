@@ -13,6 +13,7 @@
 # limitations under the License.
 """Generator module"""
 
+import itertools
 import os
 import pickle
 
@@ -304,7 +305,7 @@ class Ansatz:
         """
         # If extra ancilla is used, different than ansatz, we reduce the size by 1,
         # to implement the ancilla logic separately.
-        if CFG.extra_ancilla and CFG.ancilla_topology != "ansatz":
+        if CFG.extra_ancilla:
             size -= 1
 
         entg_list = ["XX", "YY", "ZZ"]
@@ -313,23 +314,24 @@ class Ansatz:
             for i in range(size):
                 qc.add_gate(QuantumGate("Z", i, angle=0))
             # Ancilla 1q gates for: total, bridge and disconnected:
-            if CFG.extra_ancilla and CFG.ancilla_topology not in ["ansatz", "trivial"]:
+            if CFG.extra_ancilla and CFG.ancilla_topology not in ["trivial"]:
                 qc.add_gate(QuantumGate("Z", size, angle=0))
 
             # Then 2 qubit gates:
-            for i in range(size - 1):
-                for gate in entg_list:
-                    qc.add_gate(QuantumGate(gate, i, i + 1, angle=0))
+            for i, gate in itertools.product(range(size - 1), entg_list):
+                qc.add_gate(QuantumGate(gate, i, i + 1, angle=0))
             # Ancilla ancilla coupling (2q) logic for: total and bridge
             if CFG.extra_ancilla:
                 if CFG.ancilla_topology == "total":
-                    for gate in entg_list:
-                        for i in range(size):
-                            qc.add_gate(QuantumGate(gate, i, size, angle=0))
+                    for i, gate in itertools.product(range(size), entg_list):
+                        qc.add_gate(QuantumGate(gate, i, size, angle=0))
                 if CFG.ancilla_topology == "bridge":
                     for gate in entg_list:
                         qc.add_gate(QuantumGate(gate, 0, size, angle=0))
-                        qc.add_gate(QuantumGate(gate, size - 1, size, angle=0))
+                if CFG.ancilla_topology in ["bridge", "ansatz"]:
+                    qubit_to_connect_to = CFG.ancilla_connect_to if CFG.ancilla_connect_to is not None else size - 1
+                    for gate in entg_list:
+                        qc.add_gate(QuantumGate(gate, qubit_to_connect_to, size, angle=0))
 
         # Make uniform random angles for the gates (0 to 2*pi)
         theta = np.random.uniform(0, 2 * np.pi, len(qc.gates))
@@ -352,7 +354,7 @@ class Ansatz:
         """
         # If extra ancilla is used, different than ansatz, we reduce the size by 1,
         # to implement the ancilla logic separately.
-        if CFG.extra_ancilla and CFG.ancilla_topology != "ansatz":
+        if CFG.extra_ancilla:
             size -= 1
 
         for _ in range(layer):
@@ -361,7 +363,7 @@ class Ansatz:
                 qc.add_gate(QuantumGate("X", i, angle=0))
                 qc.add_gate(QuantumGate("Z", i, angle=0))
             # Ancilla 1q gates for: total, bridge and disconnected:
-            if CFG.extra_ancilla and CFG.ancilla_topology not in ["ansatz", "trivial"]:
+            if CFG.extra_ancilla and CFG.ancilla_topology not in ["trivial"]:
                 qc.add_gate(QuantumGate("X", size, angle=0))
                 qc.add_gate(QuantumGate("Z", size, angle=0))
             # Then 2 qubit gates
@@ -374,7 +376,9 @@ class Ansatz:
                         qc.add_gate(QuantumGate("ZZ", i, size, angle=0))
                 if CFG.ancilla_topology == "bridge":
                     qc.add_gate(QuantumGate("ZZ", 0, size, angle=0))
-                    qc.add_gate(QuantumGate("ZZ", size - 1, size, angle=0))
+                if CFG.ancilla_topology in ["bridge", "ansatz"]:
+                    qubit_to_connect_to = CFG.ancilla_connect_to if CFG.ancilla_connect_to is not None else size - 1
+                    qc.add_gate(QuantumGate("ZZ", qubit_to_connect_to, size, angle=0))
 
         # Make uniform random angles for the gates (0 to 2*pi)
         theta = np.random.uniform(0, 2 * np.pi, len(qc.gates))
