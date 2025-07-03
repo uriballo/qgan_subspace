@@ -35,21 +35,43 @@ class Config:
         #       and not adding the changes (controls), for then comparing the effects of the changes.
         #       Each individual experiment lasting the specified number of epochs and iterations in CFG.
         #
-        #   - run_multiple_experiments: Whether to run multiple experiments with a change in the middle.
+        #   - run_multiple_experiments: Whether to run multiple experiments.
+        #
+        #   - start_from_common_initial_experiment: Whether to start from common initial exp. + change, or all from scratch.
         #
         #   - N_initial_exp: Number of initial experiments to run, without change (default: 5).
         #
         #   - N_reps_each_init_exp: Num of reps for each initial experiment afterwards, with changes (default: 20).
         #
-        #   - reps_new_config: The configuration changes to run, after the initial experiments.
+        #   - N_reps_no_common_initial_exp: Number of repetitions for each new configuration, if not starting from common initial experiments.
+        #
+        #   - reps_new_config: The configuration changes to run. If starting from common initial experiments,
+        #           then this represent the changes after the initial experiments (+ control with no changes).
         #
         #############################################################################################
         self.run_multiple_experiments: bool = True
-        self.N_initial_exp: int = 10
-        self.N_reps_each_init_exp: int = 20
-        self.reps_new_config: dict[str, Any] = {
-            "gen_layers": 4,
-        }
+        self.start_from_common_initial_experiment: bool = False
+        self.N_initial_exp: int = 2
+        self.N_reps_each_init_exp: int = 3
+        self.N_reps_no_common_initial_exp: int = 5  # If not starting from common initial experiments.
+        self.reps_new_config: list[dict[str, Any]] = [
+            {
+                "gen_layers": 1,
+            },
+            {
+                "gen_layers": 2,
+            },
+            {
+                "gen_layers": 3,
+            },
+            # {
+            #     "gen_layers": 4,
+            # },
+            # {
+            #     "gen_layers": 5,
+            # },
+            # Add more configs here for comparison
+        ]
 
         #############################################################################################
         # ---------------------
@@ -90,10 +112,10 @@ class Config:
         #   - steps_gen/dis: Discriminator and Generator update steps in each iter (1~5).
         #
         #############################################################################################
-        self.epochs: int = 10
-        self.iterations_epoch: int = 150
+        self.epochs: int = 5
+        self.iterations_epoch: int = 10
         self.save_fid_and_loss_every_x_iter: int = 1
-        self.log_every_x_iter: int = 10  # This needs to be a multiple of save_fid_and_loss_every_x_iter
+        self.log_every_x_iter: int = 1  # This needs to be a multiple of save_fid_and_loss_every_x_iter
         self.max_fidelity: float = 0.99
         self.steps_gen: int = 1
         self.steps_dis: int = 1
@@ -137,7 +159,7 @@ class Config:
         #       (In the diagrams above, you would basically choose where that "x" connection goes in those)
         #
         ###############################################################################################
-        self.system_size: int = 3
+        self.system_size: int = 2
         self.extra_ancilla: bool = False
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "pass"
         self.ancilla_project_norm: Optional[Literal["re-norm", "pass"]] = "re-norm"
@@ -156,7 +178,7 @@ class Config:
         #       + "ZZ_X_Z": 2 body Z, 1 body X and 1 body Z terms.
         #
         #############################################################################################
-        self.gen_layers: int = 3  # 2, 3, 5, 10, 20 ...
+        self.gen_layers: int = 1  # 2, 3, 5, 10, 20 ...
         self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "ZZ_X_Z"
 
         #############################################################################################

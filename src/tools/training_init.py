@@ -21,7 +21,12 @@ import traceback
 from config import CFG, test_configurations
 from qgan.training import Training
 from tools.data.data_managers import print_and_log, print_and_log_with_headers
-from tools.plot_hub import plot_recurrence_vs_fidelity
+from tools.plot_hub import (
+    plot_avg_best_fidelity_per_run,
+    plot_comparison_all_runs,
+    plot_recurrence_vs_fidelity,
+    plot_success_percent_per_run,
+)
 
 # ruff: noqa: E226
 
@@ -61,7 +66,73 @@ def run_single_training():
 ##################################################################
 # MULTIPLE RUNS MODE:
 ##################################################################
-def run_multiple_trainings():
+def run_multiple_trainings_no_common_init():
+    """
+    Runs multiple experiments from scratch (no common initial experiments),
+    using CFG.N_reps_no_common_initial_exp repetitions for each config in CFG.reps_new_config.
+    Results are saved in experimentX/ subfolders.
+    Plots are generated as in the common-init function.
+    """
+    from tools.plot_hub import (
+        plot_avg_best_fidelity_per_run,
+        plot_comparison_all_runs,
+        plot_recurrence_vs_fidelity,
+        plot_success_percent_per_run,
+    )
+
+    base_path = f"./generated_data/MULTIPLE_RUNS/{CFG.run_timestamp}"
+    CFG.base_data_path = base_path
+    CFG.set_results_paths()
+    n_reps = getattr(CFG, "N_reps_no_common_initial_exp", 1)
+    n_runs = len(CFG.reps_new_config)
+    try:
+        for run_idx, config_dict in enumerate(CFG.reps_new_config, 1):
+            execute_run_of_multiple_trainings(config_dict, run_idx, n_reps, base_path)
+        # Plot for each run
+        for run_idx in range(1, n_runs + 1):
+            plot_recurrence_vs_fidelity(
+                base_path, CFG.log_path, run_idx=run_idx, max_fidelity=CFG.max_fidelity, folder_mode="experiment"
+            )
+        # Plot all runs together (overwrites each time)
+        plot_comparison_all_runs(base_path, CFG.log_path, n_runs=n_runs, folder_mode="experiment")
+        # Plot average best fidelity per run
+        plot_avg_best_fidelity_per_run(
+            base_path, CFG.log_path, n_runs=n_runs, max_fidelity=CFG.max_fidelity, folder_mode="experiment"
+        )
+        # Plot percent of runs above max_fidelity per run
+        plot_success_percent_per_run(
+            base_path, CFG.log_path, n_runs=n_runs, max_fidelity=CFG.max_fidelity, folder_mode="experiment"
+        )
+        print_and_log("\nAll multiple training runs (no common init) completed.\n", CFG.log_path)
+        print_and_log(
+            "\nAnalysis plots (recurrence vs max fidelity, averages, and success rates) generated.\n", CFG.log_path
+        )
+    except Exception as e:
+        tb_str = traceback.format_exc()
+        error_msg = (
+            f"\n{'-' * 60}\n"
+            f"FAILED: Multiple training runs (no common init)!\n"
+            f"Error Type: {type(e).__name__}\n"
+            f"Error Message: {e!s}\n"
+            f"Traceback:\n{tb_str}"
+            f"{'=' * 60}\n"
+        )
+        print_and_log(error_msg, CFG.log_path)
+
+
+def execute_run_of_multiple_trainings(config_dict, run_idx, n_reps, base_path):
+    for key, value in config_dict.items():
+        setattr(CFG, key, value)
+    for rep in range(n_reps):
+        out_dir = f"{base_path}/experiment{run_idx}/{rep+1}"
+        CFG.base_data_path = out_dir
+        CFG.set_results_paths()
+        print_and_log_with_headers(f"\nExperiment {run_idx}, repetition {rep+1}/{n_reps}", CFG.log_path)
+        Training().run()
+        print_and_log(f"\nExperiment {run_idx}, repetition {rep+1} completed.\n", CFG.log_path)
+
+
+def run_multiple_trainings_from_common_init_and_later_change():
     """
     Runs multiple training instances, with a change in the middle.
 
@@ -110,19 +181,34 @@ def run_multiple_trainings():
         else:
             print_and_log("\nFollowing previous MULTIPLE run, control experiments will be skipped.\n", CFG.log_path)
 
-        # Change config for changed experiments:
-        for key, value in getattr(CFG, "reps_new_config", {}).items():
-            setattr(CFG, key, value)
-
-        # Run changed experiments, from each initial experiment:
-        _run_repeated_experiments(n_initial_exp, n_reps_each_init_exp, base_path, "changed")
+        # Run changed experiments for each config in reps_new_config:
+        for run_idx, config_dict in enumerate(CFG.reps_new_config, 1):
+            for key, value in config_dict.items():
+                setattr(CFG, key, value)
+            # Each config gets its own run subdir
+            _run_repeated_experiments(n_initial_exp, n_reps_each_init_exp, base_path, f"changed_run{run_idx}")
 
         ##############################################################
         # Plot results: recurrence vs max fidelity for controls and changed
         ##############################################################
-        plot_recurrence_vs_fidelity(base_path, CFG.log_path)
+
+        # Plot for each run
+        for run_idx in range(1, len(CFG.reps_new_config) + 1):
+            plot_recurrence_vs_fidelity(base_path, CFG.log_path, run_idx=run_idx, max_fidelity=CFG.max_fidelity)
+        # Plot all runs together (overwrites each time)
+        plot_comparison_all_runs(base_path, CFG.log_path, n_runs=len(CFG.reps_new_config))
+        # Plot average best fidelity per run
+        plot_avg_best_fidelity_per_run(
+            base_path, CFG.log_path, n_runs=len(CFG.reps_new_config), max_fidelity=CFG.max_fidelity
+        )
+        # Plot percent of runs above max_fidelity per run
+        plot_success_percent_per_run(
+            base_path, CFG.log_path, n_runs=len(CFG.reps_new_config), max_fidelity=CFG.max_fidelity
+        )
         print_and_log("\nAll multiple training runs completed.\n", CFG.log_path)
-        print_and_log("\nAnalysis plot (recurrence vs max fidelity) generated.\n", CFG.log_path)
+        print_and_log(
+            "\nAnalysis plots (recurrence vs max fidelity, averages, and success rates) generated.\n", CFG.log_path
+        )
 
     except Exception as e:
         tb_str = traceback.format_exc()
@@ -162,30 +248,23 @@ def _run_initial_experiments(n_initial_exp: int, base_path: str):
 
 
 def _run_repeated_experiments(n_initial_exp: int, n_reps_each_init_exp: int, base_path: str, changed_or_control: str):
-    # Find the next available run index for changed experiments
-    if changed_or_control == "changed":
-        run_idx = 1
-        out_dir = f"{base_path}/initial_exp_1/repeated_changed_run1"
-        while os.path.exists(out_dir):
-            run_idx += 1
-            out_dir = f"{base_path}/initial_exp_1/repeated_changed_run{run_idx}"
-
+    # changed_or_control can now be 'control' or 'changed_runX'
+    is_changed = changed_or_control.startswith("changed_run")
+    run_idx = None
+    if is_changed:
+        run_idx = int(changed_or_control.replace("changed_run", ""))
     for i, rep in itertools.product(range(n_initial_exp), range(n_reps_each_init_exp)):
-        # Set the base/out directory for the repeated experiments
         if changed_or_control == "control":
-            # For controls, we use the same path as the initial experiment
             out_dir = f"{base_path}/initial_exp_{i+1}/repeated_controls/{rep+1}"
-        elif changed_or_control == "changed":
-            base_dir = f"{base_path}/initial_exp_{i+1}/repeated_changed"
-            out_dir = f"{base_dir}_run{run_idx}/{rep+1}"
+        elif is_changed:
+            out_dir = f"{base_path}/initial_exp_{i+1}/repeated_changed_run{run_idx}/{rep+1}"
         else:
-            raise ValueError(f"Invalid value for changed_or_control: {changed_or_control} (!= 'control', 'changed').")
-        # Change load_timestamp to the initial experiment's timestamp, and base_data_path for controls/changed
+            raise ValueError(
+                f"Invalid value for changed_or_control: {changed_or_control} (!= 'control', 'changed_runX')."
+            )
         CFG.load_timestamp = f"MULTIPLE_RUNS/{CFG.run_timestamp}/initial_exp_{i+1}"
         CFG.base_data_path = out_dir
         CFG.set_results_paths()
-
-        # Run the repeated experiment
         print_and_log_with_headers(
             f"\nRepeated Experiments {changed_or_control} {rep+1}/{n_reps_each_init_exp} for Initial Exp {i+1}/{n_initial_exp}",
             CFG.log_path,
