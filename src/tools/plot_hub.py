@@ -86,12 +86,13 @@ def collect_latest_changed_fidelities_nested(base_path, folder_mode="initial", r
     """
     run_dirs = {}
     if folder_mode == "initial":
-        # Old structure: initial_exp_J/repeated_changed_runY/X/fidelities/
-        pattern = (
-            r"initial_exp_(\d+)/repeated_changed_run" + (str(run_idx) if run_idx else r"(\d+)") + r"/(\d+)/fidelities$"
-        )
+        if run_idx is not None:
+            # Only two groups: exp_j and x_num
+            pattern = rf"initial_exp_(\d+)/repeated_changed_run{run_idx}/(\d+)/fidelities$"
+        else:
+            # Three groups: exp_j, run_y, x_num
+            pattern = r"initial_exp_(\d+)/repeated_changed_run(\d+)/(\d+)/fidelities$"
     else:
-        # New structure: experimentX/Y/fidelities/
         if run_idx is not None:
             pattern = rf"experiment{run_idx}/(\d+)/fidelities$"
         else:
@@ -100,9 +101,14 @@ def collect_latest_changed_fidelities_nested(base_path, folder_mode="initial", r
         m = re.search(pattern, root)
         if m and "log_fidelity_loss.txt" in files:
             if folder_mode == "initial":
-                exp_j = int(m[1])
-                run_y = int(m[2]) if run_idx is None else run_idx
-                x_num = int(m[3])
+                if run_idx is not None:
+                    exp_j = int(m[1])
+                    run_y = run_idx
+                    x_num = int(m[2])
+                else:
+                    exp_j = int(m[1])
+                    run_y = int(m[2])
+                    x_num = int(m[3])
                 key = (exp_j, x_num)
             else:
                 if run_idx is not None:
@@ -215,7 +221,10 @@ def plot_comparison_all_runs(base_path, log_path, n_runs, folder_mode="initial")
         )
     colors = plt.cm.tab10.colors
     for run_idx in range(1, n_runs + 1):
-        changed_fids = collect_latest_changed_fidelities_nested(base_path, folder_mode, run_idx)
+        if folder_mode == "initial":
+            changed_fids = collect_latest_changed_fidelities_nested_run(base_path, run_idx)
+        else:
+            changed_fids = collect_latest_changed_fidelities_nested(base_path, folder_mode, run_idx)
         changed_hist, _ = np.histogram(changed_fids, bins=bins)
         if np.any(changed_hist):
             bars.append(
