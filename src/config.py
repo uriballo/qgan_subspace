@@ -51,9 +51,9 @@ class Config:
         #############################################################################################
         self.run_multiple_experiments: bool = True
         self.start_from_common_initial_experiment: bool = False
-        self.N_initial_exp: int = 2
-        self.N_reps_each_init_exp: int = 3
-        self.N_reps_no_common_initial_exp: int = 5  # If not starting from common initial experiments.
+        self.N_initial_exp: int = 10
+        self.N_reps_each_init_exp: int = 20
+        self.N_reps_no_common_initial_exp: int = 100  # If not starting from common initial experiments.
         self.reps_new_config: list[dict[str, Any]] = [
             {
                 "gen_layers": 1,
@@ -64,9 +64,9 @@ class Config:
             {
                 "gen_layers": 3,
             },
-            # {
-            #     "gen_layers": 4,
-            # },
+            {
+                "gen_layers": 4,
+            },
             # {
             #     "gen_layers": 5,
             # },
@@ -112,10 +112,10 @@ class Config:
         #   - steps_gen/dis: Discriminator and Generator update steps in each iter (1~5).
         #
         #############################################################################################
-        self.epochs: int = 5
-        self.iterations_epoch: int = 10
+        self.epochs: int = 10
+        self.iterations_epoch: int = 300
         self.save_fid_and_loss_every_x_iter: int = 1
-        self.log_every_x_iter: int = 1  # This needs to be a multiple of save_fid_and_loss_every_x_iter
+        self.log_every_x_iter: int = 10  # This needs to be a multiple of save_fid_and_loss_every_x_iter
         self.max_fidelity: float = 0.99
         self.steps_gen: int = 1
         self.steps_dis: int = 1
@@ -159,7 +159,7 @@ class Config:
         #       (In the diagrams above, you would basically choose where that "x" connection goes in those)
         #
         ###############################################################################################
-        self.system_size: int = 2
+        self.system_size: int = 3
         self.extra_ancilla: bool = False
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "pass"
         self.ancilla_project_norm: Optional[Literal["re-norm", "pass"]] = "re-norm"
