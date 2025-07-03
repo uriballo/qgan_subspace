@@ -80,39 +80,39 @@ def construct_target(size: int, terms: list[str], strengths: list[float]) -> np.
         np.ndarray: the target Hamiltonian.
     """
     H = np.zeros([2**size, 2**size])
-    for i, term in enumerate(terms):
+    for term_i, term in enumerate(terms):
         if term == "I":
-            H += strengths[i] * np.identity(2**size)
+            H += strengths[term_i] * np.identity(2**size)
         elif term == "X":
             for i in range(size):
-                H += strengths[i] * term_X(size, i)
+                H += strengths[term_i] * term_X(size, i)
         elif term == "Y":
             for i in range(size):
-                H += strengths[i] * term_Y(size, i)
+                H += strengths[term_i] * term_Y(size, i)
         elif term == "Z":
             for i in range(size):
-                H += strengths[i] * term_Z(size, i)
+                H += strengths[term_i] * term_Z(size, i)
         elif term == "XX":
             for i in range(size - 1):
-                H += strengths[i] * term_XX(size, i, i + 1)
+                H += strengths[term_i] * term_XX(size, i, i + 1)
         elif term == "XZ":
             for i in range(size - 1):
-                H += strengths[i] * term_XZ(size, i, i + 1)
+                H += strengths[term_i] * term_XZ(size, i, i + 1)
         elif term == "ZZ":
             for i in range(size - 1):
-                H += strengths[i] * term_ZZ(size, i, i + 1)
+                H += strengths[term_i] * term_ZZ(size, i, i + 1)
         elif term == "ZZZ":
             for i in range(size - 2):
-                H += strengths[i] * term_ZZZ(size, i, i + 1, i + 2)
+                H += strengths[term_i] * term_ZZZ(size, i, i + 1, i + 2)
         elif term == "ZZZZ":
             for i in range(size - 3):
-                H += strengths[i] * term_ZZZZ(size, i, i + 1, i + 2, i + 3)
+                H += strengths[term_i] * term_ZZZZ(size, i, i + 1, i + 2, i + 3)
         elif term == "XZX":
             for i in range(size - 2):
-                H += strengths[i] * term_XZX(size, i, i + 1, i + 2)
+                H += strengths[term_i] * term_XZX(size, i, i + 1, i + 2)
         elif term == "XXXX":
             for i in range(size - 3):
-                H += strengths[i] * term_XXXX(size, i, i + 1, i + 2, i + 3)
+                H += strengths[term_i] * term_XXXX(size, i, i + 1, i + 2, i + 3)
         # Add more terms as needed
         else:
             raise ValueError(f"Unknown term '{term}' in custom_hamiltonian_terms.")
