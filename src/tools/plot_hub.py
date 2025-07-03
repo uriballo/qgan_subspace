@@ -124,7 +124,7 @@ def collect_latest_changed_fidelities_nested(base_path, folder_mode="initial", r
 
 def plot_recurrence_vs_fidelity(base_path, log_path, run_idx=None, max_fidelity=0.99, folder_mode="initial"):
     control_fids = (
-        collect_max_fidelities_nested(base_path, r"repeated_control", r"\\d+") if folder_mode == "initial" else []
+        collect_max_fidelities_nested(base_path, r"repeated_controls", r"\d+") if folder_mode == "initial" else []
     )
     changed_fids = collect_latest_changed_fidelities_nested(base_path, folder_mode, run_idx)
     # Split last bin at max_fidelity
@@ -135,14 +135,12 @@ def plot_recurrence_vs_fidelity(base_path, log_path, run_idx=None, max_fidelity=
     plt.figure(figsize=(8, 6))
     width = (bins[1] - bins[0]) * 0.4
     bars = []
-    labels = []
     if folder_mode == "initial" and np.any(control_hist):
         bars.append(
             plt.bar(
                 bin_centers - width / 2, control_hist, width=width, label="Control (no change)", alpha=0.7, color="C0"
             )
         )
-        labels.append("Control (no change)")
     if np.any(changed_hist):
         bars.append(
             plt.bar(
@@ -154,7 +152,6 @@ def plot_recurrence_vs_fidelity(base_path, log_path, run_idx=None, max_fidelity=
                 color="C1",
             )
         )
-        labels.append(f"Run {run_idx}" if run_idx else "Experiment Runs")
     plt.xlabel("Maximum Fidelity Reached")
     plt.ylabel("Recurrence (Count)")
     title = "Recurrence vs Maximum Fidelity"
@@ -202,7 +199,7 @@ def collect_latest_changed_fidelities_nested_run(base_path, run_idx):
 
 def plot_comparison_all_runs(base_path, log_path, n_runs, folder_mode="initial"):
     control_fids = (
-        collect_max_fidelities_nested(base_path, r"repeated_control", r"\\d+") if folder_mode == "initial" else []
+        collect_max_fidelities_nested(base_path, r"repeated_controls", r"\d+") if folder_mode == "initial" else []
     )
     bins = np.linspace(0, 1, 21)
     control_hist, _ = np.histogram(control_fids, bins=bins) if control_fids else (np.zeros(len(bins) - 1), bins)

@@ -73,13 +73,6 @@ def run_multiple_trainings_no_common_init():
     Results are saved in experimentX/ subfolders.
     Plots are generated as in the common-init function.
     """
-    from tools.plot_hub import (
-        plot_avg_best_fidelity_per_run,
-        plot_comparison_all_runs,
-        plot_recurrence_vs_fidelity,
-        plot_success_percent_per_run,
-    )
-
     base_path = f"./generated_data/MULTIPLE_RUNS/{CFG.run_timestamp}"
     CFG.base_data_path = base_path
     CFG.set_results_paths()
