@@ -44,14 +44,11 @@ class Config:
         #   - reps_new_config: The configuration changes to run, after the initial experiments.
         #
         #############################################################################################
-        self.run_multiple_experiments: bool = False
+        self.run_multiple_experiments: bool = True
         self.N_initial_exp: int = 10
         self.N_reps_each_init_exp: int = 20
         self.reps_new_config: dict[str, Any] = {
-            "extra_ancilla": True,
-            "ancilla_mode": "project",
-            "ancilla_topology": "total",
-            "type_of_warm_start": "none",
+            "gen_layers": 4,
         }
 
         #############################################################################################
@@ -94,8 +91,8 @@ class Config:
         #
         #############################################################################################
         self.epochs: int = 10
-        self.iterations_epoch: int = 200
-        self.save_fid_and_loss_every_x_iter: int = 10
+        self.iterations_epoch: int = 150
+        self.save_fid_and_loss_every_x_iter: int = 1
         self.log_every_x_iter: int = 10  # This needs to be a multiple of save_fid_and_loss_every_x_iter
         self.max_fidelity: float = 0.99
         self.steps_gen: int = 1
@@ -142,10 +139,10 @@ class Config:
         ###############################################################################################
         self.system_size: int = 3
         self.extra_ancilla: bool = False
-        self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "project"
+        self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "pass"
         self.ancilla_project_norm: Optional[Literal["re-norm", "pass"]] = "re-norm"
         self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "bridge"
-        self.ancilla_connect_to: Optional[int] = None  # None means connected to last one, otherwise to the specified.
+        self.ancilla_connect_to: Optional[int] = 1  # None means connected to last one, otherwise to the specified.
         # TODO: [FUTURE] Decide what to do with trace, make all code work with density matrices, instead than sampling?
 
         #############################################################################################
@@ -177,7 +174,8 @@ class Config:
         #
         #############################################################################################
         self.target_hamiltonian: Literal["cluster_h", "rotated_surface_h", "ising_h", "custom_h"] = "custom_h"
-        self.custom_hamiltonian_terms: Optional[list[str]] = ["ZZZ"]  # "I", "X", "Y", "Z", "XX", "XZ", "ZZ", "ZZZ" ...
+        self.custom_hamiltonian_terms: Optional[list[str]] = ["XZ", "X"]  # "I", "X", "Y", "Z", "XX", "XZ", "ZZZ", ...
+        self.custom_hamiltonian_strengths: Optional[list[float]] = [1.0, 0.1]  # Strengths for the above terms.
 
         #############################################################################################
         # -----------------------------------
@@ -252,6 +250,7 @@ class Config:
             "----------------------------------------------\n"
             f"target_hamiltonian: {self.target_hamiltonian},\n"
             f"custom_hamiltonian_terms: {self.custom_hamiltonian_terms},\n"
+            f"custom_hamiltonian_strengths: {self.custom_hamiltonian_strengths},\n"
             "----------------------------------------------\n"
             f"epochs: {self.epochs},\n"
             f"iterations_epoch: {self.iterations_epoch},\n"
