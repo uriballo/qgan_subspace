@@ -258,8 +258,14 @@ def plot_comparison_all_runs(base_path, log_path, n_runs, folder_mode="initial")
 def plot_avg_best_fidelity_per_run(base_path, log_path, n_runs, max_fidelity=0.99, folder_mode="initial"):
     avgs = []
     for run_idx in range(1, n_runs + 1):
-        changed_fids = collect_latest_changed_fidelities_nested(base_path, folder_mode, run_idx)
-        avgs.append(np.mean(changed_fids) if changed_fids else 0)
+        if folder_mode == "initial":
+            changed_fids = collect_latest_changed_fidelities_nested_run(base_path, run_idx)
+        else:
+            changed_fids = collect_latest_changed_fidelities_nested(base_path, folder_mode, run_idx)
+        if changed_fids:
+            avgs.append(np.mean(changed_fids))
+        else:
+            avgs.append(0)
     plt.figure(figsize=(8, 5))
     plt.bar(range(1, n_runs + 1), avgs, color="C1", alpha=0.8)
     plt.xlabel("Run index")
