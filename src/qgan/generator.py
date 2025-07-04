@@ -234,6 +234,9 @@ class Generator:
             for i, gate in enumerate(self.qc.gates):
                 gate.angle = saved_gen.qc.gates[i].angle
 
+            # Load the optimizer parameters if they exist in the saved generator
+            self.optimizer.v = saved_gen.optimizer.v
+
             print_and_log("Generator parameters loaded\n", CFG.log_path)
             return True
 
@@ -256,6 +259,9 @@ class Generator:
                     if isinstance(gate, type(saved_gate)) and saved_gate.qubit1 == q1 and saved_gate.qubit2 == q2:
                         gate.angle = saved_gate.angle
                         break
+
+            # Load the optimizer parameters if they exist in the saved generator
+            self.optimizer.v = saved_gen.optimizer.v
 
             print_and_log("Generator parameters partially loaded (excluding ancilla difference)\n", CFG.log_path)
             return True

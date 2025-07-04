@@ -347,6 +347,11 @@ class Discriminator:
         if saved_dis.size == self.size:  # This size check, already takes care into ancilla match!
             self.alpha = saved_dis.alpha.copy()
             self.beta = saved_dis.beta.copy()
+
+            # Load the optimizer parameters if they exist in the saved generator
+            self.optimizer_phi.v = saved_dis.optimizer_phi.v
+            self.optimizer_psi.v = saved_dis.optimizer_psi.v
+
             print_and_log("Discriminator parameters loaded\n", CFG.log_path)
             return True
 
@@ -359,6 +364,11 @@ class Discriminator:
             # Load only the matching parameters
             self.alpha[:min_size] = saved_dis.alpha[:min_size].copy()
             self.beta[:min_size] = saved_dis.beta[:min_size].copy()
+
+            # Load the optimizer parameters if they exist in the saved generator
+            self.optimizer_phi.v = saved_dis.optimizer_phi.v
+            self.optimizer_psi.v = saved_dis.optimizer_psi.v
+
             print_and_log("Discriminator parameters loaded partially (one qubit difference).\n", CFG.log_path)
             return True
 
