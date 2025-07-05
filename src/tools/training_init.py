@@ -26,9 +26,9 @@ from tools.plot_hub import generate_all_plots
 # ruff: noqa: E226
 
 
-##################################################################
+#################################################################################################################
 # SINGLE RUN MODE:
-##################################################################
+#################################################################################################################
 def run_single_training():
     """
     Runs a single training instance.
@@ -58,9 +58,9 @@ def run_single_training():
         print_and_log(error_msg, CFG.log_path)  # Log to file
 
 
-##################################################################
-# MULTIPLE RUNS MODE:
-##################################################################
+#################################################################################################################
+# MULTIPLE RUNS MODE, WITH COMMON INITIAL EXPERIMENTS:
+#################################################################################################################
 def run_multiple_trainings_no_common_init():
     """
     Runs multiple experiments from scratch (no common initial experiments),
@@ -68,15 +68,23 @@ def run_multiple_trainings_no_common_init():
     Results are saved in experimentX/ subfolders.
     Plots are generated as in the common-init function.
     """
+    ################################################################
+    # Change results directory to MULTIPLE RUNS:
+    ################################################################
     base_path = f"./generated_data/MULTIPLE_RUNS/{CFG.run_timestamp}"
     CFG.base_data_path = base_path
     CFG.set_results_paths()
     n_reps = getattr(CFG, "N_reps_no_common_initial_exp", 1)
     try:
+        ##############################################################
+        # Run multiple training instances with no common initial experiments
+        ##############################################################
         for run_idx, config_dict in enumerate(CFG.reps_new_config, 1):
             execute_run_of_multiple_trainings(config_dict, run_idx, n_reps, base_path)
 
-        # Plot results:
+        ##############################################################
+        # Generate plots for all runs
+        ##############################################################
         generate_all_plots(
             base_path,
             CFG.log_path,
@@ -89,6 +97,9 @@ def run_multiple_trainings_no_common_init():
             "\nAnalysis plots (recurrence vs max fidelity, averages, and success rates) generated.\n", CFG.log_path
         )
     except Exception as e:
+        ##############################################################
+        # Handle exceptions during the training run
+        ##############################################################
         tb_str = traceback.format_exc()
         error_msg = (
             f"\n{'-' * 60}\n"
@@ -113,6 +124,9 @@ def execute_run_of_multiple_trainings(config_dict, run_idx, n_reps, base_path):
         print_and_log(f"\nExperiment {run_idx}, repetition {rep+1} completed.\n", CFG.log_path)
 
 
+#################################################################################################################
+# MULTIPLE RUNS MODE, WITH COMMON INITIAL EXPERIMENTS:
+#################################################################################################################
 def run_multiple_trainings_from_common_init_and_later_change():
     """
     Runs multiple training instances, with a change in the middle.
@@ -170,7 +184,7 @@ def run_multiple_trainings_from_common_init_and_later_change():
             _run_repeated_experiments(n_initial_exp, n_reps_each_init_exp, base_path, f"changed_run{run_idx}")
 
         ##############################################################
-        # Plot results: recurrence vs max fidelity for controls and changed
+        # Generate plots for all runs
         ##############################################################
         generate_all_plots(
             base_path,
@@ -185,6 +199,9 @@ def run_multiple_trainings_from_common_init_and_later_change():
         )
 
     except Exception as e:
+        ##############################################################
+        # Handle exceptions during the training run
+        ##############################################################
         tb_str = traceback.format_exc()
         error_msg = (
             f"\n{'-' * 60}\n"
@@ -249,9 +266,9 @@ def _run_repeated_experiments(n_initial_exp: int, n_reps_each_init_exp: int, bas
         )
 
 
-###################################################################
+#################################################################################################################
 # TESTING MODE:
-###################################################################
+#################################################################################################################
 def run_test_configurations():
     """
     Runs a suite of test configurations.
