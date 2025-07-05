@@ -37,7 +37,7 @@ class Config:
         #
         #   - run_multiple_experiments: Whether to run multiple experiments.
         #
-        #   - start_from_common_initial_experiment: Whether to start from common initial exp. + change, or all from scratch.
+        #   - common_initial_experiment: Whether to start from common initial exp. + change, or all from scratch.
         #
         #   - N_initial_exp: Number of initial experiments to run, without change (default: 5).
         #
@@ -50,26 +50,28 @@ class Config:
         #
         #############################################################################################
         self.run_multiple_experiments: bool = True
-        self.start_from_common_initial_experiment: bool = False
+        self.common_initial_experiment: bool = True
         self.N_initial_exp: int = 10
         self.N_reps_each_init_exp: int = 20
         self.N_reps_no_common_initial_exp: int = 100  # If not starting from common initial experiments.
+        # TODO: Maybe make the reps common in a single parameter, and then use it for both cases?
+
         self.reps_new_config: list[dict[str, Any]] = [
             {
-                "gen_layers": 1,
+                "extra_ancilla": True,
+                "ancilla_mode": "pass",
+                "ancilla_topology": "disconnected",
             },
             {
-                "gen_layers": 2,
+                "extra_ancilla": True,
+                "ancilla_mode": "pass",
+                "ancilla_topology": "ansatz",
             },
             {
-                "gen_layers": 3,
+                "extra_ancilla": True,
+                "ancilla_mode": "pass",
+                "ancilla_topology": "bridge",
             },
-            {
-                "gen_layers": 4,
-            },
-            # {
-            #     "gen_layers": 5,
-            # },
             # Add more configs here for comparison
         ]
 
@@ -162,9 +164,11 @@ class Config:
         self.system_size: int = 3
         self.extra_ancilla: bool = False
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "pass"
+        # self.ancilla_1q_gates: Optional[bool] = False
+        # TODO: Add a bool for doing or not doing ancilla 1q gates, and make it work with the rest of the code.
         self.ancilla_project_norm: Optional[Literal["re-norm", "pass"]] = "re-norm"
         self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "bridge"
-        self.ancilla_connect_to: Optional[int] = 1  # None means connected to last one, otherwise to the specified.
+        self.ancilla_connect_to: Optional[int] = None  # None means connected to last one, otherwise to the specified.
         # TODO: [FUTURE] Decide what to do with trace, make all code work with density matrices, instead than sampling?
 
         #############################################################################################
@@ -178,7 +182,7 @@ class Config:
         #       + "ZZ_X_Z": 2 body Z, 1 body X and 1 body Z terms.
         #
         #############################################################################################
-        self.gen_layers: int = 1  # 2, 3, 5, 10, 20 ...
+        self.gen_layers: int = 4  # 2, 3, 5, 10, 20 ...
         self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "ZZ_X_Z"
 
         #############################################################################################

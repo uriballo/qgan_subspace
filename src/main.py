@@ -16,8 +16,7 @@
 from config import CFG
 from tools.data.data_managers import print_and_log
 from tools.training_init import (
-    run_multiple_trainings_from_common_init_and_later_change,
-    run_multiple_trainings_no_common_init,
+    run_multiple_trainings,
     run_single_training,
 )
 
@@ -27,10 +26,7 @@ from tools.training_init import (
 ##############################################################
 def main():
     if CFG.run_multiple_experiments:
-        if CFG.start_from_common_initial_experiment:
-            run_multiple_trainings_from_common_init_and_later_change()
-        else:
-            run_multiple_trainings_no_common_init()
+        run_multiple_trainings()
     else:
         print_and_log("Running in SINGLE RUN mode.\n", CFG.log_path)
         run_single_training()

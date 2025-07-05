@@ -59,14 +59,17 @@ def run_single_training():
 
 
 #################################################################################################################
-# MULTIPLE RUNS MODE, WITH COMMON INITIAL EXPERIMENTS:
+# MULTIPLE RUNS MODE, WITH AND WITHOUT COMMON INITIAL EXPERIMENTS:
 #################################################################################################################
-def run_multiple_trainings_no_common_init():
-    """
-    Runs multiple experiments from scratch (no common initial experiments),
-    using CFG.N_reps_no_common_initial_exp repetitions for each config in CFG.reps_new_config.
-    Results are saved in experimentX/ subfolders.
-    Plots are generated as in the common-init function.
+def run_multiple_trainings():
+    """Runs the multiple training logic, both for common initial experiments
+    with later changes, and for no common initial experiments.
+
+    This function handles the loading, sets the base path for results, checks for
+    previous runs if specified, and executes the training.
+
+    It also generates plots for all runs after completion, and raises the necessary
+    exceptions if any errors occur during the training.
     """
     ################################################################
     # Change results directory to MULTIPLE RUNS:
@@ -74,68 +77,8 @@ def run_multiple_trainings_no_common_init():
     base_path = f"./generated_data/MULTIPLE_RUNS/{CFG.run_timestamp}"
     CFG.base_data_path = base_path
     CFG.set_results_paths()
-    n_reps = getattr(CFG, "N_reps_no_common_initial_exp", 1)
-    try:
-        ##############################################################
-        # Run multiple training instances with no common initial experiments
-        ##############################################################
-        for run_idx, config_dict in enumerate(CFG.reps_new_config, 1):
-            execute_run_of_multiple_trainings(config_dict, run_idx, n_reps, base_path)
 
-        ##############################################################
-        # Generate plots for all runs
-        ##############################################################
-        generate_all_plots(
-            base_path,
-            CFG.log_path,
-            n_runs=len(CFG.reps_new_config),
-            max_fidelity=CFG.max_fidelity,
-            folder_mode="experiment",
-        )
-        print_and_log("\nAll multiple training runs (no common init) completed.\n", CFG.log_path)
-        print_and_log(
-            "\nAnalysis plots (recurrence vs max fidelity, averages, and success rates) generated.\n", CFG.log_path
-        )
-    except Exception as e:
-        ##############################################################
-        # Handle exceptions during the training run
-        ##############################################################
-        tb_str = traceback.format_exc()
-        error_msg = (
-            f"\n{'-' * 60}\n"
-            f"FAILED: Multiple training runs (no common init)!\n"
-            f"Error Type: {type(e).__name__}\n"
-            f"Error Message: {e!s}\n"
-            f"Traceback:\n{tb_str}"
-            f"{'=' * 60}\n"
-        )
-        print_and_log(error_msg, CFG.log_path)
-
-
-def execute_run_of_multiple_trainings(config_dict, run_idx, n_reps, base_path):
-    for key, value in config_dict.items():
-        setattr(CFG, key, value)
-    for rep in range(n_reps):
-        out_dir = f"{base_path}/experiment{run_idx}/{rep+1}"
-        CFG.base_data_path = out_dir
-        CFG.set_results_paths()
-        print_and_log_with_headers(f"\nExperiment {run_idx}, repetition {rep+1}/{n_reps}", CFG.log_path)
-        Training().run()
-        print_and_log(f"\nExperiment {run_idx}, repetition {rep+1} completed.\n", CFG.log_path)
-
-
-#################################################################################################################
-# MULTIPLE RUNS MODE, WITH COMMON INITIAL EXPERIMENTS:
-#################################################################################################################
-def run_multiple_trainings_from_common_init_and_later_change():
-    """
-    Runs multiple training instances, with a change in the middle.
-
-    Loops twice, first for `CFG.N_initial_exp`, then for `CFG.N_reps_each_init_exp`,
-    starting from each of the last runs, changing what is specified in `CFG.reps_new_config`.
-
-    Saves and loads results using the generated_data folder structure.
-    """
+    # TODO: Make sure this works for the no common initial experiments case too.
     ##############################################################
     # Loading previous MULTIPLE run timestamp if specified:
     ##############################################################
@@ -147,41 +90,13 @@ def run_multiple_trainings_from_common_init_and_later_change():
         print_and_log("Running MULTIPLE initial, controls and changed experiments.\n", CFG.log_path)
 
     ##############################################################
-    # Change results directory to MULTIPLE RUNS:
+    # Execute multiple training instances (with/out common initial exp.)
     ##############################################################
-    base_path = f"./generated_data/MULTIPLE_RUNS/{CFG.run_timestamp}"
-    CFG.base_data_path = base_path
-    CFG.set_results_paths()
-
-    # Cache loops configuration parameters
-    n_initial_exp = getattr(CFG, "N_initial_exp", 1)
-    n_reps_each_init_exp = getattr(CFG, "N_reps_each_init_exp", 1)
-
     try:
-        ##############################################################
-        # Run initial experiments
-        ##############################################################
-        if CFG.load_timestamp is None:
-            _run_initial_experiments(n_initial_exp, base_path)
+        if CFG.common_initial_experiment:
+            execute_from_common_initial_experiment(base_path)
         else:
-            print_and_log("\nFollowing previous MULTIPLE run, initial experiments will be skipped.\n", CFG.log_path)
-
-        #############################################################
-        # Run repeated (control and changed), from each initial experiment
-        ##############################################################
-
-        # Run controls first, from each initial experiment:
-        if CFG.load_timestamp is None:
-            _run_repeated_experiments(n_initial_exp, n_reps_each_init_exp, base_path, "control")
-        else:
-            print_and_log("\nFollowing previous MULTIPLE run, control experiments will be skipped.\n", CFG.log_path)
-
-        # Run changed experiments for each config in reps_new_config:
-        for run_idx, config_dict in enumerate(CFG.reps_new_config, 1):
-            for key, value in config_dict.items():
-                setattr(CFG, key, value)
-            # Each config gets its own run subdir
-            _run_repeated_experiments(n_initial_exp, n_reps_each_init_exp, base_path, f"changed_run{run_idx}")
+            execute_from_no_common_initial_experiment(base_path)
 
         ##############################################################
         # Generate plots for all runs
@@ -191,17 +106,17 @@ def run_multiple_trainings_from_common_init_and_later_change():
             CFG.log_path,
             n_runs=len(CFG.reps_new_config),
             max_fidelity=CFG.max_fidelity,
-            folder_mode="initial",
+            common_initial_experiment=CFG.common_initial_experiment,
         )
         print_and_log("\nAll multiple training runs completed.\n", CFG.log_path)
         print_and_log(
             "\nAnalysis plots (recurrence vs max fidelity, averages, and success rates) generated.\n", CFG.log_path
         )
 
+    ##############################################################
+    # Handle exceptions during the training run
+    ##############################################################
     except Exception as e:
-        ##############################################################
-        # Handle exceptions during the training run
-        ##############################################################
         tb_str = traceback.format_exc()
         error_msg = (
             f"\n{'-' * 60}\n"
@@ -212,6 +127,72 @@ def run_multiple_trainings_from_common_init_and_later_change():
             f"{'=' * 60}\n"
         )
         print_and_log(error_msg, CFG.log_path)
+
+
+#############################################################################
+# Execute multiple training instances with no common initial experiments
+#############################################################################
+def execute_from_no_common_initial_experiment(base_path):
+    """
+    Runs multiple experiments from scratch (no common initial experiments),
+    using CFG.N_reps_no_common_initial_exp repetitions for each config in CFG.reps_new_config.
+
+    Results are saved in experimentX/ subfolders.
+    """
+    n_reps = getattr(CFG, "N_reps_no_common_initial_exp", 1)
+
+    for run_idx, config_dict in enumerate(CFG.reps_new_config, 1):
+        for key, value in config_dict.items():
+            setattr(CFG, key, value)
+        for rep in range(n_reps):
+            out_dir = f"{base_path}/experiment{run_idx}/{rep+1}"
+            CFG.base_data_path = out_dir
+            CFG.set_results_paths()
+            print_and_log_with_headers(f"\nExperiment {run_idx}, repetition {rep+1}/{n_reps}", CFG.log_path)
+            Training().run()
+            print_and_log(f"\nExperiment {run_idx}, repetition {rep+1} completed.\n", CFG.log_path)
+
+
+#############################################################################
+# Execute multiple training instances with common initial experiments
+#############################################################################
+def execute_from_common_initial_experiment(base_path):
+    """
+    Runs multiple training instances, with a change in the middle.
+
+    Loops twice, first for `CFG.N_initial_exp`, then for `CFG.N_reps_each_init_exp`,
+    starting from each of the last runs, changing what is specified in `CFG.reps_new_config`.
+
+    Results are saved in initial_exp_X/repeated_controls/ and initial_exp_X/repeated_changed_runX/ subfolders.
+    """
+    # Cache loops configuration parameters
+    n_initial_exp = getattr(CFG, "N_initial_exp", 1)
+    n_reps_each_init_exp = getattr(CFG, "N_reps_each_init_exp", 1)
+
+    ##############################################################
+    # Run initial experiments
+    ##############################################################
+    if CFG.load_timestamp is None:
+        _run_initial_experiments(n_initial_exp, base_path)
+    else:
+        print_and_log("\nFollowing previous MULTIPLE run, initial experiments will be skipped.\n", CFG.log_path)
+
+    #############################################################
+    # Run controls from each initial experiment
+    #############################################################
+    if CFG.load_timestamp is None:
+        _run_repeated_experiments(n_initial_exp, n_reps_each_init_exp, base_path, "control")
+    else:
+        print_and_log("\nFollowing previous MULTIPLE run, control experiments will be skipped.\n", CFG.log_path)
+
+    #############################################################
+    # Run changed experiments from each initial experiment, for each config in reps_new_config:
+    #############################################################
+    for run_idx, config_dict in enumerate(CFG.reps_new_config, 1):
+        for key, value in config_dict.items():
+            setattr(CFG, key, value)
+        # Each config gets its own run subdir
+        _run_repeated_experiments(n_initial_exp, n_reps_each_init_exp, base_path, f"changed_run{run_idx}")
 
 
 def _check_for_previous_multiple_runs():

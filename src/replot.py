@@ -24,7 +24,7 @@ from tools.plot_hub import generate_all_plots
 time_stamp_to_replot = "2025-07-03__15-03-02"
 n_runs = 5
 max_fidelity = 0.99
-folder_mode = "experiment"  # "experiment" for no common initial vs "initial" for common initial
+common_initial_experiment = False
 
 #######################################################################
 # Replotting script for the specified experiment
@@ -41,5 +41,5 @@ generate_all_plots(
     log_path,
     n_runs=n_runs,
     max_fidelity=max_fidelity,
-    folder_mode=folder_mode,
+    common_initial_experiments=common_initial_experiment,
 )
