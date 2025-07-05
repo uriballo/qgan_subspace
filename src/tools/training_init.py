@@ -21,12 +21,7 @@ import traceback
 from config import CFG, test_configurations
 from qgan.training import Training
 from tools.data.data_managers import print_and_log, print_and_log_with_headers
-from tools.plot_hub import (
-    plot_avg_best_fidelity_per_run,
-    plot_comparison_all_runs,
-    plot_recurrence_vs_fidelity,
-    plot_success_percent_per_run,
-)
+from tools.plot_hub import generate_all_plots
 
 # ruff: noqa: E226
 
@@ -77,24 +72,17 @@ def run_multiple_trainings_no_common_init():
     CFG.base_data_path = base_path
     CFG.set_results_paths()
     n_reps = getattr(CFG, "N_reps_no_common_initial_exp", 1)
-    n_runs = len(CFG.reps_new_config)
     try:
         for run_idx, config_dict in enumerate(CFG.reps_new_config, 1):
             execute_run_of_multiple_trainings(config_dict, run_idx, n_reps, base_path)
-        # Plot for each run
-        for run_idx in range(1, n_runs + 1):
-            plot_recurrence_vs_fidelity(
-                base_path, CFG.log_path, run_idx=run_idx, max_fidelity=CFG.max_fidelity, folder_mode="experiment"
-            )
-        # Plot all runs together (overwrites each time)
-        plot_comparison_all_runs(base_path, CFG.log_path, n_runs=n_runs, folder_mode="experiment")
-        # Plot average best fidelity per run
-        plot_avg_best_fidelity_per_run(
-            base_path, CFG.log_path, n_runs=n_runs, max_fidelity=CFG.max_fidelity, folder_mode="experiment"
-        )
-        # Plot percent of runs above max_fidelity per run
-        plot_success_percent_per_run(
-            base_path, CFG.log_path, n_runs=n_runs, max_fidelity=CFG.max_fidelity, folder_mode="experiment"
+
+        # Plot results:
+        generate_all_plots(
+            base_path,
+            CFG.log_path,
+            n_runs=len(CFG.reps_new_config),
+            max_fidelity=CFG.max_fidelity,
+            folder_mode="experiment",
         )
         print_and_log("\nAll multiple training runs (no common init) completed.\n", CFG.log_path)
         print_and_log(
@@ -184,19 +172,12 @@ def run_multiple_trainings_from_common_init_and_later_change():
         ##############################################################
         # Plot results: recurrence vs max fidelity for controls and changed
         ##############################################################
-
-        # Plot for each run
-        for run_idx in range(1, len(CFG.reps_new_config) + 1):
-            plot_recurrence_vs_fidelity(base_path, CFG.log_path, run_idx=run_idx, max_fidelity=CFG.max_fidelity)
-        # Plot all runs together (overwrites each time)
-        plot_comparison_all_runs(base_path, CFG.log_path, n_runs=len(CFG.reps_new_config))
-        # Plot average best fidelity per run
-        plot_avg_best_fidelity_per_run(
-            base_path, CFG.log_path, n_runs=len(CFG.reps_new_config), max_fidelity=CFG.max_fidelity
-        )
-        # Plot percent of runs above max_fidelity per run
-        plot_success_percent_per_run(
-            base_path, CFG.log_path, n_runs=len(CFG.reps_new_config), max_fidelity=CFG.max_fidelity
+        generate_all_plots(
+            base_path,
+            CFG.log_path,
+            n_runs=len(CFG.reps_new_config),
+            max_fidelity=CFG.max_fidelity,
+            folder_mode="initial",
         )
         print_and_log("\nAll multiple training runs completed.\n", CFG.log_path)
         print_and_log(

@@ -26,6 +26,21 @@ mpl.use("Agg")
 import matplotlib.pyplot as plt
 
 
+def generate_all_plots(base_path, log_path, n_runs, max_fidelity, folder_mode):
+    # Plot for each run
+    for run_idx in range(1, n_runs + 1):
+        plot_recurrence_vs_fid(base_path, log_path, run_idx=run_idx, max_fidelity=max_fidelity, folder_mode=folder_mode)
+
+    # Plot all runs together (overwrites each time)
+    plot_comparison_all_runs(base_path, log_path, n_runs=n_runs, max_fidelity=max_fidelity, folder_mode=folder_mode)
+
+    # Plot average best fidelity per run
+    plot_avg_best_fid_per_run(base_path, log_path, n_runs=n_runs, max_fidelity=max_fidelity, folder_mode=folder_mode)
+
+    # Plot percent of runs above max_fidelity per run
+    plot_success_percent_per_run(base_path, log_path, n_runs=n_runs, max_fidelity=max_fidelity, folder_mode=folder_mode)
+
+
 def plt_fidelity_vs_iter(fidelities, losses, config, indx=0):
     fig, (axs1, axs2) = plt.subplots(1, 2)
     axs1.plot(range(len(fidelities)), fidelities)
@@ -128,7 +143,7 @@ def collect_latest_changed_fidelities_nested(base_path, folder_mode="initial", r
     return max_fids
 
 
-def plot_recurrence_vs_fidelity(base_path, log_path, run_idx=None, max_fidelity=0.99, folder_mode="initial"):
+def plot_recurrence_vs_fid(base_path, log_path, run_idx=None, max_fidelity=0.99, folder_mode="initial"):
     control_fids = (
         collect_max_fidelities_nested(base_path, r"repeated_controls", r"\d+") if folder_mode == "initial" else []
     )
@@ -169,13 +184,9 @@ def plot_recurrence_vs_fidelity(base_path, log_path, run_idx=None, max_fidelity=
     if bars:
         plt.legend()
     plt.grid(True)
-    base_plot = os.path.join(
-        base_path, f"comparison_recurrence_vs_fidelity_run{run_idx}" if run_idx else "recurrence_vs_fidelity"
+    save_path = os.path.join(
+        base_path, f"comparison_recurrence_vs_fidelity_run{run_idx}.png" if run_idx else "recurrence_vs_fidelity.png"
     )
-    run_file_idx = 1
-    while os.path.exists(f"{base_plot}_{run_file_idx}.png"):
-        run_file_idx += 1
-    save_path = f"{base_plot}_{run_file_idx}.png"
     plt.tight_layout()
     plt.savefig(save_path)
     print_and_log(f"Saved plot to {save_path}", log_path)
@@ -203,13 +214,14 @@ def collect_latest_changed_fidelities_nested_run(base_path, run_idx):
     return max_fids
 
 
-def plot_comparison_all_runs(base_path, log_path, n_runs, folder_mode="initial"):
+def plot_comparison_all_runs(base_path, log_path, n_runs, max_fidelity, folder_mode="initial"):
     control_fids = (
         collect_max_fidelities_nested(base_path, r"repeated_controls", r"\d+") if folder_mode == "initial" else []
     )
-    bins = np.linspace(0, 1, 21)
+    # Split last bin at max_fidelity
+    bins = [*list(np.linspace(0, max_fidelity, 20)), max_fidelity, 1.0]
     control_hist, _ = np.histogram(control_fids, bins=bins) if control_fids else (np.zeros(len(bins) - 1), bins)
-    bin_centers = (bins[:-1] + bins[1:]) / 2
+    bin_centers = (np.array(bins[:-1]) + np.array(bins[1:])) / 2
     plt.figure(figsize=(10, 7))
     width = (bins[1] - bins[0]) * 0.7 / (n_runs + (1 if folder_mode == "initial" and np.any(control_hist) else 0))
     bars = []
@@ -255,7 +267,9 @@ def plot_comparison_all_runs(base_path, log_path, n_runs, folder_mode="initial")
     plt.close()
 
 
-def plot_avg_best_fidelity_per_run(base_path, log_path, n_runs, max_fidelity=0.99, folder_mode="initial"):
+def plot_avg_best_fid_per_run(base_path, log_path, n_runs, max_fidelity=0.99, folder_mode="initial"):
+    import matplotlib.ticker as mticker
+
     avgs = []
     for run_idx in range(1, n_runs + 1):
         if folder_mode == "initial":
@@ -267,12 +281,14 @@ def plot_avg_best_fidelity_per_run(base_path, log_path, n_runs, max_fidelity=0.9
         else:
             avgs.append(0)
     plt.figure(figsize=(8, 5))
-    plt.bar(range(1, n_runs + 1), avgs, color="C1", alpha=0.8)
+    x = np.arange(1, n_runs + 1)
+    plt.plot(x, avgs, "o", color="green", label="Avg Best Fidelity", markersize=6)
+    plt.axhline(max_fidelity, color="C0", linestyle="--", label=f"threshold_fidelity={max_fidelity}")
     plt.xlabel("Run index")
     plt.ylabel("Average of Best Fidelity Achieved")
     plt.title("Average Best Fidelity per Run")
     plt.ylim(0, 1.05)
-    plt.axhline(max_fidelity, color="C0", linestyle="--", label=f"max_fidelity={max_fidelity}")
+    plt.gca().xaxis.set_major_locator(mticker.MaxNLocator(integer=True))
     plt.legend()
     save_path = os.path.join(base_path, "avg_best_fidelity_per_run.png")
     plt.tight_layout()
@@ -282,17 +298,21 @@ def plot_avg_best_fidelity_per_run(base_path, log_path, n_runs, max_fidelity=0.9
 
 
 def plot_success_percent_per_run(base_path, log_path, n_runs, max_fidelity=0.99, folder_mode="initial"):
+    import matplotlib.ticker as mticker
+
     percents = []
     for run_idx in range(1, n_runs + 1):
         changed_fids = collect_latest_changed_fidelities_nested(base_path, folder_mode, run_idx)
         perc = 100 * np.sum(np.array(changed_fids) >= max_fidelity) / len(changed_fids) if changed_fids else 0
         percents.append(perc)
     plt.figure(figsize=(8, 5))
-    plt.bar(range(1, n_runs + 1), percents, color="C2", alpha=0.8)
+    x = np.arange(1, n_runs + 1)
+    plt.plot(x, percents, "o", color="red", label="Success %", markersize=6)
     plt.xlabel("Run index")
     plt.ylabel(f"% of Runs with Fidelity ≥ {max_fidelity}")
     plt.title("Success Rate per Run")
     plt.ylim(0, 105)
+    plt.gca().xaxis.set_major_locator(mticker.MaxNLocator(integer=True))
     plt.tight_layout()
     save_path = os.path.join(base_path, "success_percent_per_run.png")
     plt.savefig(save_path)
