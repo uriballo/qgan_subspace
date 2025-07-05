@@ -85,6 +85,7 @@ class TestGeneratorAnsatzAncillaModes():
         modes = ["pass", "project", "trace"]
         topologies = ["disconnected", "ansatz", "bridge", "total"]
 
+        CFG.do_ancilla_1q_gates = True
         CFG.extra_ancilla = True
         CFG.system_size = 4
         CFG.gen_layers = 1
