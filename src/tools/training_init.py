@@ -129,6 +129,19 @@ def run_multiple_trainings():
         print_and_log(error_msg, CFG.log_path)
 
 
+def _check_for_previous_multiple_runs():
+    # Check config compatibility
+    prev_log_path = f"./generated_data/MULTIPLE_RUNS/{CFG.load_timestamp}/initial_exp_1/logs/log.txt"
+    if not os.path.exists(prev_log_path):
+        raise RuntimeError(f"Previous run log not found: {prev_log_path}")
+    with open(prev_log_path, "r") as f:
+        log_content = f.read()
+    # Only check for a subset of config fields (excluding run_timestamp and load_timestamp.)
+    config_str = CFG.show_data()
+    if config_str.split("type_of_warm_start")[1] not in log_content:
+        raise RuntimeError("Current config does not match previous initial experiments. Aborting.")
+
+
 #############################################################################
 # Execute multiple training instances with no common initial experiments
 #############################################################################
@@ -193,19 +206,6 @@ def execute_from_common_initial_experiment(base_path):
             setattr(CFG, key, value)
         # Each config gets its own run subdir
         _run_repeated_experiments(n_initial_exp, n_reps_each_init_exp, base_path, f"changed_run{run_idx}")
-
-
-def _check_for_previous_multiple_runs():
-    # Check config compatibility
-    prev_log_path = f"./generated_data/MULTIPLE_RUNS/{CFG.load_timestamp}/initial_exp_1/logs/log.txt"
-    if not os.path.exists(prev_log_path):
-        raise RuntimeError(f"Previous run log not found: {prev_log_path}")
-    with open(prev_log_path, "r") as f:
-        log_content = f.read()
-    # Only check for a subset of config fields (excluding run_timestamp and load_timestamp.)
-    config_str = CFG.show_data()
-    if config_str.split("type_of_warm_start")[1] not in log_content:
-        raise RuntimeError("Current config does not match previous initial experiments. Aborting.")
 
 
 def _run_initial_experiments(n_initial_exp: int, base_path: str):
