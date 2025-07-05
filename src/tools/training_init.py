@@ -71,23 +71,23 @@ def run_multiple_trainings():
     It also generates plots for all runs after completion, and raises the necessary
     exceptions if any errors occur during the training.
     """
+    ##############################################################
+    # Loading previous MULTIPLE run timestamp if specified:
+    ##############################################################
+    if CFG.load_timestamp is not None:
+        if CFG.common_initial_experiment:
+            _check_for_previous_multiple_runs()
+        CFG.run_timestamp = CFG.load_timestamp
+        print_and_log("Following previous MULTIPLE run, in an already existing directory.\n", CFG.log_path)
+    else:
+        print_and_log("Running MULTIPLE initial, in a new directory.\n", CFG.log_path)
+
     ################################################################
     # Change results directory to MULTIPLE RUNS:
     ################################################################
     base_path = f"./generated_data/MULTIPLE_RUNS/{CFG.run_timestamp}"
     CFG.base_data_path = base_path
     CFG.set_results_paths()
-
-    # TODO: Make sure this works for the no common initial experiments case too.
-    ##############################################################
-    # Loading previous MULTIPLE run timestamp if specified:
-    ##############################################################
-    if CFG.load_timestamp is not None:
-        _check_for_previous_multiple_runs()
-        CFG.run_timestamp = CFG.load_timestamp
-        print_and_log("Following previous MULTIPLE run, only changed experiments will be run.\n", CFG.log_path)
-    else:
-        print_and_log("Running MULTIPLE initial, controls and changed experiments.\n", CFG.log_path)
 
     ##############################################################
     # Execute multiple training instances (with/out common initial exp.)
