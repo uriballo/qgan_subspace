@@ -243,7 +243,7 @@ def plot_success_percent_per_run(base_path, log_path, n_runs, max_fidelity, comm
         percents.append(perc)
     plt.figure(figsize=(8, 5))
     x = np.arange(1, n_runs + 1)
-    points = plt.plot(x, percents, "o", color="red", label="Runs Succes", markersize=6)
+    points = plt.plot(x, percents, "o", color="red", label="Runs Success", markersize=6)
     # Add value labels above each point
     for xi, yi in zip(x, percents):
         plt.text(xi, yi + 1, f"{yi:.1f}%", ha="center", va="bottom", fontsize=9)

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Module, for manual reploting of a generated_data/MULTIPLE_RUNS/timestamp."""
+"""Module, for manual replotting of a generated_data/MULTIPLE_RUNS/timestamp."""
 
 import os
 
@@ -41,5 +41,5 @@ generate_all_plots(
     log_path,
     n_runs=n_runs,
     max_fidelity=max_fidelity,
-    common_initial_experiments=common_initial_experiment,
+    common_initial_experiment=common_initial_experiment,
 )
