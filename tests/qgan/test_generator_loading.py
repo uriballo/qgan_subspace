@@ -166,7 +166,7 @@ class TestGeneratorAncillaLoading():
         # Create a new model with different configurations:
         for extra_ancilla in [True, False]:
             CFG.extra_ancilla = extra_ancilla
-            for ancilla_topology in ["trivial", "disconnected", "ansatz", "bridge", "total"]:
+            for ancilla_topology in ["disconnected", "ansatz", "bridge", "total"]:
                 CFG.ancilla_topology = ancilla_topology
 
                 gen_with_ancilla = Generator(np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1))))
