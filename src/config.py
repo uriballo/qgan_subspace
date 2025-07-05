@@ -84,8 +84,8 @@ class Config:
         # ---------------------
         #   - load_timestamp: Timestamp to load a previous run (ex. None, 2025-06-06__02-05-10").
         #       + For individual runs, it will load the models from the specified timestamp.
-        #       + For multiple runs, it will load the initial and control experiments from the specified timestamp,
-        #         and then if the initial experiments config matches, only run the new configuration with changes.
+        #       + For multiple runs, it will move to the directory from the specified timestamp,
+        #         and append the new configurations (if common init, it will first check the CFG matches).
         #
         #   - type_of_warm_start: Warm start type for loading models (only if load_timestamp != None).
         #       + "none": No warm start.
