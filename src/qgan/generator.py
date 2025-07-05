@@ -320,7 +320,7 @@ class Ansatz:
             for i in range(size):
                 qc.add_gate(QuantumGate("Z", i, angle=0))
             # Ancilla 1q gates for: total, bridge and disconnected:
-            if CFG.extra_ancilla and CFG.ancilla_topology not in ["trivial"]:
+            if CFG.extra_ancilla and CFG.do_ancilla_1q_gates:
                 qc.add_gate(QuantumGate("Z", size, angle=0))
 
             # Then 2 qubit gates:
@@ -369,7 +369,7 @@ class Ansatz:
                 qc.add_gate(QuantumGate("X", i, angle=0))
                 qc.add_gate(QuantumGate("Z", i, angle=0))
             # Ancilla 1q gates for: total, bridge and disconnected:
-            if CFG.extra_ancilla and CFG.ancilla_topology not in ["trivial"]:
+            if CFG.extra_ancilla and CFG.do_ancilla_1q_gates:
                 qc.add_gate(QuantumGate("X", size, angle=0))
                 qc.add_gate(QuantumGate("Z", size, angle=0))
             # Then 2 qubit gates

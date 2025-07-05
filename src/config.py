@@ -143,21 +143,23 @@ class Config:
         #       + "pass": Pass state with its norm after project (keeps norm info, harder train, more effective Ham).
         #
         #   - ancilla_topology: Topology for the ancilla connections:
-        #       |-----------------|-----------------|-------------------|---------------------|----------------------|
-        #       |    "trivial"    |  "disconnected" |      "ansatz"     |       "bridge"      |        "total"       |
-        # |-----|-----------------|-----------------|-------------------|---------------------|----------------------|
-        # | Q0: |  ───|     |───  |  ───|     |───  |  ───|     |─────  |  ───|     |──■────  |  ───|     |──■────── |
-        # | Q1: |  ───|  G  |───  |  ───|  G  |───  |  ───|  G  |─────  |  ───|  G  |──│────  |  ───|  G  |──│─■──── |
-        # | Q2: |  ───|     |───  |  ───|     |───  |  ───|     |──x──  |  ───|     |──│─x──  |  ───|     |──│─│─■── |
-        # |     |                 |                 |              │    |              │ │    |              │ │ │   |
-        # | A:  |  ─────────────  |  ────U...U────  |  ────U...U───■──  |  ────U...U───■─■──  |  ────U...U───■─■─■── |
-        # |     |                 |                 |                   |                     |                      |
-        # |     |        or       |       or        |         or        |           or        |          or          |
-        # |     |                 |                 |                   |                     |                      |
-        # |  M  |                 |                 |     Q0──Q1──Q2    |      Q0──Q1──Q2     |      Q0──Q1──Q2      |
-        # |  A  |  Q0──Q1──Q2  A  |  Q0──Q1──Q2  A  |           "x"|    |      │     "x"│     |      │   │   │       |
-        # |  P  |                 |                 |     A────────     |      A────────      |      A────────       |
-        # |-----|-----------------|-----------------|-------------------|---------------------|----------------------|
+        #           |-----------------|-------------------|---------------------|----------------------|
+        #           |  "disconnected" |      "ansatz"     |       "bridge"      |        "total"       |
+        #     |-----|-----------------|-------------------|---------------------|----------------------|
+        #     | Q0: |  ───|     |───  |  ───|     |─────  |  ───|     |──■────  |  ───|     |──■────── |
+        #     | Q1: |  ───|  G  |───  |  ───|  G  |─────  |  ───|  G  |──│────  |  ───|  G  |──│─■──── |
+        #     | Q2: |  ───|     |───  |  ───|     |──x──  |  ───|     |──│─x──  |  ───|     |──│─│─■── |
+        #     |     |                 |              │    |              │ │    |              │ │ │   |
+        #     | A:  |  ────U...U────  |  ────U...U───■──  |  ────U...U───■─■──  |  ────U...U───■─■─■── |
+        #     |     |                 |                   |                     |                      |
+        #     |     |       or        |         or        |           or        |          or          |
+        #     |     |                 |                   |                     |                      |
+        #     |  M  |                 |     Q0──Q1──Q2    |      Q0──Q1──Q2     |      Q0──Q1──Q2      |
+        #     |  A  |  Q0──Q1──Q2  A  |           "x"|    |      │     "x"│     |      │   │   │       |
+        #     |  P  |                 |     A────────     |      A────────      |      A────────       |
+        #     |-----|-----------------|-------------------|---------------------|----------------------|
+        #
+        #   - do_ancilla_1q_gates: Whether to include 1-qubit gates for the ancilla qubit.
         #
         #   - ancilla_connect_to: If ancilla_topology is "ansatz" or "bridge" connect to this qubit index.
         #       If None, then the ancilla is connected to the last qubit.
@@ -167,10 +169,9 @@ class Config:
         self.system_size: int = 3
         self.extra_ancilla: bool = False
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "pass"
-        # self.ancilla_1q_gates: Optional[bool] = False
-        # TODO: Add a bool for doing or not doing ancilla 1q gates, and make it work with the rest of the code.
         self.ancilla_project_norm: Optional[Literal["re-norm", "pass"]] = "re-norm"
-        self.ancilla_topology: Optional[Literal["trivial", "disconnected", "ansatz", "bridge", "total"]] = "bridge"
+        self.ancilla_topology: Optional[Literal["disconnected", "ansatz", "bridge", "total"]] = "bridge"
+        self.do_ancilla_1q_gates: Optional[bool] = False  # Whether to include 1-qubit gates for ancilla qubit.
         self.ancilla_connect_to: Optional[int] = None  # None means connected to last one, otherwise to the specified.
         # TODO: [FUTURE] Decide what to do with trace, make all code work with density matrices, instead than sampling?
 
@@ -327,7 +328,7 @@ test_configurations = [
         "system_size": 2,
         "extra_ancilla": True,
         "ancilla_mode": "pass",
-        "ancilla_topology": "trivial",
+        "ancilla_topology": "disconnected",
         "epochs": 1,
         "iterations_epoch": 3,
         "gen_layers": 1,

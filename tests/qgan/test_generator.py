@@ -64,7 +64,7 @@ class TestGenerator():
     def test_ancilla_modes_and_topologies(self):
         # Try all combinations of ancilla_mode and ancilla_topology
         modes = ["pass", "project", "trace"]
-        topologies = ["trivial", "disconnected", "ansatz", "bridge", "total"]
+        topologies = ["disconnected", "ansatz", "bridge", "total"]
         for mode, topo in itertools.product(modes, topologies):
             CFG.extra_ancilla = True
             CFG.ancilla_mode = mode
