@@ -39,22 +39,25 @@ class Config:
         #
         #   - common_initial_experiment: Whether to start from common initial exp. + change, or all from scratch.
         #
-        #   - N_initial_exp: Number of initial experiments to run, without change (default: 5).
+        #     If True:
+        #       + N_initial_exp: Number of initial experiments to run, without change (default: 5).
+        #       + N_reps_each_init_exp: Num of reps for each initial experiment afterwards, with changes (default: 20).
         #
-        #   - N_reps_each_init_exp: Num of reps for each initial experiment afterwards, with changes (default: 20).
-        #
-        #   - N_reps_no_common_initial_exp: Number of repetitions for each new configuration, if not starting from common initial experiments.
+        #     If False:
+        #       + N_reps_no_common_initial_exp: Number of repetitions for each new configuration (default: 100).
         #
         #   - reps_new_config: The configuration changes to run. If starting from common initial experiments,
-        #           then this represent the changes after the initial experiments (+ control with no changes).
+        #         then this represent the changes after the initial experiments (+ control with no changes).
+        #         If not starting from common initial experiments, then this represents the full set of experiments.
         #
         #############################################################################################
         self.run_multiple_experiments: bool = True
         self.common_initial_experiment: bool = True
+        # If common_initial_experiment == true:
         self.N_initial_exp: int = 10
         self.N_reps_each_init_exp: int = 20
-        self.N_reps_no_common_initial_exp: int = 100  # If not starting from common initial experiments.
-        # TODO: Maybe make the reps common in a single parameter, and then use it for both cases?
+        # If common_initial_experiment == false:
+        self.N_reps_no_common_initial_exp: int = 100
 
         self.reps_new_config: list[dict[str, Any]] = [
             {
