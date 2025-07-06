@@ -261,7 +261,8 @@ class Generator:
                         break
 
             # Load the optimizer parameters if they exist in the saved generator
-            self.optimizer.v = saved_gen.optimizer.v
+            # self.optimizer.v = saved_gen.optimizer.v
+            # TODO: Check how to load momentum, if not exact match
 
             print_and_log("Generator parameters partially loaded (excluding ancilla difference)\n", CFG.log_path)
             return True

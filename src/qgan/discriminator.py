@@ -366,8 +366,9 @@ class Discriminator:
             self.beta[:min_size] = saved_dis.beta[:min_size].copy()
 
             # Load the optimizer parameters if they exist in the saved generator
-            self.optimizer_phi.v = saved_dis.optimizer_phi.v
-            self.optimizer_psi.v = saved_dis.optimizer_psi.v
+            # self.optimizer_phi.v = saved_dis.optimizer_phi.v
+            # self.optimizer_psi.v = saved_dis.optimizer_psi.v
+            # TODO: Check how to load momentum, if not exact match
 
             print_and_log("Discriminator parameters loaded partially (one qubit difference).\n", CFG.log_path)
             return True
