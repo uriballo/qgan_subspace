@@ -18,6 +18,8 @@ import itertools
 import os
 import traceback
 
+import numpy as np
+
 from config import CFG, test_configurations
 from qgan.training import Training
 from tools.data.data_managers import print_and_log, print_and_log_with_headers
@@ -209,14 +211,49 @@ def execute_from_common_initial_experiment(base_path):
 
 
 def _run_initial_experiments(n_initial_exp: int, base_path: str):
-    for i in range(n_initial_exp):
-        # Set path for initial experiment
-        CFG.base_data_path = f"{base_path}/initial_exp_{i+1}"
+    """
+    Run initial experiments, only keeping those that do NOT reach max_fidelity.
+    Continue until n_initial_exp such failed initials are found.
+    """
+    kept = 0
+    attempt = 0
+    max_fid = getattr(CFG, "max_fidelity", 0.99)
+    while kept < n_initial_exp:
+        attempt += 1
+        # Set path for initial experiment (use attempt index for uniqueness)
+        exp_dir = f"{base_path}/initial_exp_{kept+1}"
+        temp_dir = f"{base_path}/initial_exp_attempt_{attempt}"
+        CFG.base_data_path = temp_dir
         CFG.set_results_paths()
-
-        print_and_log_with_headers(f"\nInitial Experiment {i+1}/{n_initial_exp}", CFG.log_path)
+        print_and_log_with_headers(f"\nInitial Experiment Attempt {attempt} (kept {kept+1}/{n_initial_exp})", CFG.log_path)
         Training().run()
-        print_and_log(f"\nInitial Experiment {i+1} completed.\n", CFG.log_path)
+        print_and_log(f"\nInitial Experiment Attempt {attempt} completed. Checking fidelity...\n", CFG.log_path)
+        # Check final fidelity
+        fid_file = os.path.join(temp_dir, "fidelities", "log_fidelity_loss.txt")
+        if os.path.exists(fid_file):
+            try:
+                data = np.loadtxt(fid_file)
+                if data.ndim == 1:
+                    fids = data
+                else:
+                    fids = data[0] if data.shape[0] < data.shape[1] else data[:, 0]
+                max_found = np.max(fids)
+            except Exception:
+                max_found = 0
+        else:
+            max_found = 0
+        if max_found < max_fid:
+            # Keep this experiment: rename to sequential initial_exp_X
+            os.rename(temp_dir, exp_dir)
+            kept += 1
+            print_and_log(f"Kept initial experiment {kept} (max fidelity {max_found:.4f} < {max_fid})\n", CFG.log_path)
+        else:
+            # Remove this experiment
+            import shutil
+
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            print_and_log(f"Discarded initial experiment (max fidelity {max_found:.4f} >= {max_fid})\n", CFG.log_path)
+    print_and_log(f"\nFinished collecting {n_initial_exp} initial experiments below threshold.\n", CFG.log_path)
 
 
 def _run_repeated_experiments(n_initial_exp: int, n_reps_each_init_exp: int, base_path: str, changed_or_control: str):
