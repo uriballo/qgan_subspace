@@ -160,6 +160,7 @@ class Config:
         #     |-----|-----------------|-------------------|---------------------|----------------------|
         #
         #   - do_ancilla_1q_gates: Whether to include 1-qubit gates for the ancilla qubit.
+        #       (The `U...U` gate in the previous diagrams).
         #
         #   - ancilla_connect_to: If ancilla_topology is "ansatz" or "bridge" connect to this qubit index.
         #       If None, then the ancilla is connected to the last qubit.
