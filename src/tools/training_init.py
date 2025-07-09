@@ -183,7 +183,7 @@ def execute_from_common_initial_plateaus(base_path):
     """
     # Cache loops configuration parameters
     N_initial_plateaus = getattr(CFG, "N_initial_plateaus", 1)
-    N_reps_each_init_exp = getattr(CFG, "N_reps_each_init_plateau", 1)
+    N_reps_each_init_plateau = getattr(CFG, "N_reps_each_init_plateau", 1)
 
     ##############################################################
     # Run initial plateaus
@@ -197,7 +197,7 @@ def execute_from_common_initial_plateaus(base_path):
     # Run controls from each initial plateau
     #############################################################
     if CFG.load_timestamp is None:
-        _run_repeated_experiments(N_initial_plateaus, N_reps_each_init_exp, base_path, "control")
+        _run_repeated_experiments(N_initial_plateaus, N_reps_each_init_plateau, base_path, "control")
     else:
         print_and_log("\nFollowing previous MULTIPLE run, control experiments will be skipped.\n", CFG.log_path)
 
@@ -208,7 +208,7 @@ def execute_from_common_initial_plateaus(base_path):
         for key, value in config_dict.items():
             setattr(CFG, key, value)
         # Each config gets its own run subdir
-        _run_repeated_experiments(N_initial_plateaus, N_reps_each_init_exp, base_path, f"changed_run{run_idx}")
+        _run_repeated_experiments(N_initial_plateaus, N_reps_each_init_plateau, base_path, f"changed_run{run_idx}")
 
 
 def _run_initial_plateaus(N_initial_plateaus: int, base_path: str):
