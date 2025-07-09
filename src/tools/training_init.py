@@ -280,12 +280,12 @@ def _run_repeated_experiments(
         CFG.base_data_path = out_dir
         CFG.set_results_paths()
         print_and_log_with_headers(
-            f"\nRepeated Experiments {changed_or_control} {rep+1}/{n_reps_each_init_exp} for Initial Exp {i+1}/{N_initial_plateaus}",
+            f"\nRepeated Experiments {changed_or_control} {rep+1}/{n_reps_each_init_exp} for Initial Plateau {i+1}/{N_initial_plateaus}",
             CFG.log_path,
         )
         Training().run()
         print_and_log(
-            f"\nRepeated Experiment {changed_or_control} {rep+1} for Initial Exp {i+1} completed.\n", CFG.log_path
+            f"\nRepeated Experiment {changed_or_control} {rep+1} for Initial Plateau {i+1} completed.\n", CFG.log_path
         )
 
 
