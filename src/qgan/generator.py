@@ -16,6 +16,7 @@
 import itertools
 import os
 import pickle
+from copy import deepcopy
 
 import numpy as np
 
@@ -231,11 +232,11 @@ class Generator:
                 return False
 
             # Normal case, when all gates match:
-            for i, gate in enumerate(self.qc.gates):
-                gate.angle = saved_gen.qc.gates[i].angle
+            self.qc = deepcopy(saved_gen.qc)
+            self.total_gen_state = deepcopy(saved_gen.total_gen_state)
 
             # Load the optimizer parameters if they exist in the saved generator
-            self.optimizer.v = saved_gen.optimizer.v
+            self.optimizer = deepcopy(saved_gen.optimizer)
 
             print_and_log("Generator parameters loaded\n", CFG.log_path)
             return True
@@ -259,6 +260,9 @@ class Generator:
                     if isinstance(gate, type(saved_gate)) and saved_gate.qubit1 == q1 and saved_gate.qubit2 == q2:
                         gate.angle = saved_gate.angle
                         break
+
+            # Since we can't copy the gen state, we regenerate it:
+            self.total_gen_state = self.get_total_gen_state()
 
             # Load the optimizer parameters if they exist in the saved generator
             # self.optimizer.v = saved_gen.optimizer.v
