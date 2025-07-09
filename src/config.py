@@ -54,22 +54,22 @@ class Config:
         self.run_multiple_experiments: bool = True
         self.common_initial_plateaus: bool = True
         # If common_initial_plateaus == true:
-        self.N_initial_plateaus: int = 10
+        self.N_initial_plateaus: int = 4
         self.N_reps_each_init_plateau: int = 20
         # If common_initial_plateaus == false:
         self.N_reps_if_from_scratch: int = 100
 
         self.reps_new_config: list[dict[str, Any]] = [
-            {
-                "extra_ancilla": True,
-                "ancilla_mode": "pass",
-                "ancilla_topology": "disconnected",
-            },
-            {
-                "extra_ancilla": True,
-                "ancilla_mode": "pass",
-                "ancilla_topology": "ansatz",
-            },
+            # {
+            #     "extra_ancilla": True,
+            #     "ancilla_mode": "pass",
+            #     "ancilla_topology": "disconnected",
+            # },
+            # {
+            #     "extra_ancilla": True,
+            #     "ancilla_mode": "pass",
+            #     "ancilla_topology": "ansatz",
+            # },
             {
                 "extra_ancilla": True,
                 "ancilla_mode": "pass",

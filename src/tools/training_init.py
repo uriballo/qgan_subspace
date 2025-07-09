@@ -16,6 +16,7 @@
 
 import itertools
 import os
+import shutil
 import traceback
 
 import numpy as np
@@ -150,11 +151,11 @@ def _check_for_previous_multiple_runs():
 def execute_from_no_common_initial_plateaus(base_path):
     """
     Runs multiple experiments from scratch (no common initial plateaus),
-    using CFG.N_reps_no_common_initial_plateaus repetitions for each config in CFG.reps_new_config.
+    using CFG.N_reps_if_from_scratch repetitions for each config in CFG.reps_new_config.
 
     Results are saved in experimentX/ subfolders.
     """
-    n_reps = getattr(CFG, "N_reps_no_common_initial_plateaus", 1)
+    n_reps = getattr(CFG, "N_reps_if_from_scratch", 1)
 
     for run_idx, config_dict in enumerate(CFG.reps_new_config, 1):
         for key, value in config_dict.items():
@@ -251,10 +252,10 @@ def _run_initial_plateaus(N_initial_plateaus: int, base_path: str):
             print_and_log(f"Kept initial plateau {kept} (max fidelity {max_found:.4f} < {max_fid})\n", CFG.log_path)
         else:
             # Remove this experiment
-            import shutil
-
             shutil.rmtree(temp_dir, ignore_errors=True)
-            print_and_log(f"Discarded initial experiment (max fidelity {max_found:.4f} >= {max_fid})\n", CFG.log_path)
+            print_and_log(
+                f"Discarded initial plateau attempt (max fidelity {max_found:.4f} >= {max_fid})\n", CFG.log_path
+            )
     print_and_log(f"\nFinished collecting {N_initial_plateaus} initial plateaus below threshold.\n", CFG.log_path)
 
 
