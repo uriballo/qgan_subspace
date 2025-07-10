@@ -24,7 +24,7 @@ class TestTarget():
             _, final_target_state = get_max_entangled_state_with_ancilla_if_needed(CFG.system_size)
             state = get_final_target_state(final_target_state)
             assert state is not None
-            assert state.shape[0] == 2**(unitary.shape[0]+(1 if CFG.extra_ancilla else 0))
+            assert state.shape[0] == 2**(unitary.shape[0]+(1 if CFG.extra_ancilla and CFG.ancilla_mode == "pass" else 0))
             # Check that the state is a valid quantum state
             assert np.isclose(np.linalg.norm(state), 1.0)
             

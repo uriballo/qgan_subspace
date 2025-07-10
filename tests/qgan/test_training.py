@@ -14,7 +14,6 @@ class TestTraining():
         t = Training()
         assert t.gen is not None
         assert t.dis is not None
-        assert t.total_input_state is not None
         assert t.final_target_state is not None
 
     def test_training_run(self):

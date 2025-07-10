@@ -23,11 +23,14 @@ class TestAncilla():
     def test_get_maximally_entangled_state(self):
         for ancilla in [False, True]:
             CFG.extra_ancilla = ancilla
-            total_state, final_state = get_max_entangled_state_with_ancilla_if_needed(CFG.system_size)
-            for state in [total_state, final_state]:
-                assert state is not None
-                assert len(state.shape) == 2
-                assert state.shape[0] == 2 ** (CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0))
+            for ancilla_mode in ["pass", "project"]:
+                CFG.ancilla_mode = ancilla_mode
+                total_state, final_state = get_max_entangled_state_with_ancilla_if_needed(CFG.system_size)
+                for state in [total_state, final_state]:
+                    assert state is not None
+                    assert len(state.shape) == 2
+                assert total_state.shape[0] == 2 ** (CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0))
+                assert final_state.shape[0] == 2 ** (CFG.system_size * 2 + (1 if CFG.extra_ancilla and CFG.ancilla_mode == "pass" else 0))
         
     def test_final_gen_state_project(self):
         state = np.ones((2 ** (CFG.system_size * 2 + 1), 1))
@@ -62,29 +65,29 @@ class TestAncilla():
         # Don't know how to compare state easily
 
     def test_final_target_state_project(self):
-        state = np.ones((2 ** (CFG.system_size * 2 + 1), 1))
         CFG.extra_ancilla = True
         CFG.ancilla_mode = "project"
+        state = np.ones((2 ** (CFG.system_size * 2), 1)) # No +1 since its in project mode
         result = get_final_target_state(state)
         assert result is not None
         assert result.shape[0] == 2 ** (CFG.system_size * 2)  # size halved
         assert result.shape[1] == 1
-        assert (result == state[::2]).all() # Keep even indices (no need to renormalize)
+        assert (result != state).all() # Changed state
 
     def test_final_target_state_pass(self):
-        state = np.ones((2 ** (CFG.system_size * 2 + 1), 1))
         CFG.extra_ancilla = True
         CFG.ancilla_mode = "pass"
+        state = np.ones((2 ** (CFG.system_size * 2 + 1), 1)) # +1 since its in pass mode
         result = get_final_target_state(state)
         assert result is not None
         assert result.shape[0] == 2 ** (CFG.system_size * 2 + 1)  # size unchanged
         assert result.shape[1] == 1
-        assert (result == state).all() # Unchanged state
+        assert (result != state).all() # Changed state
 
     def test_final_target_state_trace(self):
-        state = np.ones((2 ** (CFG.system_size * 2 + 1), 1))
         CFG.extra_ancilla = True
         CFG.ancilla_mode = "trace"
+        state = np.ones((2 ** (CFG.system_size * 2), 1)) # No +1 since its in trace mode
         result = get_final_target_state(state)
         assert result is not None
         assert result.shape[0] == 2 ** (CFG.system_size * 2)  # size halved

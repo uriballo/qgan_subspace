@@ -3,11 +3,11 @@ import os
 
 import numpy as np
 
-from qgan.target import get_final_target_state
 # This needs to be before any imports from src to ensure the correct path is set
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
 
 
+from qgan.target import get_final_target_state
 from qgan.ancilla import get_final_gen_state_for_discriminator
 from qgan.generator import Generator
 from qgan.discriminator import Discriminator
@@ -41,11 +41,12 @@ class TestDiscriminator():
 
     def test_update_dis(self):
         total_input_state = np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla else 0)), 1)))
+        final_input_state = np.matrix(np.ones((2**(CFG.system_size * 2 + (1 if CFG.extra_ancilla  and CFG.ancilla_mode == "pass" else 0)), 1)))
         dis = Discriminator()
         gen = Generator(total_input_state)
         total_gen_state = gen.get_total_gen_state()
         final_gen_state = get_final_gen_state_for_discriminator(total_gen_state)
-        final_target_state = get_final_target_state(total_input_state)
+        final_target_state = get_final_target_state(final_input_state)
         
         old_alpha = dis.alpha.copy()
         old_beta = dis.beta.copy()
