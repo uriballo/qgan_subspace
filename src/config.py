@@ -57,7 +57,7 @@ class Config:
         self.N_initial_plateaus: int = 10
         self.N_reps_each_init_plateau: int = 20
         # If common_initial_plateaus == false:
-        self.N_reps_if_from_scratch: int = 2
+        self.N_reps_if_from_scratch: int = 100
 
         self.reps_new_config: list[dict[str, Any]] = [
             {
