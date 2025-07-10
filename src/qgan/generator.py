@@ -247,30 +247,8 @@ class Generator:
         if saved_gen.ancilla != self.ancilla and abs(saved_gen.size - self.size) == 1:  # Rdundt size check, but clarity
             print_and_log("Gen match in size, but with diff in ancilla.\n", CFG.log_path)
 
-            # Determine the minimum number of qubits (the overlap):
-            min_size = min(saved_gen.size, self.qc.size)
-            # Map: for each gate in self.qc.gates, find a matching gate in saved_gen.qc.gates
-            # A matching gate: same type, same qubits (within min_size), same number of qubits (1q/2q)
-            # To handle multiple gates with same type/qubits, use an index to track which have been matched
-            used_indices = set()
-            for self_gate in self.qc.gates:
-                # Only consider gates that act only on the overlapping qubits (no ancilla)
-                q1, q2 = self_gate.qubit1, self_gate.qubit2
-                if (q1 is not None and q1 >= min_size) or (q2 is not None and q2 >= min_size):
-                    continue
-                # Try to find the next matching gate in saved_gen.qc.gates that hasn't been used
-                for idx, saved_gate in enumerate(saved_gen.qc.gates):
-                    if idx in used_indices:
-                        continue
-                    sq1, sq2 = saved_gate.qubit1, saved_gate.qubit2
-                    if (
-                        self_gate.name == saved_gate.name
-                        and ((q1 == sq1 and q2 == sq2) or (q1 == sq2 and q2 == sq1))
-                        and ((q2 is None and sq2 is None) or (q2 is not None and sq2 is not None))
-                    ):
-                        self_gate.angle = saved_gate.angle
-                        used_indices.add(idx)
-                        break
+            # Partially load the generator parameters:
+            self.set_common_gate_params_from_loaded_gen(saved_gen)
 
             # Since we can't copy the gen state, we regenerate it:
             self.total_gen_state = self.get_total_gen_state()
@@ -287,6 +265,33 @@ class Generator:
         ###################################################################
         print_and_log("ERROR: Saved generator model is incompatible (size or depth mismatch).\n", CFG.log_path)
         return False
+
+    def set_common_gate_params_from_loaded_gen(self, saved_gen: "Generator") -> None:
+        """Set the common gate parameters (angles) from the loaded generator.
+
+        Args:
+            saved_gen (Generator): The generator instance.
+        """
+        # Determine the minimum number of qubits (the overlap):
+        min_size = min(saved_gen.size, self.qc.size)
+        # Map: for each gate in self.qc.gates, find a matching gate in saved_gen.qc.gates
+        # A matching gate: same type, same qubits (within min_size), same number of qubits (1q/2q)
+        # To handle multiple gates with same type/qubits, use an index to track which have been matched
+        used_indices = set()
+        for self_gate in self.qc.gates:
+            # Only consider gates that act only on the overlapping qubits (no ancilla)
+            q1, q2 = self_gate.qubit1, self_gate.qubit2
+            if (q1 is not None and q1 >= min_size) or (q2 is not None and q2 >= min_size):
+                continue
+            # Try to find the next matching gate in saved_gen.qc.gates that hasn't been used
+            for idx, saved_gate in enumerate(saved_gen.qc.gates):
+                if idx in used_indices:
+                    continue
+                sq1, sq2 = saved_gate.qubit1, saved_gate.qubit2
+                if self_gate.name == saved_gate.name and ((q1 == sq1 and q2 == sq2) or (q1 == sq2 and q2 == sq1)):
+                    self_gate.angle = saved_gate.angle
+                    used_indices.add(idx)
+                    break
 
 
 ##################################################################
