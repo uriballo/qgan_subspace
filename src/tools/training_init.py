@@ -99,7 +99,7 @@ def run_multiple_trainings():
     print_and_log("\nThe different experiments to run change are:\n", CFG.log_path)
     for config_dict in CFG.reps_new_config:
         config_str = ", ".join(f"{key}: {value}" for key, value in config_dict.items())
-        print_and_log("- " + config_str + "\n", CFG.log_path)
+        print_and_log(f"- {config_str}\n", CFG.log_path)
 
     ##############################################################
     # Execute multiple training instances (with/out common initial exp.)
