@@ -22,7 +22,7 @@ import numpy as np
 
 from config import CFG
 from qgan.ancilla import get_final_gen_state_for_discriminator
-from qgan.cost_functions import braket, get_final_comp_states_for_dis
+from qgan.cost_functions import braket
 from qgan.discriminator import Discriminator
 from tools.data.data_managers import print_and_log
 from tools.optimizer import MomentumOptimizer
@@ -76,17 +76,17 @@ class Generator:
         Untouched_x_G_grad_i = np.kron(Identity(CFG.system_size), self.qc.get_grad_mat_rep(index))
         return np.matmul(Untouched_x_G_grad_i, self.total_input_state)
 
-    def update_gen(self, dis: Discriminator, total_target_state: np.ndarray):
+    def update_gen(self, dis: Discriminator, final_target_state: np.ndarray):
         """Update the generator parameters (angles) using the optimizer.
 
         Args:
             dis (Discriminator): The discriminator to compute gradients.
-            total_target_state (np.ndarray): The target state vector.
+            final_target_state (np.ndarray): The target state vector.
         """
         ###############################################################
         # Compute the gradient
         ###############################################################
-        grad: np.ndarray = self._grad_theta(dis, total_target_state, self.total_gen_state)
+        grad: np.ndarray = self._grad_theta(dis, final_target_state, self.total_gen_state)
 
         # Get the new thetas from the gradient
         theta = np.asarray([gate.angle for gate in self.qc.gates])
@@ -106,14 +106,14 @@ class Generator:
     def _grad_theta(
         self,
         dis: Discriminator,
-        total_target_state: np.ndarray,
+        final_target_state: np.ndarray,
         total_gen_state: np.ndarray,
     ) -> np.ndarray:
         """Compute the gradient of the generator parameters (angles) with respect to the discriminator's output.
 
         Args:
             dis (Discriminator): The discriminator to compute gradients.
-            total_target_state (np.ndarray): The target state vector.
+            final_target_state (np.ndarray): The target state vector.
             total_gen_state (np.ndarray): The current generator state vector.
 
         Returns:
@@ -122,7 +122,7 @@ class Generator:
         #######################################################################
         # Get the current Generator, Target and Discriminator states:
         #######################################################################
-        final_target_state, final_gen_state = get_final_comp_states_for_dis(total_target_state, total_gen_state)
+        final_gen_state = get_final_gen_state_for_discriminator(total_gen_state)
         A, B, _, phi = dis.get_dis_matrices_rep()
 
         grad_g_psi, grad_g_phi, grad_g_reg = [], [], []
@@ -273,7 +273,7 @@ class Generator:
             saved_gen (Generator): The generator instance.
         """
         # Determine the minimum number of qubits (the overlap):
-        min_size = min(saved_gen.size, self.qc.size)
+        min_size = min(saved_gen.qc.size, self.qc.size)
         # Map: for each gate in self.qc.gates, find a matching gate in saved_gen.qc.gates
         # A matching gate: same type, same qubits (within min_size), same number of qubits (1q/2q)
         # To handle multiple gates with same type/qubits, use an index to track which have been matched
