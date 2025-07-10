@@ -273,14 +273,14 @@ def _run_initial_plateaus(N_initial_plateaus: int, base_path: str):
 
 
 def _run_repeated_experiments(
-    N_initial_plateaus: int, n_reps_each_init_exp: int, base_path: str, changed_or_control: str
+    N_initial_plateaus: int, N_reps_each_init_plateau: int, base_path: str, changed_or_control: str
 ):
     # changed_or_control can now be 'control' or 'changed_runX'
     is_changed = changed_or_control.startswith("changed_run")
     run_idx = None
     if is_changed:
         run_idx = int(changed_or_control.replace("changed_run", ""))
-    for i, rep in itertools.product(range(N_initial_plateaus), range(n_reps_each_init_exp)):
+    for i, rep in itertools.product(range(N_initial_plateaus), range(N_reps_each_init_plateau)):
         if changed_or_control == "control":
             out_dir = f"{base_path}/initial_plateau_{i+1}/repeated_controls/{rep+1}"
         elif is_changed:
@@ -293,7 +293,7 @@ def _run_repeated_experiments(
         CFG.base_data_path = out_dir
         CFG.set_results_paths()
         print_and_log_with_headers(
-            f"\nRepeated Experiments {changed_or_control} {rep+1}/{n_reps_each_init_exp} for Initial Plateau {i+1}",
+            f"\nRepeated Experiments {changed_or_control} {rep+1}/{N_reps_each_init_plateau} for Initial Plateau {i+1}",
             CFG.log_path,
         )
         Training().run()
@@ -371,7 +371,7 @@ def run_test_configurations():
 def _get_last_experiment_idx(base_path, common_initial_plateaus):
     """Return the highest experiment index in experimentX or initial_plateau_1/repeated_changed_runX folders under base_path."""
     base_path = f"{base_path}/initial_plateau_1" if common_initial_plateaus else base_path
-    start_with = "experiment" if common_initial_plateaus else "repeated_changed_run"
+    start_with = "repeated_changed_run" if common_initial_plateaus else "experiment"
     experiment_dirs = [
         d for d in os.listdir(base_path) if d.startswith(start_with) and os.path.isdir(os.path.join(base_path, d))
     ]
