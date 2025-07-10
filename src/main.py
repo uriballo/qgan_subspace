@@ -25,7 +25,6 @@ def main():
     if CFG.run_multiple_experiments:
         run_multiple_trainings()
     else:
-        print_and_log("Running in SINGLE RUN mode.\n", CFG.log_path)
         run_single_training()
 
 
