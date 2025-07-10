@@ -206,7 +206,6 @@ def execute_from_common_initial_plateaus(base_path):
 
     # Find the last run index if loading previous MULTIPLE_RUNS
     last_idx = 0 if CFG.load_timestamp is None else _get_last_experiment_idx(base_path, common_initial_plateaus=True)
-    CFG.load_timestamp = None  # Clear load_timestamp after using it
 
     #############################################################
     # Run initial plateaus
