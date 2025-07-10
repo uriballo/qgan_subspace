@@ -160,7 +160,7 @@ def execute_from_no_common_initial_plateaus(base_path):
     n_reps = getattr(CFG, "N_reps_if_from_scratch", 1)
 
     # Find the last run index if loading previous MULTIPLE_RUNS
-    last_idx = 0 if CFG.load_timestamp is None else get_last_experiment_idx(base_path)
+    last_idx = 0 if CFG.load_timestamp is None else _get_last_experiment_idx(base_path)
 
     for run_idx, config_dict in enumerate(CFG.reps_new_config, 1):
         new_run_idx = last_idx + run_idx
@@ -194,7 +194,7 @@ def execute_from_common_initial_plateaus(base_path):
     N_reps_each_init_plateau = getattr(CFG, "N_reps_each_init_plateau", 1)
 
     # Find the last run index if loading previous MULTIPLE_RUNS
-    last_idx = 0 if CFG.load_timestamp is None else get_last_plateau_idx(base_path)
+    last_idx = 0 if CFG.load_timestamp is None else _get_last_plateau_idx(base_path)
 
     #############################################################
     # Run initial plateaus
@@ -367,7 +367,7 @@ def run_test_configurations():
     print_and_log(final_summary_msg, CFG.log_path)
 
 
-def get_last_experiment_idx(base_path):
+def _get_last_experiment_idx(base_path):
     """Return the highest experiment index in experimentX folders under base_path."""
     experiment_dirs = [
         d for d in os.listdir(base_path) if d.startswith("experiment") and os.path.isdir(os.path.join(base_path, d))
@@ -383,17 +383,17 @@ def get_last_experiment_idx(base_path):
     return last_idx
 
 
-def get_last_plateau_idx(base_path):
-    """Return the highest plateau index in initial_plateau_X folders under base_path."""
+def _get_last_plateau_idx(base_path):
+    """Return the highest plateau index in repeated_changed_runX folders under base_path."""
     plateau_dirs = [
         d
-        for d in os.listdir(base_path)
-        if d.startswith("initial_plateau_") and os.path.isdir(os.path.join(base_path, d))
+        for d in os.listdir(os.path.join(base_path, "initial_plateau_1"))
+        if d.startswith("repeated_changed_run") and os.path.isdir(os.path.join(base_path, d))
     ]
     last_idx = 0
     for d in plateau_dirs:
         try:
-            idx = int(d.replace("initial_plateau_", ""))
+            idx = int(d.replace("repeated_changed_run", ""))
             if idx > last_idx:
                 last_idx = idx
         except Exception:
