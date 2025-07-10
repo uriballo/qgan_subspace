@@ -52,12 +52,12 @@ class Config:
         #
         #############################################################################################
         self.run_multiple_experiments: bool = True
-        self.common_initial_plateaus: bool = True
+        self.common_initial_plateaus: bool = False
         # If common_initial_plateaus == true:
         self.N_initial_plateaus: int = 4
         self.N_reps_each_init_plateau: int = 20
         # If common_initial_plateaus == false:
-        self.N_reps_if_from_scratch: int = 100
+        self.N_reps_if_from_scratch: int = 2
 
         self.reps_new_config: list[dict[str, Any]] = [
             # {
@@ -95,7 +95,7 @@ class Config:
         #   - warm_start_strength: Strength of warm start for generator (only if loading).
         #
         #############################################################################################
-        self.load_timestamp: Optional[str] = None  # "2025-06-26__17-26-03"  # None
+        self.load_timestamp: Optional[str] = "2025-07-03__15-03-02"  # "2025-06-26__17-26-03"  # None
         self.type_of_warm_start: Literal["none", "all", "some"] = "none"
         self.warm_start_strength: Optional[float] = 0.1
 

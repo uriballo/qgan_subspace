@@ -81,6 +81,7 @@ def run_multiple_trainings():
         if CFG.common_initial_plateaus:
             _check_for_previous_multiple_runs()
         CFG.run_timestamp = CFG.load_timestamp
+        CFG.load_timestamp = None  # Clear load_timestamp after using it
         print_and_log("Following previous MULTIPLE run, in an already existing directory.\n", CFG.log_path)
     else:
         print_and_log("Running MULTIPLE initial, in a new directory.\n", CFG.log_path)
@@ -160,7 +161,7 @@ def execute_from_no_common_initial_plateaus(base_path):
     n_reps = getattr(CFG, "N_reps_if_from_scratch", 1)
 
     # Find the last run index if loading previous MULTIPLE_RUNS
-    last_idx = 0 if CFG.load_timestamp is None else _get_last_experiment_idx(base_path)
+    last_idx = 0 if CFG.load_timestamp is None else _get_last_experiment_idx(base_path, common_initial_plateaus=False)
 
     for run_idx, config_dict in enumerate(CFG.reps_new_config, 1):
         new_run_idx = last_idx + run_idx
@@ -194,7 +195,7 @@ def execute_from_common_initial_plateaus(base_path):
     N_reps_each_init_plateau = getattr(CFG, "N_reps_each_init_plateau", 1)
 
     # Find the last run index if loading previous MULTIPLE_RUNS
-    last_idx = 0 if CFG.load_timestamp is None else _get_last_plateau_idx(base_path)
+    last_idx = 0 if CFG.load_timestamp is None else _get_last_experiment_idx(base_path, common_initial_plateaus=True)
 
     #############################################################
     # Run initial plateaus
@@ -367,33 +368,17 @@ def run_test_configurations():
     print_and_log(final_summary_msg, CFG.log_path)
 
 
-def _get_last_experiment_idx(base_path):
-    """Return the highest experiment index in experimentX folders under base_path."""
+def _get_last_experiment_idx(base_path, common_initial_plateaus):
+    """Return the highest experiment index in experimentX or initial_plateau_1/repeated_changed_runX folders under base_path."""
+    base_path = f"{base_path}/initial_plateau_1" if common_initial_plateaus else base_path
+    start_with = "experiment" if common_initial_plateaus else "repeated_changed_run"
     experiment_dirs = [
-        d for d in os.listdir(base_path) if d.startswith("experiment") and os.path.isdir(os.path.join(base_path, d))
+        d for d in os.listdir(base_path) if d.startswith(start_with) and os.path.isdir(os.path.join(base_path, d))
     ]
     last_idx = 0
     for d in experiment_dirs:
         try:
-            idx = int(d.replace("experiment", ""))
-            if idx > last_idx:
-                last_idx = idx
-        except Exception:
-            continue
-    return last_idx
-
-
-def _get_last_plateau_idx(base_path):
-    """Return the highest plateau index in repeated_changed_runX folders under base_path."""
-    plateau_dirs = [
-        d
-        for d in os.listdir(os.path.join(base_path, "initial_plateau_1"))
-        if d.startswith("repeated_changed_run") and os.path.isdir(os.path.join(base_path, d))
-    ]
-    last_idx = 0
-    for d in plateau_dirs:
-        try:
-            idx = int(d.replace("repeated_changed_run", ""))
+            idx = int(d.replace(start_with, ""))
             if idx > last_idx:
                 last_idx = idx
         except Exception:
