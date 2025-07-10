@@ -36,6 +36,8 @@ def run_single_training():
     """
     Runs a single training instance.
     """
+    print_and_log("Running in SINGLE RUN mode.\n", CFG.log_path)
+
     try:
         ##############################################################
         # Run single training instance with specified configuration
