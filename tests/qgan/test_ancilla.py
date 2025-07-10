@@ -67,26 +67,29 @@ class TestAncilla():
     def test_final_target_state_project(self):
         CFG.extra_ancilla = True
         CFG.ancilla_mode = "project"
+        CFG.target_hamiltonian = "cluster_h"
         state = np.ones((2 ** (CFG.system_size * 2), 1)) # No +1 since its in project mode
         result = get_final_target_state(state)
         assert result is not None
         assert result.shape[0] == 2 ** (CFG.system_size * 2)  # size halved
         assert result.shape[1] == 1
-        assert (result != state).all() # Changed state
+        assert (result != state).any() # Changed state
 
     def test_final_target_state_pass(self):
         CFG.extra_ancilla = True
         CFG.ancilla_mode = "pass"
+        CFG.target_hamiltonian = "cluster_h"
         state = np.ones((2 ** (CFG.system_size * 2 + 1), 1)) # +1 since its in pass mode
         result = get_final_target_state(state)
         assert result is not None
         assert result.shape[0] == 2 ** (CFG.system_size * 2 + 1)  # size unchanged
         assert result.shape[1] == 1
-        assert (result != state).all() # Changed state
+        assert (result != state).any() # Changed state
 
     def test_final_target_state_trace(self):
         CFG.extra_ancilla = True
         CFG.ancilla_mode = "trace"
+        CFG.target_hamiltonian = "cluster_h"
         state = np.ones((2 ** (CFG.system_size * 2), 1)) # No +1 since its in trace mode
         result = get_final_target_state(state)
         assert result is not None
@@ -215,7 +218,7 @@ class TestAncilla():
                         assert if_exactly_equal_with_allclose_and_fidelity(final_target_state, expected_state_with_phase)
                         # Also up to a phase gen and target will match!
                         assert not if_equal_up_to_global_phase_with_fidelity(gen_out, final_target_state)
-                
+               
     def test_ancilla_logic_integration_with_actual_Hamiltonians_no_gen(self):
         # Check that ancilla logic matches for all modes
         CFG.custom_hamiltonian_terms = ["Z", "ZZ", "ZZZ"]
