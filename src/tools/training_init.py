@@ -279,9 +279,6 @@ def _run_initial_plateaus(N_initial_plateaus: int, base_path: str):
         else:
             # Remove this experiment
             shutil.rmtree(temp_dir, ignore_errors=True)
-            print_and_log(
-                f"Discarded initial plateau attempt (max fidelity {max_found:.4f} >= {max_fid})\n", CFG.log_path
-            )
     print_and_log(f"\nFinished collecting {N_initial_plateaus} initial plateaus below threshold.\n", CFG.log_path)
 
 
