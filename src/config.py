@@ -52,24 +52,24 @@ class Config:
         #
         #############################################################################################
         self.run_multiple_experiments: bool = True
-        self.common_initial_plateaus: bool = False
+        self.common_initial_plateaus: bool = True
         # If common_initial_plateaus == true:
-        self.N_initial_plateaus: int = 4
+        self.N_initial_plateaus: int = 10
         self.N_reps_each_init_plateau: int = 20
         # If common_initial_plateaus == false:
         self.N_reps_if_from_scratch: int = 2
 
         self.reps_new_config: list[dict[str, Any]] = [
-            # {
-            #     "extra_ancilla": True,
-            #     "ancilla_mode": "pass",
-            #     "ancilla_topology": "disconnected",
-            # },
-            # {
-            #     "extra_ancilla": True,
-            #     "ancilla_mode": "pass",
-            #     "ancilla_topology": "ansatz",
-            # },
+            {
+                "extra_ancilla": True,
+                "ancilla_mode": "pass",
+                "ancilla_topology": "disconnected",
+            },
+            {
+                "extra_ancilla": True,
+                "ancilla_mode": "pass",
+                "ancilla_topology": "ansatz",
+            },
             {
                 "extra_ancilla": True,
                 "ancilla_mode": "pass",
@@ -95,7 +95,7 @@ class Config:
         #   - warm_start_strength: Strength of warm start for generator (only if loading).
         #
         #############################################################################################
-        self.load_timestamp: Optional[str] = "2025-07-03__15-03-02"  # "2025-06-26__17-26-03"  # None
+        self.load_timestamp: Optional[str] = None  # "2025-07-10__18-57-21"
         self.type_of_warm_start: Literal["none", "all", "some"] = "none"
         self.warm_start_strength: Optional[float] = 0.1
 
@@ -187,7 +187,7 @@ class Config:
         #       + "ZZ_X_Z": 2 body Z, 1 body X and 1 body Z terms.
         #
         #############################################################################################
-        self.gen_layers: int = 4  # 2, 3, 5, 10, 20 ...
+        self.gen_layers: int = 3  # 2, 3, 5, 10, 20 ...
         self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "ZZ_X_Z"
 
         #############################################################################################
