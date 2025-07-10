@@ -154,19 +154,25 @@ def execute_from_no_common_initial_plateaus(base_path):
     using CFG.N_reps_if_from_scratch repetitions for each config in CFG.reps_new_config.
 
     Results are saved in experimentX/ subfolders.
+
+    If loading a previous MULTIPLE_RUNS, appends new runs after the last existing index.
     """
     n_reps = getattr(CFG, "N_reps_if_from_scratch", 1)
 
+    # Find the last run index if loading previous MULTIPLE_RUNS
+    last_idx = 0 if CFG.load_timestamp is None else get_last_experiment_idx(base_path)
+
     for run_idx, config_dict in enumerate(CFG.reps_new_config, 1):
+        new_run_idx = last_idx + run_idx
         for key, value in config_dict.items():
             setattr(CFG, key, value)
         for rep in range(n_reps):
-            out_dir = f"{base_path}/experiment{run_idx}/{rep+1}"
+            out_dir = f"{base_path}/experiment{new_run_idx}/{rep+1}"
             CFG.base_data_path = out_dir
             CFG.set_results_paths()
-            print_and_log_with_headers(f"\nExperiment {run_idx}, repetition {rep+1}/{n_reps}", CFG.log_path)
+            print_and_log_with_headers(f"\nExperiment {new_run_idx}, repetition {rep+1}/{n_reps}", CFG.log_path)
             Training().run()
-            print_and_log(f"\nExperiment {run_idx}, repetition {rep+1} completed.\n", CFG.log_path)
+            print_and_log(f"\nExperiment {new_run_idx}, repetition {rep+1} completed.\n", CFG.log_path)
 
 
 #############################################################################
@@ -180,14 +186,19 @@ def execute_from_common_initial_plateaus(base_path):
     starting from each of the last runs, changing what is specified in `CFG.reps_new_config`.
 
     Results are saved in initial_plateau_X/repeated_controls/ and initial_plateau_X/repeated_changed_runX/ subfolders.
+
+    If loading a previous MULTIPLE_RUNS, appends new runs after the last existing index.
     """
     # Cache loops configuration parameters
     N_initial_plateaus = getattr(CFG, "N_initial_plateaus", 1)
     N_reps_each_init_plateau = getattr(CFG, "N_reps_each_init_plateau", 1)
 
-    ##############################################################
+    # Find the last run index if loading previous MULTIPLE_RUNS
+    last_idx = 0 if CFG.load_timestamp is None else get_last_plateau_idx(base_path)
+
+    #############################################################
     # Run initial plateaus
-    ##############################################################
+    #############################################################
     if CFG.load_timestamp is None:
         _run_initial_plateaus(N_initial_plateaus, base_path)
     else:
@@ -205,10 +216,11 @@ def execute_from_common_initial_plateaus(base_path):
     # Run changed experiments from each initial plateau, for each config in reps_new_config:
     #############################################################
     for run_idx, config_dict in enumerate(CFG.reps_new_config, 1):
+        new_run_idx = last_idx + run_idx
         for key, value in config_dict.items():
             setattr(CFG, key, value)
         # Each config gets its own run subdir
-        _run_repeated_experiments(N_initial_plateaus, N_reps_each_init_plateau, base_path, f"changed_run{run_idx}")
+        _run_repeated_experiments(N_initial_plateaus, N_reps_each_init_plateau, base_path, f"changed_run{new_run_idx}")
 
 
 def _run_initial_plateaus(N_initial_plateaus: int, base_path: str):
@@ -280,12 +292,13 @@ def _run_repeated_experiments(
         CFG.base_data_path = out_dir
         CFG.set_results_paths()
         print_and_log_with_headers(
-            f"\nRepeated Experiments {changed_or_control} {rep+1}/{n_reps_each_init_exp} for Initial Plateau {i+1}/{N_initial_plateaus}",
+            f"\nRepeated Experiments {changed_or_control} {rep+1}/{n_reps_each_init_exp} for Initial Plateau {i+1}",
             CFG.log_path,
         )
         Training().run()
         print_and_log(
-            f"\nRepeated Experiment {changed_or_control} {rep+1} for Initial Plateau {i+1} completed.\n", CFG.log_path
+            f"\nRepeated Experiment {changed_or_control} {rep+1} for Initial Plateau {i+1} completed.\n",
+            CFG.log_path,
         )
 
 
@@ -352,3 +365,37 @@ def run_test_configurations():
     else:
         final_summary_msg = "\nSome test configurations FAILED. Please review the logs above and the log file.\n"
     print_and_log(final_summary_msg, CFG.log_path)
+
+
+def get_last_experiment_idx(base_path):
+    """Return the highest experiment index in experimentX folders under base_path."""
+    experiment_dirs = [
+        d for d in os.listdir(base_path) if d.startswith("experiment") and os.path.isdir(os.path.join(base_path, d))
+    ]
+    last_idx = 0
+    for d in experiment_dirs:
+        try:
+            idx = int(d.replace("experiment", ""))
+            if idx > last_idx:
+                last_idx = idx
+        except Exception:
+            continue
+    return last_idx
+
+
+def get_last_plateau_idx(base_path):
+    """Return the highest plateau index in initial_plateau_X folders under base_path."""
+    plateau_dirs = [
+        d
+        for d in os.listdir(base_path)
+        if d.startswith("initial_plateau_") and os.path.isdir(os.path.join(base_path, d))
+    ]
+    last_idx = 0
+    for d in plateau_dirs:
+        try:
+            idx = int(d.replace("initial_plateau_", ""))
+            if idx > last_idx:
+                last_idx = idx
+        except Exception:
+            continue
+    return last_idx
