@@ -275,10 +275,13 @@ def _run_initial_plateaus(N_initial_plateaus: int, base_path: str):
             # Keep this plateau: rename to sequential initial_plateau_X
             os.rename(temp_dir, exp_dir)
             kept += 1
-            print_and_log(f"Kept initial plateau {kept} (max fidelity {max_found:.4f} < {max_fid})\n", CFG.log_path)
         else:
             # Remove this experiment
             shutil.rmtree(temp_dir, ignore_errors=True)
+
+    # Set the base path to the root directory of the initial plateaus
+    CFG.base_data_path = base_path
+    CFG.set_results_paths()
     print_and_log(f"\nFinished collecting {N_initial_plateaus} initial plateaus below threshold.\n", CFG.log_path)
 
 
