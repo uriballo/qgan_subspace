@@ -17,12 +17,12 @@
 import os
 
 from tools.plot_hub import generate_all_plots
+from tools.training_init import get_last_experiment_idx
 
 #######################################################################
 # Parameters for the replotting script
 #######################################################################
-time_stamp_to_replot = "2025-07-05__16-57-00"
-n_runs = 3
+time_stamp_to_replot = "2025-07-03__15-03-02"
 max_fidelity = 0.99
 common_initial_plateaus = False
 
@@ -32,6 +32,8 @@ common_initial_plateaus = False
 # Path to the experiment folder
 base_path = os.path.join("generated_data", "MULTIPLE_RUNS", time_stamp_to_replot)
 log_path = os.path.join(base_path, "replot_log.txt")
+
+n_runs = get_last_experiment_idx(base_path, common_initial_plateaus)
 
 print(f"Replotting for MULTIPLE_RUNS/{time_stamp_to_replot} with {n_runs} experiments")
 

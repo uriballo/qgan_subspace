@@ -170,7 +170,7 @@ def execute_from_no_common_initial_plateaus(base_path):
     n_reps = getattr(CFG, "N_reps_if_from_scratch", 1)
 
     # Find the last run index if loading previous MULTIPLE_RUNS
-    last_idx = 0 if CFG.load_timestamp is None else _get_last_experiment_idx(base_path, common_initial_plateaus=False)
+    last_idx = 0 if CFG.load_timestamp is None else get_last_experiment_idx(base_path, common_initial_plateaus=False)
     CFG.load_timestamp = None  # Clear load_timestamp after using it
 
     for run_idx, config_dict in enumerate(CFG.reps_new_config, 1):
@@ -205,7 +205,7 @@ def execute_from_common_initial_plateaus(base_path):
     N_reps_each_init_plateau = getattr(CFG, "N_reps_each_init_plateau", 1)
 
     # Find the last run index if loading previous MULTIPLE_RUNS
-    last_idx = 0 if CFG.load_timestamp is None else _get_last_experiment_idx(base_path, common_initial_plateaus=True)
+    last_idx = 0 if CFG.load_timestamp is None else get_last_experiment_idx(base_path, common_initial_plateaus=True)
 
     #############################################################
     # Run initial plateaus
@@ -381,7 +381,7 @@ def run_test_configurations():
     print_and_log(final_summary_msg, CFG.log_path)
 
 
-def _get_last_experiment_idx(base_path, common_initial_plateaus):
+def get_last_experiment_idx(base_path, common_initial_plateaus):
     """Return the highest experiment index in experimentX or initial_plateau_1/repeated_changed_runX folders under base_path."""
     base_path = f"{base_path}/initial_plateau_1" if common_initial_plateaus else base_path
     start_with = "repeated_changed_run" if common_initial_plateaus else "experiment"
