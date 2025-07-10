@@ -23,7 +23,7 @@ import numpy as np
 
 from config import CFG, test_configurations
 from qgan.training import Training
-from tools.data.data_managers import print_and_log, print_and_log_with_headers
+from tools.data.data_managers import get_last_experiment_idx, print_and_log, print_and_log_with_headers
 from tools.plot_hub import generate_all_plots
 
 # ruff: noqa: E226
@@ -379,21 +379,3 @@ def run_test_configurations():
     else:
         final_summary_msg = "\nSome test configurations FAILED. Please review the logs above and the log file.\n"
     print_and_log(final_summary_msg, CFG.log_path)
-
-
-def get_last_experiment_idx(base_path, common_initial_plateaus):
-    """Return the highest experiment index in experimentX or initial_plateau_1/repeated_changed_runX folders under base_path."""
-    base_path = f"{base_path}/initial_plateau_1" if common_initial_plateaus else base_path
-    start_with = "repeated_changed_run" if common_initial_plateaus else "experiment"
-    experiment_dirs = [
-        d for d in os.listdir(base_path) if d.startswith(start_with) and os.path.isdir(os.path.join(base_path, d))
-    ]
-    last_idx = 0
-    for d in experiment_dirs:
-        try:
-            idx = int(d.replace(start_with, ""))
-            if idx > last_idx:
-                last_idx = idx
-        except Exception:
-            continue
-    return last_idx

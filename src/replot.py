@@ -16,8 +16,8 @@
 
 import os
 
+from tools.data.data_managers import get_last_experiment_idx
 from tools.plot_hub import generate_all_plots
-from tools.training_init import get_last_experiment_idx
 
 #######################################################################
 # Parameters for the replotting script
