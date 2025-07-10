@@ -21,8 +21,8 @@ from tools.plot_hub import generate_all_plots
 #######################################################################
 # Parameters for the replotting script
 #######################################################################
-time_stamp_to_replot = "2025-07-03__15-03-02"
-n_runs = 5
+time_stamp_to_replot = "2025-07-05__16-57-00"
+n_runs = 3
 max_fidelity = 0.99
 common_initial_plateaus = False
 
