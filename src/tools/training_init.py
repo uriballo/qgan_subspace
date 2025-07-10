@@ -82,9 +82,6 @@ def run_multiple_trainings():
             _check_for_previous_multiple_runs()
         CFG.run_timestamp = CFG.load_timestamp
         CFG.load_timestamp = None  # Clear load_timestamp after using it
-        print_and_log("Following previous MULTIPLE run, in an already existing directory.\n", CFG.log_path)
-    else:
-        print_and_log("Running MULTIPLE initial, in a new directory.\n", CFG.log_path)
 
     ################################################################
     # Change results directory to MULTIPLE RUNS:
@@ -92,6 +89,17 @@ def run_multiple_trainings():
     base_path = f"./generated_data/MULTIPLE_RUNS/{CFG.run_timestamp}"
     CFG.base_data_path = base_path
     CFG.set_results_paths()
+
+    # First log message:
+    if CFG.load_timestamp is not None:
+        print_and_log_with_headers("\nFollowing previous MULTIPLE run, in an already existing directory.", CFG.log_path)
+    else:
+        print_and_log_with_headers("\nRunning MULTIPLE initial, in a new directory.", CFG.log_path)
+    # Log the changed configuration:
+    print_and_log("\nThe different experiments to run change are:\n", CFG.log_path)
+    for config_dict in CFG.reps_new_config:
+        config_str = ", ".join(f"{key}: {value}" for key, value in config_dict.items())
+        print_and_log("- " + config_str + "\n", CFG.log_path)
 
     ##############################################################
     # Execute multiple training instances (with/out common initial exp.)
@@ -201,6 +209,7 @@ def execute_from_common_initial_plateaus(base_path):
     # Run initial plateaus
     #############################################################
     if CFG.load_timestamp is None:
+        print_and_log("\nRunning initial plateaus.\n", CFG.log_path)
         _run_initial_plateaus(N_initial_plateaus, base_path)
     else:
         print_and_log("\nFollowing previous MULTIPLE run, initial plateaus will be skipped.\n", CFG.log_path)
@@ -209,6 +218,7 @@ def execute_from_common_initial_plateaus(base_path):
     # Run controls from each initial plateau
     #############################################################
     if CFG.load_timestamp is None:
+        print_and_log("\nRunning control experiments on plateaus.\n", CFG.log_path)
         _run_repeated_experiments(N_initial_plateaus, N_reps_each_init_plateau, base_path, "control")
     else:
         print_and_log("\nFollowing previous MULTIPLE run, control experiments will be skipped.\n", CFG.log_path)
@@ -221,6 +231,7 @@ def execute_from_common_initial_plateaus(base_path):
         for key, value in config_dict.items():
             setattr(CFG, key, value)
         # Each config gets its own run subdir
+        print_and_log(f"\nRunning changed_run{new_run_idx}.\n", CFG.log_path)
         _run_repeated_experiments(N_initial_plateaus, N_reps_each_init_plateau, base_path, f"changed_run{new_run_idx}")
 
 
