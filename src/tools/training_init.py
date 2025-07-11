@@ -294,6 +294,7 @@ def _run_repeated_experiments(
     if is_changed:
         run_idx = int(changed_or_control.replace("changed_run", ""))
     for i, rep in itertools.product(range(N_initial_plateaus), range(N_reps_each_init_plateau)):
+        # TODO: Change this to only do 1 control, since they are all the same.
         if changed_or_control == "control":
             out_dir = f"{base_path}/initial_plateau_{i+1}/repeated_controls/{rep+1}"
         elif is_changed:
