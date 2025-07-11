@@ -274,6 +274,7 @@ class Config:
             f"ancilla_mode: {self.ancilla_mode},\n"
             f"ancilla_project_norm: {self.ancilla_project_norm},\n"
             f"ancilla_topology: {self.ancilla_topology},\n"
+            f"do_ancilla_1q_gates: {self.do_ancilla_1q_gates},\n"
             f"ancilla_connect_to: {self.ancilla_connect_to},\n"
             "----------------------------------------------\n"
             f"gen_layers: {self.gen_layers},\n"
