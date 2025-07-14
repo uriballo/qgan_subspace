@@ -293,6 +293,11 @@ def _run_repeated_experiments(
     run_idx = None
     if is_changed:
         run_idx = int(changed_or_control.replace("changed_run", ""))
+
+    # Only 1 control run per initial plateau:
+    if changed_or_control in "control":
+        N_reps_each_init_plateau = 1
+
     for i, rep in itertools.product(range(N_initial_plateaus), range(N_reps_each_init_plateau)):
         # TODO: Change this to only do 1 control, since they are all the same.
         if changed_or_control == "control":

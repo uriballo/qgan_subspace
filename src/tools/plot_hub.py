@@ -66,6 +66,9 @@ def plt_fidelity_vs_iter(fidelities, losses, config, indx=0):
     plt.close()
 
 
+# NEED TO CHANGE THE CONTROL HISTOGRAMS by *5 the data!
+
+
 #########################################################################
 # PLOT INDIVIDUAL RUNS HISTOGRAMS
 #########################################################################
