@@ -363,7 +363,8 @@ class Ansatz:
         # Make uniform random angles for the gates (0 to 2*pi)
         theta = np.random.uniform(0, 2 * np.pi, len(qc.gates))
         for i, gate_i in enumerate(qc.gates):
-            gate_i.angle = theta[i]
+            if CFG.start_ancilla_gates_randomly or size not in [gate_i.qubit1, gate_i.qubit2]:
+                gate_i.angle = theta[i]
 
         return qc
 
@@ -410,6 +411,7 @@ class Ansatz:
         # Make uniform random angles for the gates (0 to 2*pi)
         theta = np.random.uniform(0, 2 * np.pi, len(qc.gates))
         for i, gate_i in enumerate(qc.gates):
-            gate_i.angle = theta[i]
+            if CFG.start_ancilla_gates_randomly or size not in [gate_i.qubit1, gate_i.qubit2]:
+                gate_i.angle = theta[i]
 
         return qc
