@@ -82,6 +82,9 @@ def plot_recurrence_vs_fid(base_path, log_path, run_idx, max_fidelity, common_in
     bins = [*list(np.linspace(0, max_fidelity, 20)), max_fidelity, 1.0]
     control_hist, _ = np.histogram(control_fids, bins=bins) if control_fids else (np.zeros(len(bins) - 1), bins)
     changed_hist, _ = np.histogram(changed_fids, bins=bins)
+    # Renormalize histograms to show distributions
+    control_hist = control_hist / control_hist.sum() if control_hist.sum() > 0 else control_hist
+    changed_hist = changed_hist / changed_hist.sum() if changed_hist.sum() > 0 else changed_hist
     bin_centers = (np.array(bins[:-1]) + np.array(bins[1:])) / 2
     plt.figure(figsize=(8, 6))
     width = (bins[1] - bins[0]) * 0.4
@@ -111,8 +114,8 @@ def plot_recurrence_vs_fid(base_path, log_path, run_idx, max_fidelity, common_in
             )
         )
     plt.xlabel("Maximum Fidelity Reached")
-    plt.ylabel("Recurrence (Count)")
-    title = "Recurrence vs Maximum Fidelity"
+    plt.ylabel("Distribution (Fraction)")
+    title = "Distribution vs Maximum Fidelity"
     if run_idx:
         title += f" (run {run_idx})"
     elif not common_initial_plateaus:
@@ -122,7 +125,7 @@ def plot_recurrence_vs_fid(base_path, log_path, run_idx, max_fidelity, common_in
         plt.legend()
     plt.grid(True)
     save_path = os.path.join(
-        base_path, f"comparison_recurrence_vs_fidelity_run{run_idx}.png" if run_idx else "recurrence_vs_fidelity.png"
+        base_path, f"comparison_distribution_vs_fidelity_run{run_idx}.png" if run_idx else "distribution_vs_fidelity.png"
     )
     plt.tight_layout()
     plt.savefig(save_path)
@@ -148,6 +151,7 @@ def plot_comparison_all_runs(base_path, log_path, n_runs, max_fidelity, common_i
     # Collect control as first 'run' if present
     if common_initial_plateaus and len(control_fids) > 0:
         control_hist, _ = np.histogram(control_fids, bins=bins)
+        control_hist = control_hist / control_hist.sum() if control_hist.sum() > 0 else control_hist
         all_hists.append(control_hist)
         all_labels.append("Control (no change)")
         all_colors.append(run_colors[0])
@@ -158,6 +162,7 @@ def plot_comparison_all_runs(base_path, log_path, n_runs, max_fidelity, common_i
         else:
             changed_fids = collect_latest_changed_fidelities_nested(base_path, common_initial_plateaus, run_idx)
         changed_hist, _ = np.histogram(changed_fids, bins=bins)
+        changed_hist = changed_hist / changed_hist.sum() if changed_hist.sum() > 0 else changed_hist
         all_hists.append(changed_hist)
         all_labels.append(f"Run {run_idx}")
         all_colors.append(run_colors[run_idx % len(run_colors)])
@@ -174,15 +179,15 @@ def plot_comparison_all_runs(base_path, log_path, n_runs, max_fidelity, common_i
             color=color,
         )
     plt.xlabel("Maximum Fidelity Reached")
-    plt.ylabel("Recurrence (Count)")
-    title = "Comparison: Recurrence vs Maximum Fidelity (All Runs)"
+    plt.ylabel("Distribution (Fraction)")
+    title = "Comparison: Distribution vs Maximum Fidelity (All Runs)"
     if not common_initial_plateaus:
         title += " (Experiment Mode)"
     plt.title(title)
     if n_groups > 0:
         plt.legend()
     plt.grid(True)
-    save_path = os.path.join(base_path, "comparison_recurrence_vs_fidelity_all.png")
+    save_path = os.path.join(base_path, "comparison_distribution_vs_fidelity_all.png")
     plt.tight_layout()
     plt.savefig(save_path)
     print_and_log(f"Saved plot to {save_path}", log_path)
