@@ -75,7 +75,7 @@ def plt_fidelity_vs_iter(fidelities, losses, config, indx=0):
 def plot_recurrence_vs_fid(base_path, log_path, run_idx, max_fidelity, common_initial_plateaus):
     run_colors = plt.cm.tab10.colors  # Consistent palette for control and runs
     control_fids = (
-        collect_max_fidelities_nested(base_path, r"repeated_controls", r"\d+") if common_initial_plateaus else []
+        collect_max_fidelities_nested(base_path, r"repeated_control", None) if common_initial_plateaus else []
     )
     changed_fids = collect_latest_changed_fidelities_nested(base_path, common_initial_plateaus, run_idx)
     # Split last bin at max_fidelity
@@ -125,7 +125,8 @@ def plot_recurrence_vs_fid(base_path, log_path, run_idx, max_fidelity, common_in
         plt.legend()
     plt.grid(True)
     save_path = os.path.join(
-        base_path, f"comparison_distribution_vs_fidelity_run{run_idx}.png" if run_idx else "distribution_vs_fidelity.png"
+        base_path,
+        f"comparison_distribution_vs_fidelity_run{run_idx}.png" if run_idx else "distribution_vs_fidelity.png",
     )
     plt.tight_layout()
     plt.savefig(save_path)
@@ -139,7 +140,7 @@ def plot_recurrence_vs_fid(base_path, log_path, run_idx, max_fidelity, common_in
 def plot_comparison_all_runs(base_path, log_path, n_runs, max_fidelity, common_initial_plateaus):
     run_colors = plt.cm.tab10.colors
     control_fids = (
-        collect_max_fidelities_nested(base_path, r"repeated_controls", r"\d+") if common_initial_plateaus else []
+        collect_max_fidelities_nested(base_path, r"repeated_control", None) if common_initial_plateaus else []
     )
     # Split last bin at max_fidelity
     bins = [*list(np.linspace(0, max_fidelity, 20)), max_fidelity, 1.0]
@@ -218,7 +219,7 @@ def plot_avg_best_fid_per_run(base_path, log_path, n_runs, max_fidelity, common_
         plt.text(xi, yi + 0.01, f"{yi:.3f}", ha="center", va="bottom", fontsize=9)
     # Add control data as a distinct point if in initial mode
     if common_initial_plateaus:
-        control_fids = collect_max_fidelities_nested(base_path, r"repeated_controls", r"\d+")
+        control_fids = collect_max_fidelities_nested(base_path, r"repeated_control", None)
         if control_fids:
             control_avg = np.nanmean(control_fids)
             plt.plot([0], [control_avg], "s", color="blue", label="Control Avg", markersize=8)
@@ -257,7 +258,7 @@ def plot_success_percent_per_run(base_path, log_path, n_runs, max_fidelity, comm
         plt.text(xi, yi + 1, f"{yi:.1f}%", ha="center", va="bottom", fontsize=9)
     # Add control data as a distinct point if in initial mode
     if common_initial_plateaus:
-        control_fids = collect_max_fidelities_nested(base_path, r"repeated_controls", r"\d+")
+        control_fids = collect_max_fidelities_nested(base_path, r"repeated_control", None)
         if control_fids:
             control_success = 100 * np.sum(np.array(control_fids) >= max_fidelity) / len(control_fids)
             plt.plot([0], [control_success], "s", color="blue", label="Control Success", markersize=8)
@@ -300,7 +301,7 @@ def collect_max_fidelities_nested(base_path, outer_pattern, inner_pattern):
     for root, dirs, files in os.walk(base_path):
         if (
             re.search(outer_pattern, root)
-            and re.search(inner_pattern, root)
+            and (inner_pattern is None or re.search(inner_pattern, root))
             and os.path.basename(root) == "fidelities"
             and "log_fidelity_loss.txt" in files
         ):
