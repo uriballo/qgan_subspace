@@ -159,12 +159,14 @@ class Config:
         #     |  P  |                 |     A────────     |      A────────      |      A────────       |
         #     |-----|-----------------|-------------------|---------------------|----------------------|
         #
-        #   - do_ancilla_1q_gates: Whether to include 1-qubit gates for the ancilla qubit.
-        #       (The `U...U` gate in the previous diagrams).
-        #
         #   - ancilla_connect_to: If ancilla_topology is "ansatz" or "bridge" connect to this qubit index.
         #       If None, then the ancilla is connected to the last qubit.
         #       (In the diagrams above, you would basically choose where that "x" connection goes in those)
+        #
+        #   - do_ancilla_1q_gates: Whether to include 1-qubit gates for the ancilla qubit.
+        #       (The `U...U` gate in the previous diagrams).
+        #
+        #   - start_ancilla_gates_randomly: Whether to start the ancilla gates with random angles.
         #
         ###############################################################################################
         self.system_size: int = 3
@@ -172,9 +174,9 @@ class Config:
         self.ancilla_mode: Optional[Literal["pass", "project", "trace"]] = "pass"
         self.ancilla_project_norm: Optional[Literal["re-norm", "pass"]] = "re-norm"
         self.ancilla_topology: Optional[Literal["disconnected", "ansatz", "bridge", "total"]] = "bridge"
-        self.do_ancilla_1q_gates: Optional[bool] = False  # Whether to include 1-qubit gates for ancilla qubit.
         self.ancilla_connect_to: Optional[int] = None  # None means connected to last one, otherwise to the specified.
-        # TODO: [FUTURE] Decide what to do with trace, make all code work with density matrices, instead than sampling?
+        self.do_ancilla_1q_gates: bool = False  # Whether to include 1-qubit gates for ancilla qubit.
+        self.start_ancilla_gates_randomly: bool = False  # Whether to start ancilla gates with random angles.
 
         #############################################################################################
         # -----------------------
@@ -274,8 +276,9 @@ class Config:
             f"ancilla_mode: {self.ancilla_mode},\n"
             f"ancilla_project_norm: {self.ancilla_project_norm},\n"
             f"ancilla_topology: {self.ancilla_topology},\n"
-            f"do_ancilla_1q_gates: {self.do_ancilla_1q_gates},\n"
             f"ancilla_connect_to: {self.ancilla_connect_to},\n"
+            f"do_ancilla_1q_gates: {self.do_ancilla_1q_gates},\n"
+            f"start_ancilla_gates_randomly: {self.start_ancilla_gates_randomly},\n"
             "----------------------------------------------\n"
             f"gen_layers: {self.gen_layers},\n"
             f"gen_ansatz: {self.gen_ansatz},\n"
