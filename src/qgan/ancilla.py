@@ -44,7 +44,7 @@ def get_max_entangled_state_with_ancilla_if_needed(size: int, config=CFG) -> np.
     return np.asmatrix(initial_state_for_gen).T, np.asmatrix(initial_state_for_target).T
 
 
-def project_ancilla_zero(state: np.ndarray, renormalize: bool = True) -> tuple[np.ndarray, float]:
+def project_ancilla_zero(state: np.ndarray, renormalize: bool = True, config=CFG) -> tuple[np.ndarray, float]:
     """Project the last qubit onto |0> and renormalize. Assumes state is a column vector.
 
     Args:
@@ -77,7 +77,7 @@ def project_ancilla_zero(state: np.ndarray, renormalize: bool = True) -> tuple[n
 
 
 # TODO: Think better what to do with this function... (how to use it)
-def trace_out_ancilla(state: np.ndarray, config=CFG) -> np.ndarray:
+def trace_out_ancilla(state: np.ndarray) -> np.ndarray:
     """Trace out the last qubit and return a sampled pure state from the reduced density matrix.
 
     Args:
