@@ -151,3 +151,5 @@ class Training:
         endtime = datetime.now()
         if self.verbose:
             print_and_log(f"\nRun took: {endtime - starttime} time.", self.config.log_path)
+
+        return losses_history, fidelities_history

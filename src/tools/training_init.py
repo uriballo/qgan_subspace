@@ -44,10 +44,11 @@ def run_single_training(config=CFG, verbose=True):
         # Run single training instance with specified configuration
         ##############################################################
         training_instance = Training(config=config, verbose=verbose)
-        training_instance.run()
+        res = training_instance.run()
         success_msg = "\nDefault configuration run COMPLETED SUCCESSFULLY.\n"
         if verbose:
             print_and_log(success_msg, config.log_path)  # Log to file
+        return res
 
     except Exception as e:  # noqa: BLE001
         ##############################################################
