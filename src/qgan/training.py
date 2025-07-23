@@ -39,19 +39,21 @@ np.random.seed()
 
 
 class Training:
-    def __init__(self):
+    def __init__(self, config=CFG, verbose=True):
+        self.config = config
+        self.verbose = verbose
         """Builds the configuration for the Training. You might wanna comment/discomment lines, for changing the model."""
 
-        initial_state_total, initial_state_final = get_max_entangled_state_with_ancilla_if_needed(CFG.system_size)
+        initial_state_total, initial_state_final = get_max_entangled_state_with_ancilla_if_needed(self.config.system_size, self.config)
         """Preparation of max. entgl. state with ancilla qubit if needed, to generate state."""
 
-        self.final_target_state: np.matrix = get_final_target_state(initial_state_final)
+        self.final_target_state: np.matrix = get_final_target_state(initial_state_final, self.config)
         """Prepare the target state to compare in the Dis, with the size and Target unitary defined in config."""
 
-        self.gen: Generator = Generator(initial_state_total)
+        self.gen: Generator = Generator(initial_state_total, config=self.config)
         """Prepares the Generator with the size, ansatz, layers and ancilla, defined in config."""
 
-        self.dis: Discriminator = Discriminator()
+        self.dis: Discriminator = Discriminator(config=self.config)
         """Prepares the Discriminatos, with the size, and ancilla defined in config."""
 
     def run(self):
@@ -60,10 +62,11 @@ class Training:
         ###########################################################
         # Initialize training
         ###########################################################
-        print_and_log("\n" + CFG.show_data(), CFG.log_path)
+        if self.verbose:
+            print_and_log("\n" + self.config.show_data(), self.config.log_path)
 
         # Load models if specified (only the params, and only if compatible)
-        load_models_if_specified(self)
+        load_models_if_specified(self, verbose=self.verbose)
 
         fidelities_history, losses_history = [], []
         starttime = datetime.now()
@@ -77,34 +80,35 @@ class Training:
             fidelities = []
             losses = []
             num_epochs += 1
-            for epoch_iter in range(CFG.iterations_epoch):
+            for epoch_iter in range(self.config.iterations_epoch):
                 ###########################################################
                 # Gen and Dis gradient descent
                 ###########################################################
-                for _ in range(CFG.steps_gen):
+                for _ in range(self.config.steps_gen):
                     self.gen.update_gen(self.dis, self.final_target_state)
 
                 # Remove ancilla if needed, with ancilla mode, before discriminator:
                 final_gen_state = get_final_gen_state_for_discriminator(self.gen.total_gen_state)
 
-                for _ in range(CFG.steps_dis):
+                for _ in range(self.config.steps_dis):
                     self.dis.update_dis(self.final_target_state, final_gen_state)
 
                 ###########################################################
                 # Every X iterations: compute and save fidelity & loss
                 ###########################################################
-                if epoch_iter % CFG.save_fid_and_loss_every_x_iter == 0:
+                if epoch_iter % self.config.save_fid_and_loss_every_x_iter == 0:
                     fid, loss = compute_fidelity_and_cost(self.dis, self.final_target_state, final_gen_state)
                     fidelities.append(fid), losses.append(loss)
 
                 ############################################################
                 # Every X iterations: Print and log fidelity and loss
                 ############################################################
-                if epoch_iter % CFG.log_every_x_iter == 0:
+                if epoch_iter % self.config.log_every_x_iter == 0:
                     info = "\nepoch:{:4d} | iters:{:4d} | fidelity:{:8f} | loss:{:8f}".format(
                         num_epochs, epoch_iter + 1, round(fid, 6), round(loss, 6)
                     )
-                    print_and_log(info, CFG.log_path)
+                    if self.verbose:
+                        print_and_log(info, self.config.log_path)
 
             ###########################################################
             # End of epoch, store data and plot
@@ -116,31 +120,34 @@ class Training:
             #############################################################
             # Stopping conditions
             #############################################################
-            if num_epochs >= CFG.epochs:
-                print_and_log("\n==================================================\n", CFG.log_path)
-                print_and_log(f"\nThe number of epochs exceeds {CFG.epochs}.", CFG.log_path)
+            if num_epochs >= self.config.epochs:
+                if self.verbose:
+                    print_and_log("\n==================================================\n", self.config.log_path)
+                    print_and_log(f"\nThe number of epochs exceeds {self.config.epochs}.", self.config.log_path)
                 break
 
-            if fidelities[-1] > CFG.max_fidelity:  # TODO: Maybe change this cond, to use max(fidelities)?
-                print_and_log("\n==================================================\n", CFG.log_path)
-                print_and_log(
-                    f"\nThe fidelity {fidelities[-1]} exceeds the maximum {CFG.max_fidelity}.",
-                    CFG.log_path,
-                )
+            if fidelities[-1] > self.config.max_fidelity:  # TODO: Maybe change this cond, to use max(fidelities)?
+                if self.verbose:
+                    print_and_log("\n==================================================\n", self.config.log_path)
+                    print_and_log(
+                        f"\nThe fidelity {fidelities[-1]} exceeds the maximum {self.config.max_fidelity}.",
+                        self.config.log_path,
+                    )
                 break
 
         ###########################################################
         # End training, save all data into files
         ###########################################################
         # Save data of fidelity and loss
-        save_fidelity_loss(fidelities_history, losses_history, CFG.fid_loss_path)
+        save_fidelity_loss(fidelities_history, losses_history, self.config.fid_loss_path)
 
         # Save data of the generator and the discriminator
-        save_model(self.gen, CFG.model_gen_path)
-        save_model(self.dis, CFG.model_dis_path)
+        save_model(self.gen, self.config.model_gen_path)
+        save_model(self.dis, self.config.model_dis_path)
 
         # Output the parameters of the generator
-        save_gen_final_params(self.gen, CFG.gen_final_params_path)
+        save_gen_final_params(self.gen, self.config.gen_final_params_path)
 
         endtime = datetime.now()
-        print_and_log(f"\nRun took: {endtime - starttime} time.", CFG.log_path)
+        if self.verbose:
+            print_and_log(f"\nRun took: {endtime - starttime} time.", self.config.log_path)

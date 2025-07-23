@@ -25,7 +25,7 @@ from tools.qobjects.qgates import I, Identity, X, Y, Z
 ##############################################################
 # MAIN FUNCTIONS FOR TARGET HAMILTONIAN
 ##############################################################
-def get_target_unitary(target_type: str, size: int) -> np.ndarray:
+def get_target_unitary(target_type: str, size: int, config=CFG) -> np.ndarray:
     """Get the target unitary based on the target type and size.
 
     Args:
@@ -42,11 +42,11 @@ def get_target_unitary(target_type: str, size: int) -> np.ndarray:
     if target_type == "ising_h":
         return construct_ising(size)
     if target_type == "custom_h":
-        return construct_target(size, CFG.custom_hamiltonian_terms, CFG.custom_hamiltonian_strengths)
+        return construct_target(size, config.custom_hamiltonian_terms, config.custom_hamiltonian_strengths)
     raise ValueError(f"Unknown target type: {target_type}. Expected 'cluster_h', 'rotated_surface_h', or 'custom_h'.")
 
 
-def get_final_target_state(final_input_state: np.ndarray) -> np.ndarray:
+def get_final_target_state(final_input_state: np.ndarray, config=CFG) -> np.ndarray:
     """Initialize the target state. Applying the target unitary to the maximally entangled state.
 
     And returns it ready to be used in the discriminator.
@@ -57,10 +57,10 @@ def get_final_target_state(final_input_state: np.ndarray) -> np.ndarray:
     Returns:
         np.ndarray: the target state after applying the target unitary.
     """
-    target_unitary = get_target_unitary(CFG.target_hamiltonian, CFG.system_size)
+    target_unitary = get_target_unitary(config.target_hamiltonian, config.system_size)
 
-    target_op = np.kron(Identity(CFG.system_size), target_unitary)
-    if CFG.extra_ancilla and CFG.ancilla_mode == "pass":
+    target_op = np.kron(Identity(config.system_size), target_unitary)
+    if config.extra_ancilla and config.ancilla_mode == "pass":
         target_op = np.kron(target_op, Identity(1))
     return np.matmul(target_op, final_input_state)
 

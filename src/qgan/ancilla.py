@@ -18,7 +18,7 @@ import numpy as np
 from config import CFG
 
 
-def get_max_entangled_state_with_ancilla_if_needed(size: int) -> np.ndarray:
+def get_max_entangled_state_with_ancilla_if_needed(size: int, config=CFG) -> np.ndarray:
     """Get the maximally entangled state for the system size (With Ancilla if needed).
 
     Args:
@@ -38,8 +38,8 @@ def get_max_entangled_state_with_ancilla_if_needed(size: int) -> np.ndarray:
     initial_state_with_ancilla = np.kron(state, np.array([1, 0], dtype=complex))
 
     # Different conditions for gen and target:
-    initial_state_for_gen = initial_state_with_ancilla if CFG.extra_ancilla else state
-    initial_state_for_target = initial_state_with_ancilla if CFG.extra_ancilla and CFG.ancilla_mode == "pass" else state
+    initial_state_for_gen = initial_state_with_ancilla if config.extra_ancilla else state
+    initial_state_for_target = initial_state_with_ancilla if config.extra_ancilla and config.ancilla_mode == "pass" else state
 
     return np.asmatrix(initial_state_for_gen).T, np.asmatrix(initial_state_for_target).T
 
@@ -64,20 +64,20 @@ def project_ancilla_zero(state: np.ndarray, renormalize: bool = True) -> tuple[n
     norm = np.linalg.norm(projected)
 
     if norm == 0:  # Return the system part (without ancilla) as zeros
-        return np.zeros((2 ** (CFG.system_size * 2), 1)), 0.0
+        return np.zeros((2 ** (config.system_size * 2), 1)), 0.0
 
     # Renormalize if needed:
     if renormalize:
-        if CFG.ancilla_project_norm == "re-norm":
+        if config.ancilla_project_norm == "re-norm":
             projected = projected / norm
-        elif CFG.ancilla_project_norm != "pass":
-            raise ValueError(f"Unknown ancilla_project_norm: {CFG.ancilla_project_norm}")
+        elif config.ancilla_project_norm != "pass":
+            raise ValueError(f"Unknown ancilla_project_norm: {config.ancilla_project_norm}")
 
     return np.asmatrix(projected.reshape(-1, 1)), norm**2
 
 
 # TODO: Think better what to do with this function... (how to use it)
-def trace_out_ancilla(state: np.ndarray) -> np.ndarray:
+def trace_out_ancilla(state: np.ndarray, config=CFG) -> np.ndarray:
     """Trace out the last qubit and return a sampled pure state from the reduced density matrix.
 
     Args:
@@ -103,7 +103,7 @@ def trace_out_ancilla(state: np.ndarray) -> np.ndarray:
     return np.asmatrix(sampled_state.reshape(-1, 1))
 
 
-def get_final_gen_state_for_discriminator(total_output_state: np.ndarray) -> np.ndarray:
+def get_final_gen_state_for_discriminator(total_output_state: np.ndarray, config=CFG) -> np.ndarray:
     """Modifies the gen state to be passed to the discriminator, according to ancilla_mode.
 
     Args:
@@ -113,14 +113,14 @@ def get_final_gen_state_for_discriminator(total_output_state: np.ndarray) -> np.
         np.ndarray: The final state to be passed to the discriminator.
     """
     total_final_state = total_output_state
-    if CFG.extra_ancilla:
-        if CFG.ancilla_mode == "pass":
+    if config.extra_ancilla:
+        if config.ancilla_mode == "pass":
             # Pass ancilla to discriminator (current behavior)
             return total_final_state
-        if CFG.ancilla_mode == "project":
-            projected, _ = project_ancilla_zero(total_final_state)
+        if config.ancilla_mode == "project":
+            projected, _ = project_ancilla_zero(total_final_state, config=config)
             return projected
-        if CFG.ancilla_mode == "trace":
+        if config.ancilla_mode == "trace":
             return trace_out_ancilla(total_final_state)
-        raise ValueError(f"Unknown ancilla_mode: {CFG.ancilla_mode}")
+        raise ValueError(f"Unknown ancilla_mode: {config.ancilla_mode}")
     return total_final_state

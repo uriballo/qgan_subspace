@@ -49,19 +49,20 @@ class Discriminator:
         - B: expm(1/lamb * psi)
     """
 
-    def __init__(self):
+    def __init__(self, config=CFG):
+        self.config = config
         # Set the general used parameters:
-        self.size: int = CFG.system_size * 2 + (1 if CFG.extra_ancilla and CFG.ancilla_mode == "pass" else 0)
+        self.size: int = self.config.system_size * 2 + (1 if self.config.extra_ancilla and self.config.ancilla_mode == "pass" else 0)
         self.herm: list = [I, X, Y, Z]
         self._init_params_alpha_beta()
         self.optimizer_psi: MomentumOptimizer = MomentumOptimizer()
         self.optimizer_phi: MomentumOptimizer = MomentumOptimizer()
 
         # Set params, for comparison when loading:
-        self.ancilla: bool = CFG.extra_ancilla
-        self.ancilla_mode: str = CFG.ancilla_mode  # Topology doesn't matter, its not a circuit = fully connect matrix.
-        self.target_size: int = CFG.system_size
-        self.target_hamiltonian: str = CFG.target_hamiltonian
+        self.ancilla: bool = self.config.extra_ancilla
+        self.ancilla_mode: str = self.config.ancilla_mode  # Topology doesn't matter, its not a circuit = fully connect matrix.
+        self.target_size: int = self.config.system_size
+        self.target_hamiltonian: str = self.config.target_hamiltonian
 
     def _init_params_alpha_beta(self):
         # Each param is: (size x 4)
@@ -312,13 +313,13 @@ class Discriminator:
         # Check if the file exists and is a valid pickle file
         ########################################################################
         if not os.path.exists(file_path):
-            print_and_log("Discriminator model file not found\n", CFG.log_path)
+            print_and_log("Discriminator model file not found\n", self.config.log_path)
             return False
         try:
             with open(file_path, "rb") as f:
                 saved_dis: Discriminator = pickle.load(f)
         except (OSError, pickle.UnpicklingError) as e:
-            print_and_log(f"ERROR: Could not load discriminator model: {e}\n", CFG.log_path)
+            print_and_log(f"ERROR: Could not load discriminator model: {e}\n", self.config.log_path)
             return False
 
         ##################################################################
@@ -329,13 +330,13 @@ class Discriminator:
         # For this corner case, in reality the load will still work, since we always have matrices NxN or (N+1)x(N+1)
         # but you would load a Discriminator for distinguishing a T(3) to a T(4), or vice-versa, which shouldn't happen..
         if saved_dis.target_size != self.target_size:
-            print_and_log("ERROR: Saved discriminator model is incompatible (target size mismatch).\n", CFG.log_path)
+            print_and_log("ERROR: Saved discriminator model is incompatible (target size mismatch).\n", self.config.log_path)
             cant_load = True
 
         # This one could work, but it wouldn't make sense, since the discriminator would be useless, better to stop:
         if saved_dis.target_hamiltonian != self.target_hamiltonian:
             print_and_log(
-                "ERROR: Saved discriminator model is incompatible (target hamiltonian mismatch).\n", CFG.log_path
+                "ERROR: Saved discriminator model is incompatible (target hamiltonian mismatch).\n", self.config.log_path
             )
             cant_load = True
 
@@ -353,7 +354,7 @@ class Discriminator:
             self.optimizer_phi = deepcopy(saved_dis.optimizer_phi)
             self.optimizer_psi = deepcopy(saved_dis.optimizer_psi)
 
-            print_and_log("Discriminator parameters loaded\n", CFG.log_path)
+            print_and_log("Discriminator parameters loaded\n", self.config.log_path)
             return True
 
         ##################################################################
@@ -371,8 +372,8 @@ class Discriminator:
             # self.optimizer_psi.v = saved_dis.optimizer_psi.v
             # TODO: Check how to load momentum, if not exact match
 
-            print_and_log("Discriminator parameters loaded partially (one qubit difference).\n", CFG.log_path)
+            print_and_log("Discriminator parameters loaded partially (one qubit difference).\n", self.config.log_path)
             return True
 
-        print_and_log("Saved discriminator model is incompatible (size or shape mismatch).\n", CFG.log_path)
+        print_and_log("Saved discriminator model is incompatible (size or shape mismatch).\n", self.config.log_path)
         return False
