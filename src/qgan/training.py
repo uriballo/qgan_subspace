@@ -48,8 +48,8 @@ class Training:
 
         # --- 2. Initialize Optimizers ---
         # Use a standard PyTorch optimizer like Adam
-        self.optimizer_gen = torch.optim.Adam(self.gen.parameters(), lr=CFG.l_rate)
-        self.optimizer_dis = torch.optim.Adam(self.dis.parameters(), lr=CFG.l_rate)
+        self.optimizer_gen = torch.optim.SGD(self.gen.parameters(), lr=CFG.l_rate, momentum=CFG.momentum_coeff)
+        self.optimizer_dis = torch.optim.SGD(self.dis.parameters(), lr=CFG.l_rate, momentum=CFG.momentum_coeff)
 
     def run(self):
         """Runs the entire QGAN training loop."""
