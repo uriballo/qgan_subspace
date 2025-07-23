@@ -32,7 +32,7 @@ from tools.plot_hub import generate_all_plots
 #################################################################################################################
 # SINGLE RUN MODE:
 #################################################################################################################
-def run_single_training(config=CFG, verbose=True):
+def run_single_training(config=CFG, verbose=True, seed=None):
     """
     Runs a single training instance.
     """
@@ -43,7 +43,7 @@ def run_single_training(config=CFG, verbose=True):
         ##############################################################
         # Run single training instance with specified configuration
         ##############################################################
-        training_instance = Training(config=config, verbose=verbose)
+        training_instance = Training(config=config, verbose=verbose, seed=seed)
         res = training_instance.run()
         success_msg = "\nDefault configuration run COMPLETED SUCCESSFULLY.\n"
         if verbose:

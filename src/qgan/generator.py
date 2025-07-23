@@ -32,8 +32,9 @@ from tools.qobjects import Identity, QuantumCircuit, QuantumGate
 class Generator:
     """Generator class for Quantum GAN."""
 
-    def __init__(self, total_input_state: np.ndarray, config=CFG):
+    def __init__(self, total_input_state: np.ndarray, config=CFG, seed=None):
         self.config = config
+        self.seed = seed
         # Set general used params:
         self.size: int = self.config.system_size + (1 if self.config.extra_ancilla else 0)
         self.qc: QuantumCircuit = QuantumCircuit(self.size, "generator")
@@ -48,7 +49,7 @@ class Generator:
         self.target_hamiltonian: str = self.config.target_hamiltonian
 
         # Set the ansatz circuit:
-        self.qc = Ansatz(config=self.config).get_ansatz_type_circuit(self.ansatz)(self.qc, self.size, self.layers)
+        self.qc = Ansatz(config=self.config, seed=self.seed).get_ansatz_type_circuit(self.ansatz)(self.qc, self.size, self.layers)
         self.total_input_state: np.ndarray = total_input_state
         self.total_gen_state = self.get_total_gen_state()
 
@@ -300,8 +301,9 @@ class Generator:
 ##################################################################
 class Ansatz:
     """Ansatz class for constructing quantum circuits with specific gates"""
-    def __init__(self, config=CFG):
+    def __init__(self, config=CFG, seed=None):
         self.config = config
+        self.seed = seed
 
     def get_ansatz_type_circuit(self, type_of_ansatz: str) -> callable:
         """Construct the ansatz based on the type specified.
@@ -322,6 +324,8 @@ class Ansatz:
     
     def randomize_gates_in_qc(self, qc: QuantumCircuit, size: int) -> QuantumCircuit:
         # Make uniform random angles for the gates (0 to 2*pi)
+        if self.seed is not None:
+            np.random.seed(self.seed)
         theta = np.random.uniform(0, 2 * np.pi, len(qc.gates))
         for i, gate_i in enumerate(qc.gates):
             # Depending on the config, randomize the ancilla gates or not:

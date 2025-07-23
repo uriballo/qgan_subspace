@@ -49,7 +49,8 @@ class Discriminator:
         - B: expm(1/lamb * psi)
     """
 
-    def __init__(self, config=CFG):
+    def __init__(self, config=CFG, seed=None):
+        self.seed = seed
         self.config = config
         # Set the general used parameters:
         self.size: int = self.config.system_size * 2 + (1 if self.config.extra_ancilla and self.config.ancilla_mode == "pass" else 0)
@@ -70,6 +71,8 @@ class Discriminator:
         self.beta: np.ndarray = np.zeros((self.size, len(self.herm)))
 
         # Random Discriminator Parameters
+        if self.seed is not None:
+            np.random.seed(self.seed)
         for i in range(self.size):
             self.alpha[i] = -1 + 2 * np.random.random(len(self.herm))
             self.beta[i] = -1 + 2 * np.random.random(len(self.herm))

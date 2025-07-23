@@ -39,8 +39,9 @@ np.random.seed()
 
 
 class Training:
-    def __init__(self, config=CFG, verbose=True):
+    def __init__(self, config=CFG, verbose=True, seed=None):
         self.config = config
+        self.seed = seed
         self.verbose = verbose
         """Builds the configuration for the Training. You might wanna comment/discomment lines, for changing the model."""
 
@@ -50,10 +51,10 @@ class Training:
         self.final_target_state: np.matrix = get_final_target_state(initial_state_final, self.config)
         """Prepare the target state to compare in the Dis, with the size and Target unitary defined in config."""
 
-        self.gen: Generator = Generator(initial_state_total, config=self.config)
+        self.gen: Generator = Generator(initial_state_total, config=self.config, seed=self.seed)
         """Prepares the Generator with the size, ansatz, layers and ancilla, defined in config."""
 
-        self.dis: Discriminator = Discriminator(config=self.config)
+        self.dis: Discriminator = Discriminator(config=self.config, seed=self.seed)
         """Prepares the Discriminatos, with the size, and ancilla defined in config."""
 
     def run(self):
@@ -115,7 +116,7 @@ class Training:
             ###########################################################
             fidelities_history = np.append(fidelities_history, fidelities)
             losses_history = np.append(losses_history, losses)
-            plt_fidelity_vs_iter(fidelities_history, losses_history, CFG, num_epochs)
+            #plt_fidelity_vs_iter(fidelities_history, losses_history, CFG, num_epochs)
 
             #############################################################
             # Stopping conditions
