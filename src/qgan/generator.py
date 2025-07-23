@@ -128,7 +128,18 @@ class Generator:
         A, B, _, phi = dis.get_dis_matrices_rep()
 
         grad_g_psi, grad_g_phi, grad_g_reg = [], [], []
-
+        final_gen_state = np.asarray(final_gen_state)
+        final_target_state = np.asarray(final_target_state)
+        A_final_target_state = A @ final_target_state
+        B_final_target_state = B @ final_target_state
+        A_final_gen_state = A @ final_gen_state
+        B_final_gen_state = B @ final_gen_state
+        phi_final_gen_state = phi @ final_gen_state
+        exp_final_target_A = np.vdot(final_target_state, A_final_target_state)
+        exp_final_target_B = np.vdot(final_target_state, B_final_target_state)
+        exp_final_gen_target_A = np.vdot(final_gen_state, A_final_target_state)
+        exp_final_gen_target_B = np.vdot(final_gen_state, B_final_target_state)
+        
         for i in range(self.qc.depth):
             # fmt: off
             # For psi term
@@ -137,21 +148,22 @@ class Generator:
             # For phi term
             total_gen_grad = self.get_total_gen_grad(i)
             final_gen_grad = get_final_gen_state_for_discriminator(total_gen_grad)
-            tmp_grad = braket(final_gen_grad, phi, final_gen_state) + braket(final_gen_state, phi, final_gen_grad)
-            grad_g_phi.append(np.ndarray.item(tmp_grad))
+            final_gen_grad = np.asarray(final_gen_grad)
+            
+            tmp_grad = np.vdot(final_gen_grad, phi_final_gen_state) + np.vdot(phi_final_gen_state, final_gen_grad)
+            grad_g_phi.append(tmp_grad)
 
             # For reg term
-            term1 = braket(final_gen_grad, A, final_gen_state) * braket(final_target_state, B, final_target_state)
-            term2 = braket(final_gen_state, A, final_gen_grad) * braket(final_target_state, B, final_target_state)
-            term3 = braket(final_gen_grad, B, final_target_state) * braket(final_target_state, A, final_gen_state)
-            term4 = braket(final_gen_state, B, final_target_state) * braket(final_target_state, A, final_gen_grad)
-            term5 = braket(final_gen_grad, A, final_target_state) * braket(final_target_state, B, final_gen_state)
-            term6 = braket(final_gen_state, A, final_target_state) * braket(final_target_state, B, final_gen_grad)
-            term7 = braket(final_gen_grad, B, final_gen_state) * braket(final_target_state, A, final_target_state)
-            term8 = braket(final_gen_state, B, final_gen_grad) * braket(final_target_state, A, final_target_state)
+            term1 = np.vdot(final_gen_grad, A_final_gen_state) * exp_final_target_B
+            term2 = np.vdot(A_final_gen_state, final_gen_grad) * exp_final_target_B
+            term3 = np.vdot(final_gen_grad, B_final_target_state) * np.vdot(A_final_target_state, final_gen_state)
+            term4 = exp_final_gen_target_B * np.vdot(A_final_target_state, final_gen_grad)
+            term5 = np.vdot(final_gen_grad, A_final_target_state) * np.vdot(B_final_target_state, final_gen_state)
+            term6 = exp_final_gen_target_A * np.vdot(B_final_target_state, final_gen_grad)
+            term7 = np.vdot(final_gen_grad, B_final_gen_state) * exp_final_target_A
+            term8 = np.vdot(B_final_gen_state, final_gen_grad) * exp_final_target_A
             tmp_reg_grad = self.config.lamb / np.e * (self.config.cst1 * (term1 + term2) - self.config.cst2 * (term3 + term4 + term5 + term6) + self.config.cst3 * (term7 + term8))
-
-            grad_g_reg.append(np.ndarray.item(tmp_reg_grad))
+            grad_g_reg.append(tmp_reg_grad)
             # fmt: on
 
         g_psi = np.asarray(grad_g_psi)
@@ -159,6 +171,7 @@ class Generator:
         g_reg = np.asarray(grad_g_reg)
 
         grad = np.real(g_psi - g_phi - g_reg)
+        #print(term1, term2, term3, term4, term5, term6, term7)
 
         return np.asarray(grad)
 
