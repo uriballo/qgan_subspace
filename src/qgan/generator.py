@@ -171,8 +171,7 @@ class Generator:
         g_reg = np.asarray(grad_g_reg)
 
         grad = np.real(g_psi - g_phi - g_reg)
-        #print(term1, term2, term3, term4, term5, term6, term7)
-
+        
         return np.asarray(grad)
 
     def load_model_params(self, file_path: str) -> bool:

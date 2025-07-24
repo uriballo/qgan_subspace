@@ -181,7 +181,7 @@ class Discriminator:
 
         return np.asarray(grad)
 
-    def _grad_alpha(self, final_target_state, final_gen_state, A: np.ndarray, B: np.ndarray, type: str) -> np.ndarray:
+    def _grad_alpha(self, final_target_state, final_gen_state, A: np.ndarray, B: np.ndarray, op_type: str) -> np.ndarray:
         """Calculate a step of the gradient of the discriminator with respect to alpha.
 
         Args:
@@ -196,15 +196,28 @@ class Discriminator:
         """
         cs = 1 / lamb
 
-        gradpsi: list = self._grad_psi_or_phi(type, respect_to="psi")
+        gradpsi: list = self._grad_psi_or_phi(op_type, respect_to="psi")
         gradpsi_list, gradphi_list, gradreg_list = [], [], []
+
+        final_target_state, final_gen_state = np.asarray(final_target_state), np.asarray(final_gen_state)
+
+        A_final_gen_state = A @ final_gen_state
+        B_final_gen_state = B @ final_gen_state
+        A_final_target_state = A @ final_target_state
+        B_final_target_state = B @ final_target_state
+
+        exp_A_final_gen_state = np.vdot(final_gen_state, A_final_gen_state)
+        exp_A_final_target_state = np.vdot(final_target_state, A_final_target_state)
+        exp_A_final_gen_target_state =  np.vdot(final_gen_state, A_final_target_state)
+        exp_A_final_target_gen_state =  np.vdot(final_target_state, A_final_gen_state)
 
         # fmt: off
         for grad_psi in gradpsi:
+            grad_psi = np.asarray(grad_psi)
             ##################################################################
             # Compute the gradient of psi with respect to alpha
             ##################################################################
-            gradpsi_list.append(np.ndarray.item(braket(final_target_state, grad_psi, final_target_state)))
+            gradpsi_list.append(np.vdot(final_target_state, grad_psi @ final_target_state))
 
             ##################################################################
             # No gradient of phi with respect to alpha, so append 0
@@ -214,15 +227,17 @@ class Discriminator:
             ##################################################################
             # Compute the regularization terms:
             ##################################################################
-            term1 = cs * braket(final_gen_state, A, final_gen_state) * braket(final_target_state, grad_psi, B, final_target_state)
-            term2 = cs * braket(final_gen_state, grad_psi, B, final_target_state) * braket(final_target_state, A, final_gen_state)
-            term3 = cs * braket(final_gen_state, A, final_target_state) * braket(final_target_state, grad_psi, B, final_gen_state)
-            term4 = cs * braket(final_gen_state, grad_psi, B, final_gen_state) * braket(final_target_state, A, final_target_state)
-            gradreg_list.append(np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * (term2 + term3) + cst3 * term4)))
+            grad_psi_B_final_target_state = grad_psi @ B_final_target_state
+            grad_psi_B_final_gen_state = grad_psi @ B_final_gen_state
+            term1 = cs * exp_A_final_gen_state * np.vdot(final_target_state, grad_psi_B_final_target_state)
+            term2 = cs * np.vdot(final_gen_state, grad_psi_B_final_target_state) * exp_A_final_target_gen_state
+            term3 = cs * exp_A_final_gen_target_state * np.vdot(final_target_state, grad_psi_B_final_gen_state)
+            term4 = cs * np.vdot(final_gen_state, grad_psi_B_final_gen_state) * exp_A_final_target_state
+            gradreg_list.append(lamb / np.e * (cst1 * term1 - cst2 * (term2 + term3) + cst3 * term4))
         # fmt: on
 
         return gradpsi_list, gradphi_list, gradreg_list
-
+    
     def _grad_beta(self, final_target_state, final_gen_state, A: np.ndarray, B: np.ndarray, type: str):
         """Calculate a step of the gradient of the discriminator with respect to beta.
 
@@ -241,8 +256,21 @@ class Discriminator:
         gradphi: list = self._grad_psi_or_phi(type, respect_to="phi")
         gradpsi_list, gradphi_list, gradreg_list = [], [], []
 
+        final_target_state, final_gen_state = np.asarray(final_target_state), np.asarray(final_gen_state)
+
+        A_final_gen_state = A @ final_gen_state
+        B_final_gen_state = B @ final_gen_state
+        A_final_target_state = A @ final_target_state
+        B_final_target_state = B @ final_target_state
+
+        exp_B_final_gen_state = np.vdot(final_gen_state, B_final_gen_state)
+        exp_B_final_target_state = np.vdot(final_target_state, B_final_target_state)
+        exp_B_final_gen_target_state =  np.vdot(final_gen_state, B_final_target_state)
+        exp_B_final_target_gen_state =  np.vdot(final_target_state, B_final_gen_state)
+
         # fmt: off
         for grad_phi in gradphi:
+            grad_phi = np.asarray(grad_phi)
             ##################################################################
             # No gradient of psi with respect to beta, so append 0
             ##################################################################
@@ -251,16 +279,18 @@ class Discriminator:
             ##################################################################
             # Compute the gradient of phi with respect to beta
             ##################################################################
-            gradphi_list.append(np.ndarray.item(braket(final_gen_state, grad_phi, final_gen_state)))
+            gradphi_list.append(np.vdot(final_gen_state, grad_phi @ final_gen_state))
 
             ##################################################################
             # Compute the regularization terms:
             ##################################################################
-            term1 = cs * braket(final_gen_state, grad_phi, A, final_gen_state) * braket(final_target_state, B, final_target_state)
-            term2 = cs * braket(final_gen_state, B, final_target_state) * braket(final_target_state, grad_phi, A, final_gen_state)
-            term3 = cs * braket(final_gen_state, grad_phi, A, final_target_state) * braket(final_target_state, B, final_gen_state)
-            term4 = cs * braket(final_gen_state, B, final_gen_state) * braket(final_target_state, grad_phi, A, final_target_state)
-            gradreg_list.append(np.ndarray.item(lamb / np.e * (cst1 * term1 - cst2 * (term2 + term3) + cst3 * term4)))
+            grad_phi_A_final_target_state = grad_phi @ A_final_target_state
+            grad_phi_A_final_gen_state = grad_phi @ A_final_gen_state
+            term1 = cs * np.vdot(final_gen_state, grad_phi_A_final_gen_state) * exp_B_final_target_state
+            term2 = cs * exp_B_final_gen_target_state * np.vdot(final_target_state, grad_phi_A_final_gen_state)
+            term3 = cs * np.vdot(final_gen_state, grad_phi_A_final_target_state) * exp_B_final_target_gen_state
+            term4 = cs * exp_B_final_gen_state * np.vdot(final_target_state, grad_phi_A_final_target_state)
+            gradreg_list.append(lamb / np.e * (cst1 * term1 - cst2 * (term2 + term3) + cst3 * term4))
         # fmt: on
 
         return gradpsi_list, gradphi_list, gradreg_list
