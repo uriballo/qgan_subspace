@@ -19,23 +19,6 @@ from config import CFG
 
 np.random.seed()
 
-
-def braket(*args) -> float:
-    """Calculate the braket (inner product) between two quantum states.
-
-    Args:
-        args: The arguments can be either two vectors (bra and ket), three (bra, operator, ket) or bigger (bra, operator^N, ket).
-
-    Returns:
-        float: The inner product of the two vectors.
-    """
-    bra, *ops, ket = args
-
-    for op in ops:
-        ket = np.matmul(op, ket)
-    return np.matmul(bra.getH(), ket)
-
-
 def compute_cost(dis, final_target_state: np.ndarray, final_gen_state: np.ndarray) -> float:
     """Calculate the cost function. Which is basically equivalent to the Wasserstein distance.
 
@@ -50,22 +33,25 @@ def compute_cost(dis, final_target_state: np.ndarray, final_gen_state: np.ndarra
     A, B, psi, phi = dis.get_dis_matrices_rep()
 
     # fmt: off
-    term1 = braket(final_gen_state, A, final_gen_state)
-    term2 = braket(final_target_state, B, final_target_state)
+    A_final_gen_state = A @ final_gen_state
+    B_final_gen_state = B @ final_gen_state
 
-    term3 = braket(final_gen_state, B, final_target_state)
-    term4 = braket(final_target_state, A, final_gen_state)
+    term1 = np.vdot(final_gen_state, A_final_gen_state)
+    term2 = np.vdot(final_target_state, B @ final_target_state)
 
-    term5 = braket(final_gen_state, A, final_target_state)
-    term6 = braket(final_target_state, B, final_gen_state)
+    term3 = np.vdot(B_final_gen_state, final_target_state)
+    term4 = np.vdot(final_target_state, A_final_gen_state)
 
-    term7 = braket(final_gen_state, B, final_gen_state)
-    term8 = braket(final_target_state, A, final_target_state)
+    term5 = np.vdot(A_final_gen_state, final_target_state)
+    term6 = np.vdot(final_target_state, B_final_gen_state)
 
-    psiterm = np.trace(np.matmul(np.matmul(final_target_state, final_target_state.getH()), psi))
-    phiterm = np.trace(np.matmul(np.matmul(final_gen_state, final_gen_state.getH()), phi))
+    term7 = np.vdot(B_final_gen_state, final_gen_state)
+    term8 = np.vdot(final_target_state, A @ final_target_state)
 
-    regterm = np.ndarray.item(CFG.lamb / np.e * (CFG.cst1 * term1 * term2 - CFG.cst2 * (term3 * term4 + term5 * term6) + CFG.cst3 * term7 * term8))
+    psiterm = np.trace(np.outer(final_target_state, final_target_state.conj().T) @ psi)
+    phiterm = np.trace(np.outer(final_gen_state, final_gen_state.conj().T) @ phi)
+
+    regterm = CFG.lamb / np.e * (CFG.cst1 * term1 * term2 - CFG.cst2 * (term3 * term4 + term5 * term6) + CFG.cst3 * term7 * term8)
     # fmt: on
 
     loss = np.real(psiterm - phiterm - regterm)
@@ -83,9 +69,9 @@ def compute_fidelity(final_target_state: np.ndarray, final_gen_state: np.ndarray
     Returns:
         float: the fidelity between the target state and the gen state.
     """
-    braket_result = braket(final_target_state, final_gen_state)
-    return np.abs(np.ndarray.item(braket_result)) ** 2
-    # return np.abs(np.asscalar(np.matmul(target_state.getH(), total_final_state))) ** 2
+    braket_result = np.vdot(final_target_state, final_gen_state)
+    return np.abs(braket_result) ** 2
+    # return np.abs(np.asscalar(np.matmul(target_state.conj().T, total_final_state))) ** 2
 
 
 def compute_fidelity_and_cost(dis, final_target_state: np.ndarray, final_gen_state: np.ndarray) -> tuple[float, float]:

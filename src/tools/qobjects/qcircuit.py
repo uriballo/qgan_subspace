@@ -42,7 +42,7 @@ class QuantumCircuit:
         for gate in self.gates:
             g = gate.matrix_representation(self.size, False)
             matrix = np.matmul(g, matrix)
-        return np.asmatrix(matrix)
+        return np.asarray(matrix)
 
     def get_grad_mat_rep(self, index, signal="none", type="matrix_multiplication") -> np.ndarray:
         """Matrix multipliction: explicit way to calculate the gradient using matrix multiplication.
@@ -58,7 +58,7 @@ class QuantumCircuit:
                 else:
                     g = gate_j.matrix_representation_shift_phase(self.size, False, signal)
                 matrix = np.matmul(g, matrix)
-            return np.asmatrix(matrix)
+            return np.asarray(matrix)
 
         if type == "matrix_multiplication":
             matrix = Identity(self.size)
@@ -68,7 +68,7 @@ class QuantumCircuit:
                 else:
                     g = gate_j.matrix_representation(self.size, False)
                 matrix = np.matmul(g, matrix)
-            return np.asmatrix(matrix)
+            return np.asarray(matrix)
 
         return None
 

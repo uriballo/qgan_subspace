@@ -22,7 +22,6 @@ import numpy as np
 
 from config import CFG
 from qgan.ancilla import get_final_gen_state_for_discriminator
-from qgan.cost_functions import braket
 from qgan.discriminator import Discriminator
 from tools.data.data_managers import print_and_log
 from tools.optimizer import MomentumOptimizer
@@ -128,8 +127,9 @@ class Generator:
         A, B, _, phi = dis.get_dis_matrices_rep()
 
         grad_g_psi, grad_g_phi, grad_g_reg = [], [], []
-        final_gen_state = np.asarray(final_gen_state)
-        final_target_state = np.asarray(final_target_state)
+        print(type(final_gen_state))
+        #final_gen_state = np.asarray(final_gen_state)
+        #final_target_state = np.asarray(final_target_state)
         A_final_target_state = A @ final_target_state
         B_final_target_state = B @ final_target_state
         A_final_gen_state = A @ final_gen_state
@@ -148,7 +148,7 @@ class Generator:
             # For phi term
             total_gen_grad = self.get_total_gen_grad(i)
             final_gen_grad = get_final_gen_state_for_discriminator(total_gen_grad)
-            final_gen_grad = np.asarray(final_gen_grad)
+            #final_gen_grad = np.asarray(final_gen_grad)
             
             tmp_grad = np.vdot(final_gen_grad, phi_final_gen_state) + np.vdot(phi_final_gen_state, final_gen_grad)
             grad_g_phi.append(tmp_grad)

@@ -20,18 +20,18 @@ from scipy.sparse import dok_matrix
 I = np.eye(2)
 
 # Pauli matrices
-X = np.matrix([[0, 1], [1, 0]])  #: Pauli-X matrix
-Y = np.matrix([[0, -1j], [1j, 0]])  #: Pauli-Y matrix
-Z = np.matrix([[1, 0], [0, -1]])  #: Pauli-Z matrix
-Hadamard = np.matrix([[1, 1], [1, -1]] / np.sqrt(2))  #: Hadamard gate
+X = np.array([[0, 1], [1, 0]])  #: Pauli-X matrix
+Y = np.array([[0, -1j], [1j, 0]])  #: Pauli-Y matrix
+Z = np.array([[1, 0], [0, -1]])  #: Pauli-Z matrix
+Hadamard = np.array([[1, 1], [1, -1]] / np.sqrt(2))  #: Hadamard gate
 
-zero = np.matrix([[1, 0], [0, 0]])
-one = np.matrix([[0, 0], [0, 1]])
+zero = np.array([[1, 0], [0, 0]])
+one = np.array([[0, 0], [0, 1]])
 
 # Two qubit gates
-CNOT = np.matrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]])  #: CNOT gate
-SWAP = np.matrix([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]])  #: SWAP gate
-CZ = np.matrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, -1]])  #: CZ gate
+CNOT = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]])  #: CNOT gate
+SWAP = np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]])  #: SWAP gate
+CZ = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, -1]])  #: CZ gate
 
 global param_table
 param_table = {}

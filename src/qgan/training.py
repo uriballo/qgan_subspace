@@ -48,7 +48,7 @@ class Training:
         initial_state_total, initial_state_final = get_max_entangled_state_with_ancilla_if_needed(self.config.system_size, self.config)
         """Preparation of max. entgl. state with ancilla qubit if needed, to generate state."""
 
-        self.final_target_state: np.matrix = get_final_target_state(initial_state_final, self.config)
+        self.final_target_state = get_final_target_state(initial_state_final, self.config)
 
         """Prepare the target state to compare in the Dis, with the size and Target unitary defined in config."""
 

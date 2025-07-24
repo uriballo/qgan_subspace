@@ -41,7 +41,7 @@ def get_max_entangled_state_with_ancilla_if_needed(size: int, config=CFG) -> np.
     initial_state_for_gen = initial_state_with_ancilla if config.extra_ancilla else state
     initial_state_for_target = initial_state_with_ancilla if config.extra_ancilla and config.ancilla_mode == "pass" else state
 
-    return np.asmatrix(initial_state_for_gen).T, np.asmatrix(initial_state_for_target).T
+    return np.asarray(initial_state_for_gen).T, np.asarray(initial_state_for_target).T
 
 
 def project_ancilla_zero(state: np.ndarray, renormalize: bool = True, config=CFG) -> tuple[np.ndarray, float]:
@@ -73,7 +73,7 @@ def project_ancilla_zero(state: np.ndarray, renormalize: bool = True, config=CFG
         elif config.ancilla_project_norm != "pass":
             raise ValueError(f"Unknown ancilla_project_norm: {config.ancilla_project_norm}")
 
-    return np.asmatrix(projected.reshape(-1, 1)), norm**2
+    return np.asarray(projected.reshape(-1, 1)), norm**2
 
 
 # TODO: Think better what to do with this function... (how to use it)
@@ -100,7 +100,7 @@ def trace_out_ancilla(state: np.ndarray) -> np.ndarray:
     eigvals = eigvals / np.sum(eigvals)
     idx = np.random.choice(len(eigvals), p=eigvals)
     sampled_state = eigvecs[:, idx]
-    return np.asmatrix(sampled_state.reshape(-1, 1))
+    return np.asarray(sampled_state.reshape(-1, 1))
 
 
 def get_final_gen_state_for_discriminator(total_output_state: np.ndarray, config=CFG) -> np.ndarray:
