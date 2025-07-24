@@ -198,8 +198,6 @@ class Discriminator:
         gradpsi: list = self._grad_psi_or_phi(op_type, respect_to="psi")
         gradpsi_list, gradphi_list, gradreg_list = [], [], []
 
-        final_target_state, final_gen_state = np.asarray(final_target_state), np.asarray(final_gen_state)
-
         A_final_gen_state = A @ final_gen_state
         B_final_gen_state = B @ final_gen_state
         A_final_target_state = A @ final_target_state
@@ -212,7 +210,6 @@ class Discriminator:
 
         # fmt: off
         for grad_psi in gradpsi:
-            grad_psi = np.asarray(grad_psi)
             ##################################################################
             # Compute the gradient of psi with respect to alpha
             ##################################################################
@@ -255,8 +252,6 @@ class Discriminator:
         gradphi: list = self._grad_psi_or_phi(type, respect_to="phi")
         gradpsi_list, gradphi_list, gradreg_list = [], [], []
 
-        final_target_state, final_gen_state = np.asarray(final_target_state), np.asarray(final_gen_state)
-
         A_final_gen_state = A @ final_gen_state
         B_final_gen_state = B @ final_gen_state
         A_final_target_state = A @ final_target_state
@@ -269,7 +264,6 @@ class Discriminator:
 
         # fmt: off
         for grad_phi in gradphi:
-            grad_phi = np.asarray(grad_phi)
             ##################################################################
             # No gradient of psi with respect to beta, so append 0
             ##################################################################

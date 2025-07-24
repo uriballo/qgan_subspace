@@ -25,7 +25,7 @@ from qgan.ancilla import get_final_gen_state_for_discriminator
 from qgan.discriminator import Discriminator
 from tools.data.data_managers import print_and_log
 from tools.optimizer import MomentumOptimizer
-from tools.qobjects import Identity, QuantumCircuit, QuantumGate
+from tools.qobjects import QuantumCircuit, QuantumGate
 
 
 class Generator:
@@ -61,7 +61,7 @@ class Generator:
         Returns:
             np.ndarray: The total generator state vector.
         """
-        Untouched_x_G: np.ndarray = np.kron(Identity(self.config.system_size), self.qc.get_mat_rep())
+        Untouched_x_G: np.ndarray = np.kron(np.eye(2**self.config.system_size), self.qc.get_mat_rep())
 
         return np.matmul(Untouched_x_G, self.total_input_state)
 
@@ -74,7 +74,7 @@ class Generator:
         Returns:
             np.ndarray: The total generator gradient vector for the specified gate.
         """
-        Untouched_x_G_grad_i = np.kron(Identity(self.config.system_size), self.qc.get_grad_mat_rep(index))
+        Untouched_x_G_grad_i = np.kron(np.eye(2**self.config.system_size), self.qc.get_grad_mat_rep(index))
         return np.matmul(Untouched_x_G_grad_i, self.total_input_state)
 
     def update_gen(self, dis: Discriminator, final_target_state: np.ndarray):
@@ -127,9 +127,6 @@ class Generator:
         A, B, _, phi = dis.get_dis_matrices_rep()
 
         grad_g_psi, grad_g_phi, grad_g_reg = [], [], []
-        print(type(final_gen_state))
-        #final_gen_state = np.asarray(final_gen_state)
-        #final_target_state = np.asarray(final_target_state)
         A_final_target_state = A @ final_target_state
         B_final_target_state = B @ final_target_state
         A_final_gen_state = A @ final_gen_state
@@ -148,7 +145,6 @@ class Generator:
             # For phi term
             total_gen_grad = self.get_total_gen_grad(i)
             final_gen_grad = get_final_gen_state_for_discriminator(total_gen_grad)
-            #final_gen_grad = np.asarray(final_gen_grad)
             
             tmp_grad = np.vdot(final_gen_grad, phi_final_gen_state) + np.vdot(phi_final_gen_state, final_gen_grad)
             grad_g_phi.append(tmp_grad)
