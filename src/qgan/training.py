@@ -49,6 +49,7 @@ class Training:
         """Preparation of max. entgl. state with ancilla qubit if needed, to generate state."""
 
         self.final_target_state: np.matrix = get_final_target_state(initial_state_final, self.config)
+
         """Prepare the target state to compare in the Dis, with the size and Target unitary defined in config."""
 
         self.gen: Generator = Generator(initial_state_total, config=self.config, seed=self.seed)
