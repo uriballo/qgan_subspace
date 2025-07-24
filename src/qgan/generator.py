@@ -145,7 +145,6 @@ class Generator:
             # For phi term
             total_gen_grad = self.get_total_gen_grad(i)
             final_gen_grad = get_final_gen_state_for_discriminator(total_gen_grad)
-            
             tmp_grad = np.vdot(final_gen_grad, phi_final_gen_state) + np.vdot(phi_final_gen_state, final_gen_grad)
             grad_g_phi.append(tmp_grad)
 

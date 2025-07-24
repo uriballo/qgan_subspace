@@ -180,7 +180,7 @@ def X_Rotation(size, qubit, param, is_grad):
                 except Exception:
                     print("param:\n:", param)
             else:
-                matrix = np.kron(matrix, -1j / 2 * X * linalg.expm(-1j / 2 * param * X))
+                matrix = np.kron(matrix, -1j / 2 * X @ linalg.expm(-1j / 2 * param * X))
         else:
             matrix = np.kron(matrix, I)
 
@@ -197,7 +197,7 @@ def Y_Rotation(size, qubit, param, is_grad):
                 except Exception:
                     print("param:\n:", param)
             else:
-                matrix = np.kron(matrix, -1j / 2 * Y * linalg.expm(-1j / 2 * param * Y))
+                matrix = np.kron(matrix, -1j / 2 * Y @ linalg.expm(-1j / 2 * param * Y))
         else:
             matrix = np.kron(matrix, I)
 
@@ -214,7 +214,7 @@ def Z_Rotation(size, qubit, param, is_grad):
                 except Exception:
                     print("param:\n:", param)
             else:
-                matrix = np.kron(matrix, -1j / 2 * Z * linalg.expm(-1j / 2 * param * Z))
+                matrix = np.kron(matrix, -1j / 2 * Z @ linalg.expm(-1j / 2 * param * Z))
         else:
             matrix = np.kron(matrix, I)
 
