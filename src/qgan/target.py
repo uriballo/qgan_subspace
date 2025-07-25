@@ -135,27 +135,27 @@ def construct_ising(size: int) -> torch.Tensor:
 # MAIN FUNCTIONS FOR TARGET HAMILTONIAN
 ##############################################################
 
-def get_target_unitary(target_type: str, size: int) -> torch.Tensor:
+def get_target_unitary(target_type: str, config = CFG) -> torch.Tensor:
     """Get the target unitary based on the target type and size."""
     if target_type == "cluster_h":
-        return construct_clusterH(size)
+        return construct_clusterH(config.system_size)
     if target_type == "rotated_surface_h":
-        return construct_RotatedSurfaceCode(size)
+        return construct_RotatedSurfaceCode(config.system_size)
     if target_type == "ising_h":
-        return construct_ising(size)
+        return construct_ising(config.system_size)
     if target_type == "custom_h":
-        return construct_target(size, CFG.custom_hamiltonian_terms, CFG.custom_hamiltonian_strengths)
+        return construct_target(config.system_size, config.custom_hamiltonian_terms, config.custom_hamiltonian_strengths)
     raise ValueError(f"Unknown target type: {target_type}. Expected 'cluster_h', 'rotated_surface_h', or 'custom_h'.")
 
-def get_final_target_state(final_input_state: torch.Tensor) -> torch.Tensor:
+def get_final_target_state(final_input_state: torch.Tensor, config = CFG) -> torch.Tensor:
     """Initialize the target state by applying the target unitary."""
-    target_unitary = get_target_unitary(CFG.target_hamiltonian, CFG.system_size)
+    target_unitary = get_target_unitary(config.target_hamiltonian, config)
 
     # Ensure the unitary is on the same device as the input state
     target_unitary = target_unitary.to(final_input_state.device)
 
-    target_op = torch.kron(Identity(CFG.system_size), target_unitary)
-    if CFG.extra_ancilla and CFG.ancilla_mode == "pass":
+    target_op = torch.kron(Identity(config.system_size), target_unitary)
+    if config.extra_ancilla and config.ancilla_mode == "pass":
         target_op = torch.kron(target_op, Identity(1))
         
     return torch.matmul(target_op, final_input_state)

@@ -23,10 +23,11 @@ class Discriminator(nn.Module):
     Discriminator class for the Quantum GAN, implemented as a PyTorch Module.
     The parameters alpha and beta are learned automatically via AutoGrad.
     """
-    def __init__(self):
+    def __init__(self, config = CFG):
         super().__init__()
+        self.config = config
         # Determine the size of the Hilbert space the discriminator acts on
-        self.size: int = CFG.system_size * 2 + (1 if CFG.extra_ancilla and CFG.ancilla_mode == "pass" else 0)
+        self.size: int = self.config.system_size * 2 + (1 if self.config.extra_ancilla and self.config.ancilla_mode == "pass" else 0)
         
         # Store a list of Hermitian operators (Pauli matrices)
         self.herm: list[torch.Tensor] = [I, X, Y, Z]
@@ -39,9 +40,9 @@ class Discriminator(nn.Module):
         self.beta = nn.Parameter(beta_init)
         
         # Store config for compatibility checks during model loading
-        self.target_size: int = CFG.system_size
-        self.target_hamiltonian: str = CFG.target_hamiltonian
-        self.ancilla_mode: str = CFG.ancilla_mode
+        self.target_size: int = self.config.system_size
+        self.target_hamiltonian: str = self.config.target_hamiltonian
+        self.ancilla_mode: str = self.config.ancilla_mode
 
     def forward(self) -> tuple[torch.Tensor, torch.Tensor]:
         """
@@ -70,7 +71,7 @@ class Discriminator(nn.Module):
         psi, phi = self.forward()
         
         # lamb is a hyperparameter from the config
-        lamb = CFG.lamb
+        lamb = self.config.lamb
         
         # A = expm(-1/lamb * phi)
         A = torch.matrix_exp((-1.0 / lamb) * phi)

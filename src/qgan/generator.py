@@ -26,10 +26,10 @@ class Ansatz(nn.Module):
     Ansatz class for constructing quantum circuits with specific gates.
     Implemented as a torch.nn.Module to be part of the Generator model.
     """
-    def __init__(self, size: int, layers: int, ansatz_type: str):
+    def __init__(self, size: int, layers: int, ansatz_type: str, config = CFG):
         super().__init__()
         self.qc = QuantumCircuit(size)
-        
+        self.config = config
         # Build the circuit based on the specified ansatz type
         if ansatz_type == "XX_YY_ZZ_Z":
             self.construct_qcircuit_XX_YY_ZZ_Z(self.qc, size, layers)
@@ -43,87 +43,85 @@ class Ansatz(nn.Module):
     def forward(self):
         return self.qc()
 
-    @staticmethod
-    def construct_qcircuit_XX_YY_ZZ_Z(qc: QuantumCircuit, size: int, layer: int):
+    def construct_qcircuit_XX_YY_ZZ_Z(self, qc: QuantumCircuit, size: int, layer: int):
         # Ancilla logic reduces the main system size by 1
-        system_qubits = size - 1 if CFG.extra_ancilla else size
+        system_qubits = size - 1 if self.config.extra_ancilla else size
         
         entg_list = ["XX", "YY", "ZZ"]
         for _ in range(layer):
             for i in range(system_qubits):
                 qc.add_gate(QuantumGate("Z", i, angle=0.0))
-            if CFG.extra_ancilla and CFG.do_ancilla_1q_gates:
+            if self.config.extra_ancilla and self.config.do_ancilla_1q_gates:
                 qc.add_gate(QuantumGate("Z", system_qubits, angle=0.0))
 
             for i, gate in itertools.product(range(system_qubits - 1), entg_list):
                 qc.add_gate(QuantumGate(gate, i, i + 1, angle=0.0))
                 
             # Add ancilla coupling if specified
-            if CFG.extra_ancilla:
+            if self.config.extra_ancilla:
                 ancilla_q = system_qubits
-                if CFG.ancilla_topology == "total":
+                if self.config.ancilla_topology == "total":
                     for i, gate in itertools.product(range(system_qubits), entg_list):
                         qc.add_gate(QuantumGate(gate, i, ancilla_q, angle=0.0))
-                elif CFG.ancilla_topology in ["bridge", "ansatz"]:
-                    connect_to = CFG.ancilla_connect_to if CFG.ancilla_connect_to is not None else system_qubits - 1
+                elif self.config.ancilla_topology in ["bridge", "ansatz"]:
+                    connect_to = self.config.ancilla_connect_to if self.config.ancilla_connect_to is not None else system_qubits - 1
                     for gate in entg_list:
                         qc.add_gate(QuantumGate(gate, connect_to, ancilla_q, angle=0.0))
-                    if CFG.ancilla_topology == "bridge":
+                    if self.config.ancilla_topology == "bridge":
                          for gate in entg_list:
                             qc.add_gate(QuantumGate(gate, 0, ancilla_q, angle=0.0))
 
-    @staticmethod
-    def construct_qcircuit_ZZ_X_Z(qc: QuantumCircuit, size: int, layer: int):
-        system_qubits = size - 1 if CFG.extra_ancilla else size
+    def construct_qcircuit_ZZ_X_Z(self, qc: QuantumCircuit, size: int, layer: int):
+        system_qubits = size - 1 if self.config.extra_ancilla else size
 
         for _ in range(layer):
             for i in range(system_qubits):
                 qc.add_gate(QuantumGate("X", i, angle=0.0))
                 qc.add_gate(QuantumGate("Z", i, angle=0.0))
-            if CFG.extra_ancilla and CFG.do_ancilla_1q_gates:
+            if self.config.extra_ancilla and self.config.do_ancilla_1q_gates:
                 qc.add_gate(QuantumGate("X", system_qubits, angle=0.0))
                 qc.add_gate(QuantumGate("Z", system_qubits, angle=0.0))
             
             for i in range(system_qubits - 1):
                 qc.add_gate(QuantumGate("ZZ", i, i + 1, angle=0.0))
 
-            if CFG.extra_ancilla:
+            if self.config.extra_ancilla:
                 ancilla_q = system_qubits
-                if CFG.ancilla_topology == "total":
+                if self.config.ancilla_topology == "total":
                     for i in range(system_qubits):
                         qc.add_gate(QuantumGate("ZZ", i, ancilla_q, angle=0.0))
-                elif CFG.ancilla_topology in ["bridge", "ansatz"]:
-                    connect_to = CFG.ancilla_connect_to if CFG.ancilla_connect_to is not None else system_qubits - 1
+                elif self.config.ancilla_topology in ["bridge", "ansatz"]:
+                    connect_to = self.config.ancilla_connect_to if self.config.ancilla_connect_to is not None else system_qubits - 1
                     qc.add_gate(QuantumGate("ZZ", connect_to, ancilla_q, angle=0.0))
-                    if CFG.ancilla_topology == "bridge":
+                    if self.config.ancilla_topology == "bridge":
                         qc.add_gate(QuantumGate("ZZ", 0, ancilla_q, angle=0.0))
 
-    @staticmethod
-    def randomize_gates_in_qc(qc: QuantumCircuit, size: int):
-        ancilla_q = size - 1 if CFG.extra_ancilla else -1
+    def randomize_gates_in_qc(self, qc: QuantumCircuit, size: int):
+        ancilla_q = size - 1 if self.config.extra_ancilla else -1
         with torch.no_grad():
             for gate in qc.gates:
                 is_ancilla_gate = ancilla_q != -1 and (gate.qubit1 == ancilla_q or gate.qubit2 == ancilla_q)
-                if not is_ancilla_gate or CFG.start_ancilla_gates_randomly:
+                if not is_ancilla_gate or self.config.start_ancilla_gates_randomly:
                     gate.angle.uniform_(0, 2 * torch.pi)
 
 class Generator(nn.Module):
     """Generator class for the Quantum GAN, implemented as a PyTorch Module."""
 
-    def __init__(self):
+    def __init__(self, config = CFG):
         super().__init__()
-        self.size: int = CFG.system_size + (1 if CFG.extra_ancilla else 0)
-        self.target_size: int = CFG.system_size
+        self.config = config
+        self.size: int = self.config.system_size + (1 if self.config.extra_ancilla else 0)
+        self.target_size: int = self.config.system_size
         
         # Store config for loading/saving compatibility checks
-        self.ancilla: bool = CFG.extra_ancilla
-        self.ancilla_topology: str = CFG.ancilla_topology
-        self.ansatz_type: str = CFG.gen_ansatz
-        self.layers: int = CFG.gen_layers
-        self.target_hamiltonian: str = CFG.target_hamiltonian
+        self.ancilla: bool = self.config.extra_ancilla
+        self.ancilla_topology: str = self.config.ancilla_topology
+        self.ansatz_type: str = self.config.gen_ansatz
+        self.layers: int = self.config.gen_layers
+        self.target_hamiltonian: str = self.config.target_hamiltonian
 
         # The circuit is now a submodule of the Generator
-        self.ansatz = Ansatz(self.size, self.layers, self.ansatz_type)
+        self.ansatz = Ansatz(self.size, self.layers, self.ansatz_type, config=self.config)
 
     def forward(self, total_input_state: torch.Tensor) -> torch.Tensor:
         """

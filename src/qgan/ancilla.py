@@ -17,12 +17,12 @@ import torch
 from config import CFG
 from tools.qobjects.qgates import device, COMPLEX_TYPE
 
-def get_max_entangled_state_with_ancilla_if_needed(size: int) -> tuple[torch.Tensor, torch.Tensor]:
+def get_max_entangled_state_with_ancilla_if_needed(config = CFG) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Get the maximally entangled state for the system size (with Ancilla if needed).
     Returns tensors on the configured device.
     """
-    dim_register = 2**size
+    dim_register = 2**config.system_size
     state = torch.zeros(dim_register * dim_register, dtype=COMPLEX_TYPE, device=device)
     # Create the Bell state |Φ+⟩ = 1/√d * Σ |ii⟩
     for i in range(dim_register):
@@ -34,14 +34,14 @@ def get_max_entangled_state_with_ancilla_if_needed(size: int) -> tuple[torch.Ten
     initial_state_with_ancilla = torch.kron(state, ancilla_state)
 
     # Determine the correct state for the generator and target based on config
-    initial_state_for_gen = initial_state_with_ancilla if CFG.extra_ancilla else state
-    initial_state_for_target = initial_state_with_ancilla if CFG.extra_ancilla and CFG.ancilla_mode == "pass" else state
+    initial_state_for_gen = initial_state_with_ancilla if config.extra_ancilla else state
+    initial_state_for_target = initial_state_with_ancilla if config.extra_ancilla and config.ancilla_mode == "pass" else state
 
     # Return as column vectors
     return initial_state_for_gen.view(-1, 1), initial_state_for_target.view(-1, 1)
 
 
-def project_ancilla_zero(state: torch.Tensor, renormalize: bool = True) -> tuple[torch.Tensor, torch.Tensor]:
+def project_ancilla_zero(state: torch.Tensor, renormalize: bool = True, config = CFG) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Project the last qubit of a state vector onto |0> and renormalize.
     Assumes state is a column vector.
@@ -56,14 +56,14 @@ def project_ancilla_zero(state: torch.Tensor, renormalize: bool = True) -> tuple
     prob = norm**2
 
     if norm < 1e-9:  # Check for near-zero norm
-        return torch.zeros((2**(CFG.system_size * 2), 1), dtype=COMPLEX_TYPE, device=device), prob
+        return torch.zeros((2**(config.system_size * 2), 1), dtype=COMPLEX_TYPE, device=device), prob
 
     # Renormalize if specified
     if renormalize:
-        if CFG.ancilla_project_norm == "re-norm":
+        if config.ancilla_project_norm == "re-norm":
             projected = projected / norm
-        elif CFG.ancilla_project_norm != "pass":
-            raise ValueError(f"Unknown ancilla_project_norm: {CFG.ancilla_project_norm}")
+        elif config.ancilla_project_norm != "pass":
+            raise ValueError(f"Unknown ancilla_project_norm: {config.ancilla_project_norm}")
 
     return projected.view(-1, 1), prob
 
@@ -95,20 +95,20 @@ def trace_out_ancilla(state: torch.Tensor) -> torch.Tensor:
     return sampled_state.view(-1, 1)
 
 
-def get_final_gen_state_for_discriminator(total_output_state: torch.Tensor) -> torch.Tensor:
+def get_final_gen_state_for_discriminator(total_output_state: torch.Tensor, config = CFG) -> torch.Tensor:
     """
     Modifies the generator's output state to be passed to the discriminator,
     according to the configured ancilla_mode.
     """
-    if not CFG.extra_ancilla:
+    if not config.extra_ancilla:
         return total_output_state
 
-    if CFG.ancilla_mode == "pass":
+    if config.ancilla_mode == "pass":
         return total_output_state
-    elif CFG.ancilla_mode == "project":
+    elif config.ancilla_mode == "project":
         projected, _ = project_ancilla_zero(total_output_state)
         return projected
-    elif CFG.ancilla_mode == "trace":
+    elif config.ancilla_mode == "trace":
         return trace_out_ancilla(total_output_state)
     else:
-        raise ValueError(f"Unknown ancilla_mode: {CFG.ancilla_mode}")
+        raise ValueError(f"Unknown ancilla_mode: {config.ancilla_mode}")
