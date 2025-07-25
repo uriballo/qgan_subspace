@@ -29,31 +29,37 @@ from tools.qobjects.qgates import device # Import the configured device
 # Set PyTorch seed for reproducibility
 torch.manual_seed(42)
 
+
 class Training:
-    """
-    Manages the training process for the Quantum GAN using PyTorch.
-    """
-    def __init__(self):
-        # --- 1. Initialize models and data ---
-        # The ancilla and target functions now return tensors on the correct device
-        initial_state_total, initial_state_final = get_max_entangled_state_with_ancilla_if_needed(CFG.system_size)
-        self.final_target_state: torch.Tensor = get_final_target_state(initial_state_final)
-        
-        # Instantiate the PyTorch models
-        self.gen = Generator().to(device)
-        self.dis = Discriminator().to(device)
-        
+    def __init__(self, config=CFG, verbose=True, seed=None):
+        self.config = config
+        self.seed = seed
+        self.verbose = verbose
+        """Builds the configuration for the Training. You might wanna comment/discomment lines, for changing the model."""
+
+        initial_state_total, initial_state_final = get_max_entangled_state_with_ancilla_if_needed(self.config.system_size, self.config)
+        """Preparation of max. entgl. state with ancilla qubit if needed, to generate state."""
+
+        self.final_target_state = get_final_target_state(initial_state_final, self.config)
+
+        """Prepare the target state to compare in the Dis, with the size and Target unitary defined in config."""
+
+        self.gen: Generator = Generator(config=self.config, seed=self.seed).to(device)
+        """Prepares the Generator with the size, ansatz, layers and ancilla, defined in config."""
+
+        self.dis: Discriminator = Discriminator(config=self.config, seed=self.seed).to(device)
+        """Prepares the Discriminatos, with the size, and ancilla defined in config."""
         self.initial_state_total = initial_state_total.to(device)
         self.final_target_state = self.final_target_state.to(device)
 
         # --- 2. Initialize Optimizers ---
         # Use a standard PyTorch optimizer like Adam
-        self.optimizer_gen = torch.optim.SGD(self.gen.parameters(), lr=CFG.l_rate, momentum=CFG.momentum_coeff)
-        self.optimizer_dis = torch.optim.SGD(self.dis.parameters(), lr=CFG.l_rate, momentum=CFG.momentum_coeff)
+        self.optimizer_gen = torch.optim.SGD(self.gen.parameters(), lr=self.config.l_rate, momentum=self.config.momentum_coeff)
+        self.optimizer_dis = torch.optim.SGD(self.dis.parameters(), lr=self.config.l_rate, momentum=self.config.momentum_coeff)
 
     def run(self):
         """Runs the entire QGAN training loop."""
-        print_and_log("\n" + CFG.show_data(), CFG.log_path)
+        print_and_log("\n" + self.config.show_data(), self.config.log_path)
         
         # Note: Model loading logic would need to be adapted to use `load_state_dict`
         # For simplicity in this migration, we are starting from scratch.
@@ -62,9 +68,9 @@ class Training:
         fidelities_history, losses_history = [], []
         starttime = datetime.now()
         
-        for epoch in range(1, CFG.epochs + 1):
+        for epoch in range(1, self.config.epochs + 1):
             epoch_fidelities, epoch_losses = [], []
-            for i in range(CFG.iterations_epoch):
+            for i in range(self.config.iterations_epoch):
                 # --- Train Discriminator ---
                 # We need to detach the generator's output from the computation graph
                 # when training the discriminator to avoid backpropagating through the generator.
@@ -72,7 +78,7 @@ class Training:
                     total_gen_state = self.gen(self.initial_state_total)
                 final_gen_state_detached = get_final_gen_state_for_discriminator(total_gen_state)
                 
-                for _ in range(CFG.steps_dis):
+                for _ in range(self.config.steps_dis):
                     self.optimizer_dis.zero_grad()
                     # The cost function for the discriminator aims to maximize the distance,
                     # so we multiply by -1 to perform gradient descent (minimization).
@@ -81,7 +87,7 @@ class Training:
                     self.optimizer_dis.step()
 
                 # --- Train Generator ---
-                for _ in range(CFG.steps_gen):
+                for _ in range(self.config.steps_gen):
                     self.optimizer_gen.zero_grad()
                     # Now, we use the generator's output directly to build the graph
                     total_gen_state = self.gen(self.initial_state_total)
@@ -92,32 +98,32 @@ class Training:
                     self.optimizer_gen.step()
                 
                 # --- Logging and Monitoring ---
-                if i % CFG.save_fid_and_loss_every_x_iter == 0:
+                if i % self.config.save_fid_and_loss_every_x_iter == 0:
                     # Use the detached state for fidelity/loss calculation to save memory
                     fid, loss = compute_fidelity_and_cost(self.dis, self.final_target_state, final_gen_state_detached)
                     epoch_fidelities.append(fid)
                     epoch_losses.append(loss.item()) # .item() gets the float value
 
-                    if i % CFG.log_every_x_iter == 0:
+                    if i % self.config.log_every_x_iter == 0:
                         info = f"\nEpoch: {epoch:4d} | Iter: {i+1:4d} | Fidelity: {fid:8f} | Loss: {loss.item():8f}"
-                        print_and_log(info, CFG.log_path)
+                        print_and_log(info, self.config.log_path)
             
             # --- Store and Plot Epoch History ---
             fidelities_history.extend(epoch_fidelities)
             losses_history.extend(epoch_losses)
-            plt_fidelity_vs_iter(np.array(fidelities_history), np.array(losses_history), CFG, epoch)
+            plt_fidelity_vs_iter(np.array(fidelities_history), np.array(losses_history), self.config, epoch)
 
             # --- Stopping Conditions ---
-            if epoch_fidelities and epoch_fidelities[-1] > CFG.max_fidelity:
-                print_and_log(f"\nFidelity threshold of {CFG.max_fidelity} reached. Stopping training.", CFG.log_path)
+            if epoch_fidelities and epoch_fidelities[-1] > self.config.max_fidelity:
+                print_and_log(f"\nFidelity threshold of {self.config.max_fidelity} reached. Stopping training.", self.config.log_path)
                 break
         
         # --- End of Training ---
-        print_and_log(f"\nTraining finished after {epoch} epochs.", CFG.log_path)
+        print_and_log(f"\nTraining finished after {epoch} epochs.", self.config.log_path)
         endtime = datetime.now()
-        print_and_log(f"\nRun took: {endtime - starttime} time.", CFG.log_path)
+        print_and_log(f"\nRun took: {endtime - starttime} time.", self.config.log_path)
         
         # --- Save Final Results ---
-        save_fidelity_loss(np.array(fidelities_history), np.array(losses_history), CFG.fid_loss_path)
-        self.gen.save_model_params(CFG.model_gen_path)
-        self.dis.save_model_params(CFG.model_dis_path)
+        save_fidelity_loss(np.array(fidelities_history), np.array(losses_history), self.config.fid_loss_path)
+        self.gen.save_model_params(self.config.model_gen_path)
+        self.dis.save_model_params(self.config.model_dis_path)

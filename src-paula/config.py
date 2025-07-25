@@ -51,7 +51,7 @@ class Config:
         #         If not starting from common initial plateaus, then this represents the full set of experiments.
         #
         #############################################################################################
-        self.run_multiple_experiments: bool = False
+        self.run_multiple_experiments: bool = True
         self.common_initial_plateaus: bool = True
         # If common_initial_plateaus == true:
         self.N_initial_plateaus: int = 10

@@ -11,37 +11,62 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Discriminator module implemented in PyTorch."""
+"""Discriminator module"""
 
+import os
+import pickle
+from copy import deepcopy
+
+import numpy as np
+from scipy.linalg import expm
+
+from config import CFG
+from tools.data.data_managers import print_and_log
+from tools.qobjects.qgates import I, X, Y, Z, device, COMPLEX_TYPE
 import torch
 import torch.nn as nn
-from config import CFG
-from tools.qobjects.qgates import I, X, Y, Z, device, COMPLEX_TYPE
 
 class Discriminator(nn.Module):
+    """Discriminator class for the Quantum GAN.
+
+    Representation with coeff. in front of each herm operator (N x 4):
+    ------------------------------------------------------------------
+        - alpha: Parameters for the real part of the discriminator (coeff for I, X, Y, Z).
+        - beta: Parameters for the imaginary part of the discriminator (coeff for I, X, Y, Z).
+
+    Representation with matrices, spanning the full space  (2^N x 2^N):
+    -------------------------------------------------------------------
+        - psi: Real part of the discriminator (matrix).
+        - phi: Imaginary part of the discriminator (matrix).
+
+    For computing the gradients, we use the following matrices:
+    -----------------------------------------------------------
+        - A: expm(-1/lamb * phi)
+        - B: expm(1/lamb * psi)
     """
-    Discriminator class for the Quantum GAN, implemented as a PyTorch Module.
-    The parameters alpha and beta are learned automatically via AutoGrad.
-    """
-    def __init__(self):
+
+    def __init__(self, config=CFG, seed=None):
         super().__init__()
-        # Determine the size of the Hilbert space the discriminator acts on
-        self.size: int = CFG.system_size * 2 + (1 if CFG.extra_ancilla and CFG.ancilla_mode == "pass" else 0)
-        
-        # Store a list of Hermitian operators (Pauli matrices)
+        self.seed = seed
+        self.config = config
+        # Set the general used parameters:
+        self.size: int = self.config.system_size * 2 + (1 if self.config.extra_ancilla and self.config.ancilla_mode == "pass" else 0)
         self.herm: list[torch.Tensor] = [I, X, Y, Z]
 
         # Define alpha and beta as trainable parameters
         # They are initialized with random values between -1 and 1
+        if self.seed:
+            torch.manual_seed(self.seed)
         alpha_init = torch.empty(self.size, len(self.herm)).uniform_(-1, 1)
         beta_init = torch.empty(self.size, len(self.herm)).uniform_(-1, 1)
         self.alpha = nn.Parameter(alpha_init)
         self.beta = nn.Parameter(beta_init)
-        
-        # Store config for compatibility checks during model loading
-        self.target_size: int = CFG.system_size
-        self.target_hamiltonian: str = CFG.target_hamiltonian
-        self.ancilla_mode: str = CFG.ancilla_mode
+
+        # Set params, for comparison when loading:
+        self.ancilla: bool = self.config.extra_ancilla
+        self.ancilla_mode: str = self.config.ancilla_mode  # Topology doesn't matter, its not a circuit = fully connect matrix.
+        self.target_size: int = self.config.system_size
+        self.target_hamiltonian: str = self.config.target_hamiltonian
 
     def forward(self) -> tuple[torch.Tensor, torch.Tensor]:
         """
@@ -70,7 +95,7 @@ class Discriminator(nn.Module):
         psi, phi = self.forward()
         
         # lamb is a hyperparameter from the config
-        lamb = CFG.lamb
+        lamb = self.config.lamb
         
         # A = expm(-1/lamb * phi)
         A = torch.matrix_exp((-1.0 / lamb) * phi)
@@ -78,7 +103,7 @@ class Discriminator(nn.Module):
         B = torch.matrix_exp((1.0 / lamb) * psi)
 
         return A, B, psi, phi
-        
+    
     def load_model_params(self, file_path: str):
         """Loads discriminator parameters from a saved state_dict."""
         try:
