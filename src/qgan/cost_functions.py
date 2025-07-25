@@ -31,6 +31,7 @@ def compute_cost(dis, final_target_state: np.ndarray, final_gen_state: np.ndarra
         float: the cost function.
     """
     A, B, psi, phi = dis.get_dis_matrices_rep()
+    
 
     # fmt: off
     A_final_gen_state = A @ final_gen_state
