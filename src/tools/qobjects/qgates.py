@@ -47,14 +47,10 @@ SWAP = torch.tensor([[1,0,0,0],[0,0,1,0],[0,1,0,0],[0,0,0,1]], dtype=COMPLEX_TYP
 CZ = torch.tensor([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,-1]], dtype=COMPLEX_TYPE, device=device)
 
 
-def Identity(size: int) -> torch.Tensor:
-    """Creates a multi-qubit identity tensor on the correct device."""
-    if size == 0:
-        return torch.tensor([[1.+0.j]], dtype=COMPLEX_TYPE, device=device)
-    matrix = I
-    for _ in range(size - 1):
-        matrix = torch.kron(matrix, I)
-    return matrix
+def Identity(n: int, device=None, dtype=torch.complex64) -> torch.Tensor:
+    """Creates a 2^n x 2^n identity matrix efficiently on the given device and dtype."""
+    dim = 2 ** n
+    return torch.eye(dim, dtype=dtype, device=device)
 
 def _construct_operator(size: int, op_map: dict[int, torch.Tensor]) -> torch.Tensor:
     """Helper to construct a multi-qubit operator from a map of ops and their qubit indices."""
