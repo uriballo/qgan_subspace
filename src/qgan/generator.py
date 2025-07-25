@@ -11,418 +11,175 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Generator module"""
+"""Generator module implemented in PyTorch."""
 
+import torch
+import torch.nn as nn
 import itertools
-import os
-import pickle
-from copy import deepcopy
-
-import numpy as np
-
 from config import CFG
-from qgan.ancilla import get_final_gen_state_for_discriminator
-from qgan.discriminator import Discriminator
-from tools.data.data_managers import print_and_log
-from tools.optimizer import MomentumOptimizer
-from tools.qobjects import QuantumCircuit, QuantumGate
+from tools.qobjects.qcircuit import QuantumCircuit
+from tools.qobjects.qgates import QuantumGate, Identity
+import os
 
-
-class Generator:
-    """Generator class for Quantum GAN."""
-
-    def __init__(self, total_input_state: np.ndarray, config=CFG, seed=None):
-        self.config = config
-        self.seed = seed
-        # Set general used params:
-        self.size: int = self.config.system_size + (1 if self.config.extra_ancilla else 0)
-        self.qc: QuantumCircuit = QuantumCircuit(self.size, "generator")
-        self.optimizer: MomentumOptimizer = MomentumOptimizer()
-
-        # Set the params, for comparison while loading:
-        self.ancilla: bool = self.config.extra_ancilla
-        self.ancilla_topology: str = self.config.ancilla_topology  # Type doesn't matter, ancilla always passes through gen
-        self.ansatz: str = self.config.gen_ansatz
-        self.layers: int = self.config.gen_layers
-        self.target_size: int = self.config.system_size
-        self.target_hamiltonian: str = self.config.target_hamiltonian
-
-        # Set the ansatz circuit:
-        self.qc = Ansatz(config=self.config, seed=self.seed).get_ansatz_type_circuit(self.ansatz)(self.qc, self.size, self.layers)
-        self.total_input_state: np.ndarray = total_input_state
-        self.total_gen_state = self.get_total_gen_state()
-
-    def get_total_gen_state(self) -> np.ndarray:
-        """Get the total generator state, including the untouched qubits in front (choi).
-
-        Args:
-            total_input_state (np.ndarray): The input state vector.
-
-        Returns:
-            np.ndarray: The total generator state vector.
-        """
-        Untouched_x_G: np.ndarray = np.kron(np.eye(2**self.config.system_size), self.qc.get_mat_rep())
-
-        return np.matmul(Untouched_x_G, self.total_input_state)
-
-    def get_total_gen_grad(self, index) -> np.ndarray:
-        """Get the total generator gradient for a specific gate index.
-
-        Args:
-            index (int): The index of the gate for which to compute the gradient.
-
-        Returns:
-            np.ndarray: The total generator gradient vector for the specified gate.
-        """
-        Untouched_x_G_grad_i = np.kron(np.eye(2**self.config.system_size), self.qc.get_grad_mat_rep(index))
-        return np.matmul(Untouched_x_G_grad_i, self.total_input_state)
-
-    def update_gen(self, dis: Discriminator, final_target_state: np.ndarray):
-        """Update the generator parameters (angles) using the optimizer.
-
-        Args:
-            dis (Discriminator): The discriminator to compute gradients.
-            final_target_state (np.ndarray): The target state vector.
-        """
-        ###############################################################
-        # Compute the gradient
-        ###############################################################
-        grad: np.ndarray = self._grad_theta(dis, final_target_state, self.total_gen_state)
-
-        # Get the new thetas from the gradient
-        theta = np.asarray([gate.angle for gate in self.qc.gates])
-        new_theta = self.optimizer.move_in_grad(theta, grad, "min")
-
-        ###############################################################
-        # Update the angles in the quantum circuit
-        ###############################################################
-        for i in range(self.qc.depth):
-            self.qc.gates[i].angle = new_theta[i]
-
-        ###############################################################
-        # Update the total generator state with the new angles
-        ###############################################################
-        self.total_gen_state = self.get_total_gen_state()
-
-    def _grad_theta(
-        self,
-        dis: Discriminator,
-        final_target_state: np.ndarray,
-        total_gen_state: np.ndarray,
-    ) -> np.ndarray:
-        """Compute the gradient of the generator parameters (angles) with respect to the discriminator's output.
-
-        Args:
-            dis (Discriminator): The discriminator to compute gradients.
-            final_target_state (np.ndarray): The target state vector.
-            total_gen_state (np.ndarray): The current generator state vector.
-
-        Returns:
-            np.ndarray: The gradient of the generator parameters.
-        """
-        #######################################################################
-        # Get the current Generator, Target and Discriminator states:
-        #######################################################################
-        final_gen_state = get_final_gen_state_for_discriminator(total_gen_state)
-        A, B, _, phi = dis.get_dis_matrices_rep()
-
-        grad_g_psi, grad_g_phi, grad_g_reg = [], [], []
-        A_final_target_state = A @ final_target_state
-        B_final_target_state = B @ final_target_state
-        A_final_gen_state = A @ final_gen_state
-        B_final_gen_state = B @ final_gen_state
-        phi_final_gen_state = phi @ final_gen_state
-        exp_final_target_A = np.vdot(final_target_state, A_final_target_state)
-        exp_final_target_B = np.vdot(final_target_state, B_final_target_state)
-        exp_final_gen_target_A = np.vdot(final_gen_state, A_final_target_state)
-        exp_final_gen_target_B = np.vdot(final_gen_state, B_final_target_state)
+class Ansatz(nn.Module):
+    """
+    Ansatz class for constructing quantum circuits with specific gates.
+    Implemented as a torch.nn.Module to be part of the Generator model.
+    """
+    def __init__(self, size: int, layers: int, ansatz_type: str):
+        super().__init__()
+        self.qc = QuantumCircuit(size)
         
-        for i in range(self.qc.depth):
-            # fmt: off
-            # For psi term
-            grad_g_psi.append(0)
+        # Build the circuit based on the specified ansatz type
+        if ansatz_type == "XX_YY_ZZ_Z":
+            self.construct_qcircuit_XX_YY_ZZ_Z(self.qc, size, layers)
+        elif ansatz_type == "ZZ_X_Z":
+            self.construct_qcircuit_ZZ_X_Z(self.qc, size, layers)
+        else:
+            raise ValueError("Invalid type of ansatz specified.")
+            
+        self.randomize_gates_in_qc(self.qc, size)
 
-            # For phi term
-            total_gen_grad = self.get_total_gen_grad(i)
-            final_gen_grad = get_final_gen_state_for_discriminator(total_gen_grad)
-            tmp_grad = np.vdot(final_gen_grad, phi_final_gen_state) + np.vdot(phi_final_gen_state, final_gen_grad)
-            grad_g_phi.append(tmp_grad)
+    def forward(self):
+        return self.qc()
 
-            # For reg term
-            term1 = np.vdot(final_gen_grad, A_final_gen_state) * exp_final_target_B
-            term2 = np.vdot(A_final_gen_state, final_gen_grad) * exp_final_target_B
-            term3 = np.vdot(final_gen_grad, B_final_target_state) * np.vdot(A_final_target_state, final_gen_state)
-            term4 = exp_final_gen_target_B * np.vdot(A_final_target_state, final_gen_grad)
-            term5 = np.vdot(final_gen_grad, A_final_target_state) * np.vdot(B_final_target_state, final_gen_state)
-            term6 = exp_final_gen_target_A * np.vdot(B_final_target_state, final_gen_grad)
-            term7 = np.vdot(final_gen_grad, B_final_gen_state) * exp_final_target_A
-            term8 = np.vdot(B_final_gen_state, final_gen_grad) * exp_final_target_A
-            tmp_reg_grad = self.config.lamb / np.e * (self.config.cst1 * (term1 + term2) - self.config.cst2 * (term3 + term4 + term5 + term6) + self.config.cst3 * (term7 + term8))
-            grad_g_reg.append(tmp_reg_grad)
-            # fmt: on
-
-        g_psi = np.asarray(grad_g_psi)
-        g_phi = np.asarray(grad_g_phi)
-        g_reg = np.asarray(grad_g_reg)
-
-        grad = np.real(g_psi - g_phi - g_reg)
+    def construct_qcircuit_XX_YY_ZZ_Z(self, qc: QuantumCircuit, size: int, layer: int):
+        # Ancilla logic reduces the main system size by 1
+        system_qubits = size - 1 if self.config.extra_ancilla else size
         
-        return np.asarray(grad)
-
-    def load_model_params(self, file_path: str) -> bool:
-        """
-        Load generator parameters (angles) from a saved model, if compatible.
-
-        Supports loading when adding or removing an ancilla (one qubit difference).
-
-        WARNING: Only load trusted pickle files! Untrusted files may be insecure.
-
-        Args:
-            file_path (str): Path to the saved generator model file.
-
-        Returns:
-            bool: True if the model was loaded successfully, False otherwise.
-        """
-        ##################################################################
-        # Check if the file exists and is a valid pickle file
-        ##################################################################
-        if not os.path.exists(file_path):
-            print_and_log("ERROR: Generator model file not found\n", self.config.log_path)
-            return False
-        try:
-            with open(file_path, "rb") as f:
-                saved_gen: Generator = pickle.load(f)
-        except (OSError, pickle.UnpicklingError) as e:
-            print_and_log(f"ERROR: Could not load generator model: {e}\n", self.config.log_path)
-            return False
-
-        ##################################################################
-        # Check for the cases you can't load -> Stop
-        ##################################################################
-        cant_load = False
-
-        if saved_gen.target_size != self.target_size:
-            print_and_log("ERROR: Saved generator model is incompatible (target size mismatch).\n", self.config.log_path)
-            cant_load = True
-
-        # This one could work, but it wouldn't make sense, since the generator would be useless, better to stop:
-        if saved_gen.target_hamiltonian != self.target_hamiltonian:
-            print_and_log("ERROR: Saved generator model is incompatible (target hamiltonian mismatch).\n", self.config.log_path)
-            cant_load = True
-
-        if saved_gen.ansatz != self.ansatz:
-            print_and_log("ERROR: Can't load due to different ansatz in gen.\n", self.config.log_path)
-            cant_load = True
-
-        if saved_gen.layers != self.layers:
-            print_and_log("ERROR: Can't load due to different number of layers in gen.\n", self.config.log_path)
-            cant_load = True
-
-        if saved_gen.ancilla and self.ancilla and saved_gen.ancilla_topology != self.ancilla_topology:
-            print_and_log(
-                "ERROR: Can't load gen with ancilla into another one with ancilla too, but in a different topology.\n",
-                self.config.log_path,
-            )
-            cant_load = True
-
-        # Stop loading, logging all the errors at the same time in one execution:
-        if cant_load:
-            return False
-
-        ##################################################################
-        # Case of exact match
-        ##################################################################
-        if saved_gen.size == self.size and saved_gen.ancilla == self.ancilla:  # Redundant size check, kept for clarity
-            print_and_log("Gen match in size and ancilla.\n", self.config.log_path)
-
-            # Corner case, when ancilla number of gates has changed:
-            if len(saved_gen.qc.gates) != len(self.qc.gates):
-                print_and_log("Gen number of gates don't match (change in code implementation?).\n", self.config.log_path)
-                return False
-
-            # Normal case, when all gates match:
-            self.qc = deepcopy(saved_gen.qc)
-            self.total_gen_state = deepcopy(saved_gen.total_gen_state)
-
-            # Load the optimizer parameters if they exist in the saved generator
-            self.optimizer = deepcopy(saved_gen.optimizer)
-
-            print_and_log("Generator parameters loaded\n", self.config.log_path)
-            return True
-
-        ##################################################################
-        # Case of adding or removing an ancilla (one qubit difference)
-        ###################################################################
-        if saved_gen.ancilla != self.ancilla and abs(saved_gen.size - self.size) == 1:  # Rdundt size check, but clarity
-            print_and_log("Gen match in size, but with diff in ancilla.\n", self.config.log_path)
-
-            # Partially load the generator parameters:
-            self.set_common_gate_params_from_loaded_gen(saved_gen)
-
-            # Since we can't copy the gen state, we regenerate it:
-            self.total_gen_state = self.get_total_gen_state()
-
-            # Load the optimizer parameters if they exist in the saved generator
-            # self.optimizer.v = saved_gen.optimizer.v
-            # TODO: Check how to load momentum, if not exact match
-
-            print_and_log("Generator parameters partially loaded (excluding ancilla difference)\n", self.config.log_path)
-            return True
-
-        ##################################################################
-        # For other cases, error the loading
-        ###################################################################
-        print_and_log("ERROR: Saved generator model is incompatible (size or depth mismatch).\n", self.config.log_path)
-        return False
-
-    def set_common_gate_params_from_loaded_gen(self, saved_gen: "Generator") -> None:
-        """Set the common gate parameters (angles) from the loaded generator.
-
-        Args:
-            saved_gen (Generator): The generator instance.
-        """
-        # Determine the minimum number of qubits (the overlap):
-        min_size = min(saved_gen.qc.size, self.qc.size)
-        # Map: for each gate in self.qc.gates, find a matching gate in saved_gen.qc.gates
-        # A matching gate: same type, same qubits (within min_size), same number of qubits (1q/2q)
-        # To handle multiple gates with same type/qubits, use an index to track which have been matched
-        used_indices = set()
-        for self_gate in self.qc.gates:
-            # Only consider gates that act only on the overlapping qubits (no ancilla)
-            q1, q2 = self_gate.qubit1, self_gate.qubit2
-            if (q1 is not None and q1 >= min_size) or (q2 is not None and q2 >= min_size):
-                continue
-            # Try to find the next matching gate in saved_gen.qc.gates that hasn't been used
-            for idx, saved_gate in enumerate(saved_gen.qc.gates):
-                if idx in used_indices:
-                    continue
-                sq1, sq2 = saved_gate.qubit1, saved_gate.qubit2
-                if self_gate.name == saved_gate.name and ((q1 == sq1 and q2 == sq2) or (q1 == sq2 and q2 == sq1)):
-                    self_gate.angle = saved_gate.angle
-                    used_indices.add(idx)
-                    break
-
-
-##################################################################
-# GENERATOR ANSATZ DEFINITIONS
-##################################################################
-class Ansatz:
-    """Ansatz class for constructing quantum circuits with specific gates"""
-    def __init__(self, config=CFG, seed=None):
-        self.config = config
-        self.seed = seed
-
-    def get_ansatz_type_circuit(self, type_of_ansatz: str) -> callable:
-        """Construct the ansatz based on the type specified.
-
-        Args:
-            type_of_ansatz (str): Type of ansatz to construct, either 'XX_YY_ZZ_Z' or 'ZZ_X_Z'.
-
-        Returns:
-            callable: Function to construct the quantum circuit with the specified ansatz.
-        """
-        if type_of_ansatz == "XX_YY_ZZ_Z":
-            return self.construct_qcircuit_XX_YY_ZZ_Z
-
-        if type_of_ansatz == "ZZ_X_Z":
-            return self.construct_qcircuit_ZZ_X_Z
-
-        raise ValueError("Invalid type of ansatz specified.")
-    
-    def randomize_gates_in_qc(self, qc: QuantumCircuit, size: int) -> QuantumCircuit:
-        # Make uniform random angles for the gates (0 to 2*pi)
-        if self.seed is not None:
-            np.random.seed(self.seed)
-        theta = np.random.uniform(0, 2 * np.pi, len(qc.gates))
-        for i, gate_i in enumerate(qc.gates):
-            # Depending on the config, randomize the ancilla gates or not:
-            if self.config.start_ancilla_gates_randomly or size not in [gate_i.qubit1, gate_i.qubit2]:
-                gate_i.angle = theta[i]
-
-        return qc
-
-    def construct_qcircuit_XX_YY_ZZ_Z(self, qc: QuantumCircuit, size: int, layer: int) -> QuantumCircuit:
-        """Construct a quantum circuit with the ansatz of XX YY ZZ and FieldZ
-
-        Args:
-            qc (QuantumCircuit): Quantum Circuit
-            size (int): Size of the Quantum Circuit
-            layer (int): Number of layers
-
-        Returns:
-            QuantumCircuit: Quantum Circuit with the ansatz of XYZ and FieldZ
-        """
-        # If extra ancilla is used, different than ansatz, we reduce the size by 1,
-        # to implement the ancilla logic separately.
-        if self.config.extra_ancilla:
-            size -= 1
-
         entg_list = ["XX", "YY", "ZZ"]
         for _ in range(layer):
-            # First 1 qubit gates
-            for i in range(size):
-                qc.add_gate(QuantumGate("Z", i, angle=0))
-            # Ancilla 1q gates for: total, bridge and disconnected:
+            for i in range(system_qubits):
+                qc.add_gate(QuantumGate("Z", i, angle=0.0))
             if self.config.extra_ancilla and self.config.do_ancilla_1q_gates:
-                qc.add_gate(QuantumGate("Z", size, angle=0))
+                qc.add_gate(QuantumGate("Z", system_qubits, angle=0.0))
 
-            # Then 2 qubit gates:
-            for i, gate in itertools.product(range(size - 1), entg_list):
-                qc.add_gate(QuantumGate(gate, i, i + 1, angle=0))
-            # Ancilla ancilla coupling (2q) logic for: total and bridge
+            for i, gate in itertools.product(range(system_qubits - 1), entg_list):
+                qc.add_gate(QuantumGate(gate, i, i + 1, angle=0.0))
+                
+            # Add ancilla coupling if specified
             if self.config.extra_ancilla:
+                ancilla_q = system_qubits
                 if self.config.ancilla_topology == "total":
-                    for i, gate in itertools.product(range(size), entg_list):
-                        qc.add_gate(QuantumGate(gate, i, size, angle=0))
-                if self.config.ancilla_topology == "bridge":
+                    for i, gate in itertools.product(range(system_qubits), entg_list):
+                        qc.add_gate(QuantumGate(gate, i, ancilla_q, angle=0.0))
+                elif self.config.ancilla_topology in ["bridge", "ansatz"]:
+                    connect_to = self.config.ancilla_connect_to if self.config.ancilla_connect_to is not None else system_qubits - 1
                     for gate in entg_list:
-                        qc.add_gate(QuantumGate(gate, 0, size, angle=0))
-                if self.config.ancilla_topology in ["bridge", "ansatz"]:
-                    qubit_to_connect_to = self.config.ancilla_connect_to if self.config.ancilla_connect_to is not None else size - 1
-                    for gate in entg_list:
-                        qc.add_gate(QuantumGate(gate, qubit_to_connect_to, size, angle=0))
+                        qc.add_gate(QuantumGate(gate, connect_to, ancilla_q, angle=0.0))
+                    if self.config.ancilla_topology == "bridge":
+                         for gate in entg_list:
+                            qc.add_gate(QuantumGate(gate, 0, ancilla_q, angle=0.0))
 
-        return self.randomize_gates_in_qc(qc, size)
-
-    def construct_qcircuit_ZZ_X_Z(self, qc: QuantumCircuit, size: int, layer: int) -> QuantumCircuit:
-        """Construct a quantum circuit with the ansatz of ZZ and XZ
-
-        Args:
-            qc (QuantumCircuit): Quantum Circuit
-            size (int): Size of the Quantum Circuit
-            layer (int): Number of layers
-
-        Returns:
-            QuantumCircuit: Quantum Circuit with the ansatz of ZZ and XZ
-        """
-        # If extra ancilla is used, different than ansatz, we reduce the size by 1,
-        # to implement the ancilla logic separately.
-        if self.config.extra_ancilla:
-            size -= 1
+    def construct_qcircuit_ZZ_X_Z(self, qc: QuantumCircuit, size: int, layer: int):
+        system_qubits = size - 1 if self.config.extra_ancilla else size
 
         for _ in range(layer):
-            # First 1 qubit gates
-            for i in range(size):
-                qc.add_gate(QuantumGate("X", i, angle=0))
-                qc.add_gate(QuantumGate("Z", i, angle=0))
-            # Ancilla 1q gates for: total, bridge and disconnected:
+            for i in range(system_qubits):
+                qc.add_gate(QuantumGate("X", i, angle=0.0))
+                qc.add_gate(QuantumGate("Z", i, angle=0.0))
             if self.config.extra_ancilla and self.config.do_ancilla_1q_gates:
-                qc.add_gate(QuantumGate("X", size, angle=0))
-                qc.add_gate(QuantumGate("Z", size, angle=0))
-            # Then 2 qubit gates
-            for i in range(size - 1):
-                qc.add_gate(QuantumGate("ZZ", i, i + 1, angle=0))
-            # Ancilla ancilla coupling (2q) logic for: total and bridge
+                qc.add_gate(QuantumGate("X", system_qubits, angle=0.0))
+                qc.add_gate(QuantumGate("Z", system_qubits, angle=0.0))
+            
+            for i in range(system_qubits - 1):
+                qc.add_gate(QuantumGate("ZZ", i, i + 1, angle=0.0))
+
             if self.config.extra_ancilla:
+                ancilla_q = system_qubits
                 if self.config.ancilla_topology == "total":
-                    for i in range(size):
-                        qc.add_gate(QuantumGate("ZZ", i, size, angle=0))
-                if self.config.ancilla_topology == "bridge":
-                    qc.add_gate(QuantumGate("ZZ", 0, size, angle=0))
-                if self.config.ancilla_topology in ["bridge", "ansatz"]:
-                    qubit_to_connect_to = self.config.ancilla_connect_to if self.config.ancilla_connect_to is not None else size - 1
-                    qc.add_gate(QuantumGate("ZZ", qubit_to_connect_to, size, angle=0))
+                    for i in range(system_qubits):
+                        qc.add_gate(QuantumGate("ZZ", i, ancilla_q, angle=0.0))
+                elif self.config.ancilla_topology in ["bridge", "ansatz"]:
+                    connect_to = self.config.ancilla_connect_to if self.config.ancilla_connect_to is not None else system_qubits - 1
+                    qc.add_gate(QuantumGate("ZZ", connect_to, ancilla_q, angle=0.0))
+                    if self.config.ancilla_topology == "bridge":
+                        qc.add_gate(QuantumGate("ZZ", 0, ancilla_q, angle=0.0))
 
-        return self.randomize_gates_in_qc(qc, size)
+    def randomize_gates_in_qc(self, qc: QuantumCircuit, size: int):
+        ancilla_q = size - 1 if self.config.extra_ancilla else -1
+        with torch.no_grad():
+            for gate in qc.gates:
+                is_ancilla_gate = ancilla_q != -1 and (gate.qubit1 == ancilla_q or gate.qubit2 == ancilla_q)
+                if not is_ancilla_gate or self.config.start_ancilla_gates_randomly:
+                    gate.angle.uniform_(0, 2 * torch.pi)
 
-    
+class Generator(nn.Module):
+    """Generator class for the Quantum GAN, implemented as a PyTorch Module."""
+
+    def __init__(self, config=CFG, seed=None):
+        super().__init__()
+        self.config = CFG
+        self.seed = seed
+        if self.seed is not None:
+            torch.manual_seed(self.seed)
+        self.size: int = self.config.system_size + (1 if self.config.extra_ancilla else 0)
+        self.target_size: int = self.config.system_size
+        
+        # Store config for loading/saving compatibility checks
+        self.ancilla: bool = self.config.extra_ancilla
+        self.ancilla_topology: str = self.config.ancilla_topology
+        self.ansatz_type: str = self.config.gen_ansatz
+        self.layers: int = self.config.gen_layers
+        self.target_hamiltonian: str = self.config.target_hamiltonian
+
+        # The circuit is now a submodule of the Generator
+        self.ansatz = Ansatz(self.size, self.layers, self.ansatz_type)
+
+    def forward(self, total_input_state: torch.Tensor) -> torch.Tensor:
+        """
+        The forward pass of the generator. It applies the quantum circuit
+        to the input state.
+        """
+        # Get the unitary matrix representation of the quantum circuit
+        device = total_input_state.device
+        generator_unitary = self.ansatz().to(device)
+
+        # The full operator includes the identity on the untouched qubits
+        # Identity is created on the correct device by the qgates module
+        full_op = torch.kron(Identity(self.target_size), generator_unitary)
+        
+        # Apply the operator to the input state
+        total_gen_state = torch.matmul(full_op, total_input_state)
+        return total_gen_state
+
+    def load_model_params(self, file_path: str):
+        """Loads generator parameters from a saved state_dict."""
+        try:
+            # Load the entire saved dictionary, which includes config
+            saved_data = torch.load(file_path)
+            saved_config = saved_data.get('config', {})
+            
+            # --- Perform compatibility checks ---
+            if saved_config.get('target_size') != self.target_size:
+                raise ValueError("Incompatible target size.")
+            if saved_config.get('target_hamiltonian') != self.target_hamiltonian:
+                raise ValueError("Incompatible target Hamiltonian.")
+            if saved_config.get('ansatz_type') != self.ansatz_type:
+                raise ValueError("Incompatible ansatz type.")
+            if saved_config.get('layers') != self.layers:
+                raise ValueError("Incompatible number of layers.")
+            
+            # Load the state dictionary
+            self.load_state_dict(saved_data['model_state_dict'])
+            print(f"Generator parameters loaded successfully from {file_path}")
+
+        except Exception as e:
+            print(f"ERROR: Could not load generator model: {e}")
+
+    def save_model_params(self, file_path: str):
+        """Saves generator parameters and config to a file."""
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+        # Save both the model's state_dict and its configuration
+        save_data = {
+            'model_state_dict': self.state_dict(),
+            'config': {
+                'target_size': self.target_size,
+                'target_hamiltonian': self.target_hamiltonian,
+                'ansatz_type': self.ansatz_type,
+                'layers': self.layers,
+            }
+        }
+        torch.save(save_data, file_path)
+        print(f"Generator model saved to {file_path}")

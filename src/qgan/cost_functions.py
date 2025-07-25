@@ -13,20 +13,19 @@
 # limitations under the License.
 """Cost and Fidelity Functions"""
 
-import numpy as np
+import torch 
 
 from config import CFG
 
-np.random.seed()
 
-def compute_cost(dis, final_target_state: np.ndarray, final_gen_state: np.ndarray) -> float:
+def compute_cost(dis, final_target_state: torch.Tensor, final_gen_state: torch.Tensor, config=CFG) -> float:
     """Calculate the cost function. Which is basically equivalent to the Wasserstein distance.
 
     Args:
         dis (Discriminator): the discriminator.
         final_target_state (np.ndarray): the target state to input into the Discriminator.
         final_gen_state (np.ndarray): the gen state to input into the Discriminator.
-
+        config (Config): training configuration (defaults to CFG).
     Returns:
         float: the cost function.
     """
@@ -37,30 +36,31 @@ def compute_cost(dis, final_target_state: np.ndarray, final_gen_state: np.ndarra
     A_final_gen_state = A @ final_gen_state
     B_final_gen_state = B @ final_gen_state
 
-    term1 = np.vdot(final_gen_state, A_final_gen_state)
-    term2 = np.vdot(final_target_state, B @ final_target_state)
+    term1 = torch.vdot(final_gen_state, A_final_gen_state)
+    term2 = torch.vdot(final_target_state, B @ final_target_state)
 
-    term3 = np.vdot(B_final_gen_state, final_target_state)
-    term4 = np.vdot(final_target_state, A_final_gen_state)
+    term3 = torch.vdot(B_final_gen_state, final_target_state)
+    term4 = torch.vdot(final_target_state, A_final_gen_state)
 
-    term5 = np.vdot(A_final_gen_state, final_target_state)
-    term6 = np.vdot(final_target_state, B_final_gen_state)
+    term5 = torch.vdot(A_final_gen_state, final_target_state)
+    term6 = torch.vdot(final_target_state, B_final_gen_state)
 
-    term7 = np.vdot(B_final_gen_state, final_gen_state)
-    term8 = np.vdot(final_target_state, A @ final_target_state)
+    term7 = torch.vdot(B_final_gen_state, final_gen_state)
+    term8 = torch.vdot(final_target_state, A @ final_target_state)
 
-    psiterm = np.trace(np.outer(final_target_state, final_target_state.conj().T) @ psi)
-    phiterm = np.trace(np.outer(final_gen_state, final_gen_state.conj().T) @ phi)
+    psiterm = torch.trace(torch.outer(final_target_state, final_target_state.conj().T) @ psi)
+    phiterm = torch.trace(torch.outer(final_gen_state, final_gen_state.conj().T) @ phi)
 
-    regterm = CFG.lamb / np.e * (CFG.cst1 * term1 * term2 - CFG.cst2 * (term3 * term4 + term5 * term6) + CFG.cst3 * term7 * term8)
+    regterm = (config.lamb / torch.e) * (config.cst1 * term1 * term2 - config.cst2 * (term3 * term4 + term5 * term6) + config.cst3 * term7 * term8)
     # fmt: on
 
-    loss = np.real(psiterm - phiterm - regterm)
+    # The final loss must be a real-valued scalar tensor
+    loss = (psiterm - phiterm - regterm).real
 
     return loss
 
 
-def compute_fidelity(final_target_state: np.ndarray, final_gen_state: np.ndarray) -> float:
+def compute_fidelity(final_target_state: torch.Tensor, final_gen_state: torch.Tensory) -> float:
     """Calculate the fidelity between target state and gen state
 
     Args:
@@ -70,12 +70,12 @@ def compute_fidelity(final_target_state: np.ndarray, final_gen_state: np.ndarray
     Returns:
         float: the fidelity between the target state and the gen state.
     """
-    braket_result = np.vdot(final_target_state, final_gen_state)
-    return np.abs(braket_result) ** 2
-    # return np.abs(np.asscalar(np.matmul(target_state.conj().T, total_final_state))) ** 2
+    braket_result = torch.vdot(final_target_state, final_gen_state)
+    # .item() extracts the scalar value from the tensor
+    return torch.abs(braket_result).pow(2).item()
 
 
-def compute_fidelity_and_cost(dis, final_target_state: np.ndarray, final_gen_state: np.ndarray) -> tuple[float, float]:
+def compute_fidelity_and_cost(dis, final_target_state: torch.Tensor, final_gen_state: torch.Tensor) -> tuple[float, float]:
     """Calculate the fidelity and cost function
 
     Args:
