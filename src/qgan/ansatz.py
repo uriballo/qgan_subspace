@@ -7,13 +7,14 @@ import numpy as np
 
 
 class ZZ_X_Z_circuit(nn.Module):
-    def __init__(self, size: int, layer: int, device = "default.qubit", config = CFG):
+    def __init__(self, size: int, layer: int, config = CFG):
         super().__init__()
         self.size = size
         self.n_qubits = 2 * self.size
         self.layer = layer 
         self.config = config
-        self.device = qml.device(device, wires=self.n_qubits)
+        self.str_device = config.device
+        self.device = qml.device(self.str_device, wires=self.n_qubits)
         self.n_params = self.count_n_params()
         self.theta = nn.Parameter(torch.randn(self.n_params, dtype=torch.float32))
         self.qnode = qml.QNode(self.circuit, self.device, interface="torch")
