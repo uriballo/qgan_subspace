@@ -182,6 +182,7 @@ class Config:
         # -----------------------
         # GENERATOR CONFIGURATION
         # -----------------------
+        #   - device: Pennylane quantum device (default: default.qubit)
         #   - gen_layers: Number of layers in the generator ansatz (default: ~4)
         #
         #   - gen_ansatz: Ansatz type for generator:
@@ -189,6 +190,7 @@ class Config:
         #       + "ZZ_X_Z": 2 body Z, 1 body X and 1 body Z terms.
         #
         #############################################################################################
+        self.device = 'default.qubit'
         self.gen_layers: int = 3  # 2, 3, 5, 10, 20 ...
         self.gen_ansatz: Literal["XX_YY_ZZ_Z", "ZZ_X_Z"] = "ZZ_X_Z"
 
