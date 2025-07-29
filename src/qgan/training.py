@@ -13,7 +13,6 @@
 # limitations under the License.
 """Training module for the Quantum GAN using PyTorch."""
 
-from datetime import datetime
 import torch
 import numpy as np
 from config import CFG
@@ -25,9 +24,20 @@ from qgan.target import get_final_target_state
 from tools.data.data_managers import print_and_log, save_fidelity_loss
 from tools.plot_hub import plt_fidelity_vs_iter
 from tools.qobjects.qgates import device # Import the configured device
+from time import perf_counter as tpc
+from dataclasses import dataclass
+from typing import Optional, List
 
 # Set PyTorch seed for reproducibility
 #torch.manual_seed(42)
+
+@dataclass
+class Results:
+    fidelities: List
+    losses: List
+    runtimes: List
+    total_time: float
+
 
 class Training:
     """
@@ -60,17 +70,17 @@ class Training:
         # For simplicity in this migration, we are starting from scratch.
         # load_models_if_specified(self) 
 
-        fidelities_history, losses_history = [], []
-        starttime = datetime.now()
+        fidelities_history, losses_history, runtimes_history = [], [], []
+        starttime = tpc()
         
         for epoch in range(1, self.config.epochs + 1):
-            epoch_fidelities, epoch_losses = [], []
+            epoch_fidelities, epoch_losses, epoch_runtimes = [], [], []
             for i in range(self.config.iterations_epoch):
                 # --- Train Discriminator ---
                 # We need to detach the generator's output from the computation graph
                 # when training the discriminator to avoid backpropagating through the generator.
                 
-                
+                t0 = tpc()
                 # --- Train Generator ---
                 for _ in range(self.config.steps_gen):
                     self.optimizer_gen.zero_grad()
@@ -93,14 +103,14 @@ class Training:
                     dis_loss = -1 * compute_cost(self.dis, self.final_target_state, final_gen_state_detached)
                     dis_loss.backward()
                     self.optimizer_dis.step()
-                
+                tf = tpc()
                 # --- Logging and Monitoring ---
                 if i % self.config.save_fid_and_loss_every_x_iter == 0:
                     # Use the detached state for fidelity/loss calculation to save memory
                     fid, loss = compute_fidelity_and_cost(self.dis, self.final_target_state, final_gen_state_detached)
                     epoch_fidelities.append(fid)
                     epoch_losses.append(loss.item()) # .item() gets the float value
-
+                    epoch_runtimes.append(tf-t0)
                     if i % self.config.log_every_x_iter == 0:
                         info = f"\nEpoch: {epoch:4d} | Iter: {i+1:4d} | Fidelity: {fid:8f} | Loss: {loss.item():8f}"
                         print_and_log(info, self.config.log_path)
@@ -108,6 +118,7 @@ class Training:
             # --- Store and Plot Epoch History ---
             fidelities_history.extend(epoch_fidelities)
             losses_history.extend(epoch_losses)
+            runtimes_history.extend(epoch_runtimes)
             plt_fidelity_vs_iter(np.array(fidelities_history), np.array(losses_history), CFG, epoch)
 
             # --- Stopping Conditions ---
@@ -117,10 +128,12 @@ class Training:
         
         # --- End of Training ---
         print_and_log(f"\nTraining finished after {epoch} epochs.", self.config.log_path)
-        endtime = datetime.now()
+        endtime = tpc()
         print_and_log(f"\nRun took: {endtime - starttime} time.", self.config.log_path)
         
         # --- Save Final Results ---
         save_fidelity_loss(np.array(fidelities_history), np.array(losses_history), self.config.fid_loss_path)
         self.gen.save_model_params(self.config.model_gen_path)
         self.dis.save_model_params(self.config.model_dis_path)
+
+        return Results(fidelities=np.array(fidelities_history), losses=np.array(losses_history), runtimes=np.array(runtimes_history), total_time=endtime-starttime)

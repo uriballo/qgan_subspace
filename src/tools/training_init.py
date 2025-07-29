@@ -43,9 +43,10 @@ def run_single_training(config=CFG):
         # Run single training instance with specified configuration
         ##############################################################
         training_instance = Training(config=config)
-        training_instance.run()
+        results = training_instance.run()
         success_msg = "\nDefault configuration run COMPLETED SUCCESSFULLY.\n"
         print_and_log(success_msg, config.log_path)  # Log to file
+        return results
 
     except Exception as e:  # noqa: BLE001
         ##############################################################
