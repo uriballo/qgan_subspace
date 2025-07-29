@@ -28,7 +28,6 @@ class Generator(nn.Module):
     def __init__(self, config = CFG):
         super().__init__()
         self.config = config
-        self.size: int = self.config.system_size + (1 if self.config.extra_ancilla else 0)
         self.target_size: int = self.config.system_size
         
         # Store config for loading/saving compatibility checks
@@ -39,7 +38,7 @@ class Generator(nn.Module):
         self.target_hamiltonian: str = self.config.target_hamiltonian
 
         # The circuit is now a submodule of the Generator
-        self.ansatz = ZZ_X_Z_circuit(self.size, self.layers, config=self.config)
+        self.ansatz = ZZ_X_Z_circuit(config=self.config)
 
     def forward(self, total_input_state: torch.Tensor) -> torch.Tensor:
         """

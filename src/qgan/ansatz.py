@@ -7,12 +7,12 @@ import numpy as np
 
 
 class ZZ_X_Z_circuit(nn.Module):
-    def __init__(self, size: int, layer: int, config = CFG):
+    def __init__(self, config = CFG):
         super().__init__()
-        self.size = size
-        self.n_qubits = 2 * self.size
-        self.layer = layer 
         self.config = config
+        self.size = self.config.system_size
+        self.n_qubits = 2 * self.size + (1 if self.config.extra_ancilla else 0)
+        self.layer = self.config.gen_layers 
         self.str_device = config.device
         self.device = qml.device(self.str_device, wires=self.n_qubits)
         self.n_params = self.count_n_params()
@@ -21,7 +21,7 @@ class ZZ_X_Z_circuit(nn.Module):
 
     def count_n_params(self):
         n_params = 0
-        base_size = self.size - 1 if self.config.extra_ancilla else self.size
+        base_size = self.size # - 1 if self.config.extra_ancilla else self.size
 
         # 1-qubit RX and RZ
         n_params += self.size * 2
@@ -48,8 +48,8 @@ class ZZ_X_Z_circuit(nn.Module):
         # If extra ancilla is used, different than ansatz, we reduce the size by 1,
         # to implement the ancilla logic separately.
         size = self.size
-        if self.config.extra_ancilla:
-            size -= 1            
+        #if self.config.extra_ancilla:
+        #    size -= 1            
 
         idx = 0
         for _ in range(self.layer):
