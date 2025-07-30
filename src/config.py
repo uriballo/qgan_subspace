@@ -183,6 +183,7 @@ class Config:
         # GENERATOR CONFIGURATION
         # -----------------------
         #   - device: Pennylane quantum device (default: default.qubit)
+        #   
         #   - gen_layers: Number of layers in the generator ansatz (default: ~4)
         #
         #   - gen_ansatz: Ansatz type for generator:
