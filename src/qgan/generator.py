@@ -20,7 +20,7 @@ from config import CFG
 from tools.qobjects.qcircuit import QuantumCircuit
 from tools.qobjects.qgates import QuantumGate, Identity
 import os
-from qgan.ansatz import ZZ_X_Z_circuit
+from qgan.ansatz import ZZ_X_Z_circuit, XX_YY_ZZ_Z_circuit
 
 class Generator(nn.Module):
     """Generator class for the Quantum GAN, implemented as a PyTorch Module."""
@@ -38,7 +38,10 @@ class Generator(nn.Module):
         self.target_hamiltonian: str = self.config.target_hamiltonian
 
         # The circuit is now a submodule of the Generator
-        self.ansatz = ZZ_X_Z_circuit(config=self.config)
+        if config.gen_ansatz == 'ZZ_X_Z':
+            self.ansatz = ZZ_X_Z_circuit(config=self.config)
+        elif config.gen_ansatz == 'XX_YY_ZZ_Z':
+            self.ansatz = XX_YY_ZZ_Z_circuit(config=self.config)
 
     def forward(self, total_input_state: torch.Tensor) -> torch.Tensor:
         """
