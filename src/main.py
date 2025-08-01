@@ -15,6 +15,7 @@
 
 from config import CFG
 from tools.training_init import run_multiple_trainings, run_single_training
+import torch
 
 
 ##############################################################
@@ -28,4 +29,5 @@ def main():
 
 
 if __name__ == "__main__":
+    torch.manual_seed(0)
     main()
