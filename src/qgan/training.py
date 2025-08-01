@@ -27,6 +27,7 @@ from tools.qobjects.qgates import device # Import the configured device
 from time import perf_counter as tpc
 from dataclasses import dataclass
 from typing import Optional, List
+import schedulefree as sf
 
 # Set PyTorch seed for reproducibility
 #torch.manual_seed(42)
@@ -59,8 +60,8 @@ class Training:
 
         # --- 2. Initialize Optimizers ---
         # Use a standard PyTorch optimizer like Adam
-        self.optimizer_gen = torch.optim.SGD(self.gen.parameters(), lr=self.config.l_rate, momentum=self.config.momentum_coeff)
-        self.optimizer_dis = torch.optim.SGD(self.dis.parameters(), lr=self.config.l_rate, momentum=self.config.momentum_coeff)
+        self.optimizer_gen = sf.AdamWScheduleFree(self.gen.parameters()) #torch.optim.SGD(self.gen.parameters(), lr=self.config.l_rate, momentum=self.config.momentum_coeff)
+        self.optimizer_dis = sf.AdamWScheduleFree(self.dis.parameters())#torch.optim.SGD(self.dis.parameters(), lr=self.config.l_rate, momentum=self.config.momentum_coeff)
 
     def run(self):
         """Runs the entire QGAN training loop."""
@@ -79,7 +80,8 @@ class Training:
                 # --- Train Discriminator ---
                 # We need to detach the generator's output from the computation graph
                 # when training the discriminator to avoid backpropagating through the generator.
-                
+                self.optimizer_dis.train()
+                self.optimizer_gen.train()
                 t0 = tpc()
                 # --- Train Generator ---
                 for _ in range(self.config.steps_gen):
@@ -104,6 +106,8 @@ class Training:
                     dis_loss.backward()
                     self.optimizer_dis.step()
                 tf = tpc()
+                self.optimizer_dis.eval()
+                self.optimizer_gen.eval()
                 # --- Logging and Monitoring ---
                 if i % self.config.save_fid_and_loss_every_x_iter == 0:
                     # Use the detached state for fidelity/loss calculation to save memory
